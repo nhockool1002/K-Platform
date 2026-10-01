@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+ * K-Point Platform — Design Tokens (P0-11)
+ * Nguồn màu: README.md / SRS_K-PLATFORM-v1.0.docx (branding header/diagram).
+ * Giữ nguyên các mã hex này khi đổi theme — chúng là bộ nhận diện thương hiệu chính thức.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+
+  /* Brand palette */
+  --color-brand-navy: #1d4e89;
+  --color-brand-navy-dark: #13324f;
+  --color-brand-blue: #2f6ca2;
+  --color-brand-blue-light: #4a90c4;
+  --color-brand-gold: #e8a93a;
+  --color-brand-gold-dark: #a9760f;
+  --color-brand-bg-light: #eaf1f8;
+  --color-brand-bg-gold-light: #fdf1dd;
+
+  /* Semantic tokens */
+  --color-primary: var(--color-brand-navy);
+  --color-accent: var(--color-brand-gold);
+  --color-muted: #666666;
+  --color-border: #e2e8f0;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-brand-navy: var(--color-brand-navy);
+  --color-brand-navy-dark: var(--color-brand-navy-dark);
+  --color-brand-blue: var(--color-brand-blue);
+  --color-brand-blue-light: var(--color-brand-blue-light);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-gold-dark: var(--color-brand-gold-dark);
+  --color-brand-bg-light: var(--color-brand-bg-light);
+  --color-brand-bg-gold-light: var(--color-brand-bg-gold-light);
+
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --color-muted: #a3a3a3;
+    --color-border: #27272a;
+    --color-brand-bg-light: #11213a;
+    --color-brand-bg-gold-light: #2a2110;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}

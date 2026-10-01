@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+coverage
+*.min.js
+docs/diagrams/out
+docs/assets
+SRS_K-PLATFORM-v1.0.docx
+backend/prisma/migrations
+pnpm-lock.yaml
+frontend/next-env.d.ts

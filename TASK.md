@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase | Tên | Tổng task | Hoàn thành | % | Trạng thái |
-|---|---|---|---|---|---|
-| 0 | Khởi tạo nền tảng | 12 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 1 | Auth, RBAC & Switch Mode | 14 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 2 | Ví KPoint & SePay | 13 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 3 | Campaign & Survey | 15 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 4 | Submission, Proof & Auto-Approve | 13 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 5 | Dispute Center | 12 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 6 | Thanh toán Quốc tế & Audit Logs | 15 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 7 | CMS Admin & RBAC nâng cao | 11 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 8 | Hardening, QA & Go-live | 14 | 0 | 0% | ⬜ Chưa bắt đầu |
-| 9 | Mobile App (React Native) | 10 | 0 | 0% | ⬜ Chưa bắt đầu |
-| **Tổng** | | **129** | **0** | **0%** | |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %      | Trạng thái      |
+| -------- | -------------------------------- | --------- | ---------- | ------ | --------------- |
+| 0        | Khởi tạo nền tảng                | 12        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 2        | Ví KPoint & SePay                | 13        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 3        | Campaign & Survey                | 15        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 5        | Dispute Center                   | 12        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%     | ⬜ Chưa bắt đầu |
+| **Tổng** |                                  | **129**   | **0**      | **0%** |                 |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -53,7 +53,7 @@
 
 ## Phase 0 — Khởi tạo nền tảng
 
-**Mục tiêu:** Repo chạy được end-to-end, CI xanh. *(DoD đầy đủ: xem PLAN.md § Phase 0)*
+**Mục tiêu:** Repo chạy được end-to-end, CI xanh. _(DoD đầy đủ: xem PLAN.md § Phase 0)_
 
 - [ ] **P0-01** Khởi tạo monorepo (`frontend/`, `backend/`, `infra/`)
 - [ ] **P0-02** Cấu hình TypeScript dùng chung (tsconfig base) cho cả FE/BE
@@ -75,16 +75,16 @@
 **Mục tiêu:** Đăng ký/đăng nhập, Switch Mode mượt không mất phiên, RBAC chặn đúng theo role.
 
 - [ ] **P1-01** Bảng `users` + `roles_permissions` (migration + model)
-- [ ] **P1-02** Đăng ký/Đăng nhập bằng Email + Password *(SCR-02)*
-- [ ] **P1-03** Quên mật khẩu / reset password qua email *(SCR-02)*
-- [ ] **P1-04** OAuth2 Google *(SCR-02)*
-- [ ] **P1-05** OAuth2 Facebook *(SCR-02)*
+- [ ] **P1-02** Đăng ký/Đăng nhập bằng Email + Password _(SCR-02)_
+- [ ] **P1-03** Quên mật khẩu / reset password qua email _(SCR-02)_
+- [ ] **P1-04** OAuth2 Google _(SCR-02)_
+- [ ] **P1-05** OAuth2 Facebook _(SCR-02)_
 - [ ] **P1-06** Phát hành JWT (access + refresh token)
-- [ ] **P1-07** API `POST /api/v1/auth/switch-mode` — đổi `active_mode`, giữ nguyên JWT *(FN-AUTH-01)*
+- [ ] **P1-07** API `POST /api/v1/auth/switch-mode` — đổi `active_mode`, giữ nguyên JWT _(FN-AUTH-01)_
 - [ ] **P1-08** Guard RBAC theo role (Bên A/Bên B/Super-Moderator/Administrator/Root Administrator)
 - [ ] **P1-09** Ràng buộc: Root Administrator hard-code ID, chặn mọi API xóa/hạ cấp Root
-- [ ] **P1-10** Khung Dashboard Bên A rỗng (chưa data) để test UI Switch Mode *(SCR-03)*
-- [ ] **P1-11** Khung Dashboard Bên B rỗng (chưa data) để test UI Switch Mode *(SCR-06)*
+- [ ] **P1-10** Khung Dashboard Bên A rỗng (chưa data) để test UI Switch Mode _(SCR-03)_
+- [ ] **P1-11** Khung Dashboard Bên B rỗng (chưa data) để test UI Switch Mode _(SCR-06)_
 - [ ] **P1-12** Test case: đăng nhập A → Switch B → gọi API bất kỳ không bị 401
 - [ ] **P1-13** Test case: thử xóa/hạ cấp Root Administrator qua mọi endpoint → bị chặn 403/409
 - [ ] **P1-14** Demo cuối Phase cho Product Owner + đối chiếu DoD
@@ -96,14 +96,14 @@
 **Mục tiêu:** Nạp tiền qua SePay cộng KPoint tức thời, ví không bao giờ sai lệch khi đồng thời.
 
 - [ ] **P2-01** Bảng `wallets` (balance_kpoint, reserved_kpoint) — tự tạo khi user được tạo
-- [ ] **P2-02** Xin sandbox/test credentials từ SePay *(ưu tiên cao — xem Rủi ro R1 trong PLAN.md)*
-- [ ] **P2-03** Màn hình Quản lý Ví & Nạp/Rút KPoint *(SCR-08)*
-- [ ] **P2-04** Sinh mã QR VietQR nội dung `KPOINT <UserID>` *(FN-PAY-01)*
+- [ ] **P2-02** Xin sandbox/test credentials từ SePay _(ưu tiên cao — xem Rủi ro R1 trong PLAN.md)_
+- [ ] **P2-03** Màn hình Quản lý Ví & Nạp/Rút KPoint _(SCR-08)_
+- [ ] **P2-04** Sinh mã QR VietQR nội dung `KPOINT <UserID>` _(FN-PAY-01)_
 - [ ] **P2-05** API `POST /api/v1/payments/sepay-webhook` nhận webhook SePay
 - [ ] **P2-06** Idempotency theo `txn_id` — chống cộng tiền trùng khi webhook gọi lại
 - [ ] **P2-07** Transaction ACID (row lock `SELECT ... FOR UPDATE`) cho mọi thao tác cộng/trừ ví
 - [ ] **P2-08** UI lập lệnh rút tiền về ngân hàng, trạng thái `PENDING`
-- [ ] **P2-09** Lịch sử giao dịch ví — tách biệt theo chế độ Bên A/Bên B *(theo quy tắc Switch Mode ở SRS Section II)*
+- [ ] **P2-09** Lịch sử giao dịch ví — tách biệt theo chế độ Bên A/Bên B _(theo quy tắc Switch Mode ở SRS Section II)_
 - [ ] **P2-10** Test concurrency: 50 request cộng/trừ ví đồng thời không sai lệch số dư
 - [ ] **P2-11** Test webhook retry/duplicate không cộng tiền 2 lần
 - [ ] **P2-12** Test nạp tiền thật trên SePay sandbox end-to-end
@@ -116,17 +116,17 @@
 **Mục tiêu:** Bên A tạo Campaign thật, Bên B tìm và ứng tuyển, chống gian lận multi-account.
 
 - [ ] **P3-01** Bảng `campaigns` (migration + model)
-- [ ] **P3-02** Form Tạo Campaign & Survey Filter (Slots, Price, Drip-feed, câu hỏi sàng lọc) *(SCR-04)*
-- [ ] **P3-03** API `POST /api/v1/campaigns` — tính `Tổng KPoint = Phí tạo + (Slots × Price)` *(FN-CAMP-01)*
+- [ ] **P3-02** Form Tạo Campaign & Survey Filter (Slots, Price, Drip-feed, câu hỏi sàng lọc) _(SCR-04)_
+- [ ] **P3-03** API `POST /api/v1/campaigns` — tính `Tổng KPoint = Phí tạo + (Slots × Price)` _(FN-CAMP-01)_
 - [ ] **P3-04** Khóa `reserved_kpoint` trong Wallet khi Campaign Active
-- [ ] **P3-05** Trang chủ & Public Campaigns — danh sách, tìm kiếm *(SCR-01)*
-- [ ] **P3-06** Bộ lọc nền tảng (Google Maps / Facebook) trên trang Public *(SCR-01)*
-- [ ] **P3-07** Hoàn thiện Dashboard Bên A với dữ liệu thật (thống kê Campaign, KPoint đã chi) *(SCR-03)*
-- [ ] **P3-08** Màn hình Quản lý Campaign & Appliers *(SCR-05)*
-- [ ] **P3-09** API `POST /api/v1/campaigns/:id/apply` — Ứng tuyển Survey *(FN-CAMP-02)*
+- [ ] **P3-05** Trang chủ & Public Campaigns — danh sách, tìm kiếm _(SCR-01)_
+- [ ] **P3-06** Bộ lọc nền tảng (Google Maps / Facebook) trên trang Public _(SCR-01)_
+- [ ] **P3-07** Hoàn thiện Dashboard Bên A với dữ liệu thật (thống kê Campaign, KPoint đã chi) _(SCR-03)_
+- [ ] **P3-08** Màn hình Quản lý Campaign & Appliers _(SCR-05)_
+- [ ] **P3-09** API `POST /api/v1/campaigns/:id/apply` — Ứng tuyển Survey _(FN-CAMP-02)_
 - [ ] **P3-10** Kiểm tra Device Fingerprint khi ứng tuyển
 - [ ] **P3-11** Kiểm tra IP + Trust Score khi ứng tuyển
-- [ ] **P3-12** Chức năng Invite/Reject ứng viên (Bên A) *(SCR-05)*
+- [ ] **P3-12** Chức năng Invite/Reject ứng viên (Bên A) _(SCR-05)_
 - [ ] **P3-13** Quy tắc: Campaign cũ không thể xóa, chỉ Archive
 - [ ] **P3-14** Test: tạo Campaign khi không đủ số dư → bị chặn đúng thông báo
 - [ ] **P3-15** Test: 1 user tạo 2 tài khoản ứng tuyển cùng Campaign → bị chặn bởi Fingerprint/IP
@@ -138,16 +138,16 @@
 **Mục tiêu:** Vòng đời ứng tuyển → review → nộp proof có watermark → duyệt (người hoặc tự động 48h).
 
 - [ ] **P4-01** Bảng `submissions` (migration + model, có `auto_approve_at`)
-- [ ] **P4-02** Form Làm Survey & Submit Proof — upload ảnh/video *(SCR-07)*
-- [ ] **P4-03** API `POST /api/v1/submissions/:id/proof` (multipart) *(FN-TASK-01)*
+- [ ] **P4-02** Form Làm Survey & Submit Proof — upload ảnh/video _(SCR-07)_
+- [ ] **P4-03** API `POST /api/v1/submissions/:id/proof` (multipart) _(FN-TASK-01)_
 - [ ] **P4-04** Thiết lập Queue (BullMQ/Redis) xử lý watermark bất đồng bộ
 - [ ] **P4-05** Worker chèn Watermark UserID + CampaignID lên ảnh
 - [ ] **P4-06** Worker chèn Watermark UserID + CampaignID lên video
 - [ ] **P4-07** UI trạng thái "đang xử lý" trong lúc chờ watermark hoàn tất
 - [ ] **P4-08** Giới hạn: Bên B chỉ nhận tối đa 1 slot/campaign
-- [ ] **P4-09** Cronjob Auto-Approve 48h — quét `submissions` quá hạn *(FN-TASK-02)*
+- [ ] **P4-09** Cronjob Auto-Approve 48h — quét `submissions` quá hạn _(FN-TASK-02)_
 - [ ] **P4-10** Luồng Bên A duyệt/từ chối Proof (nối từ SCR-05)
-- [ ] **P4-11** Hoàn thiện Dashboard Bên B với dữ liệu thật (KPoint kiếm được, nhiệm vụ đang làm) *(SCR-06)*
+- [ ] **P4-11** Hoàn thiện Dashboard Bên B với dữ liệu thật (KPoint kiếm được, nhiệm vụ đang làm) _(SCR-06)_
 - [ ] **P4-12** Test watermark xuất hiện đúng trên ảnh + video mẫu
 - [ ] **P4-13** Test cronjob chạy đúng giờ trên staging + không trả thưởng trùng khi chạy nhiều lần
 
@@ -158,12 +158,12 @@
 **Mục tiêu:** Luồng tranh chấp 3 vai trò (Bên B tạo → Moderator đề xuất → Admin phán quyết) không rò rỉ/nhân đôi KPoint.
 
 - [ ] **P5-01** Bảng `disputes` (migration + model)
-- [ ] **P5-02** API `POST /api/v1/disputes` — Tạo Khiếu nại khi Bên A từ chối Proof *(FN-DISP-01)*
+- [ ] **P5-02** API `POST /api/v1/disputes` — Tạo Khiếu nại khi Bên A từ chối Proof _(FN-DISP-01)_
 - [ ] **P5-03** Phong tỏa KPoint của slot liên quan khi Dispute mở
-- [ ] **P5-04** Màn hình CMS Tranh chấp (Dispute Center) — xem bằng chứng 2 bên *(SCR-11)*
-- [ ] **P5-05** API `PUT /api/v1/mod/disputes/:id/recommend` *(FN-DISP-02)*
+- [ ] **P5-04** Màn hình CMS Tranh chấp (Dispute Center) — xem bằng chứng 2 bên _(SCR-11)_
+- [ ] **P5-05** API `PUT /api/v1/mod/disputes/:id/recommend` _(FN-DISP-02)_
 - [ ] **P5-06** Guard: Moderator chỉ được `Pend Approval`/`Pend Reject`, không duyệt chi trực tiếp
-- [ ] **P5-07** API `POST /api/v1/admin/disputes/:id/resolve` *(FN-DISP-03)*
+- [ ] **P5-07** API `POST /api/v1/admin/disputes/:id/resolve` _(FN-DISP-03)_
 - [ ] **P5-08** Giải phóng KPoint đúng bên thắng sau phán quyết Admin
 - [ ] **P5-09** Thông báo (email/app) cho Bên A & Bên B khi có cập nhật Dispute
 - [ ] **P5-10** Test nhánh "thắng Bên A" — giải phóng đúng số KPoint, không rò rỉ
@@ -177,16 +177,16 @@
 **Mục tiêu:** Admin duyệt nạp quốc tế thủ công an toàn; mọi thao tác nhạy cảm đều truy vết được.
 
 - [ ] **P6-01** Bảng `bmc_topups` (migration + model)
-- [ ] **P6-02** Form nạp Buy Me a Coffee — nhập Transaction ID + upload Receipt *(FN-PAY-02)*
+- [ ] **P6-02** Form nạp Buy Me a Coffee — nhập Transaction ID + upload Receipt _(FN-PAY-02)_
 - [ ] **P6-03** API `POST /api/v1/payments/bmc-topup` — trạng thái `PENDING_MANUAL_VERIFICATION`
-- [ ] **P6-04** Màn hình CMS Duyệt Nạp Tiền Quốc Tế — xem Receipt, Approve/Reject *(SCR-10)*
-- [ ] **P6-05** API `POST /api/v1/admin/payments/bmc/:id/approve` — ACID Transaction cộng KPoint *(FN-PAY-03)*
+- [ ] **P6-04** Màn hình CMS Duyệt Nạp Tiền Quốc Tế — xem Receipt, Approve/Reject _(SCR-10)_
+- [ ] **P6-05** API `POST /api/v1/admin/payments/bmc/:id/approve` — ACID Transaction cộng KPoint _(FN-PAY-03)_
 - [ ] **P6-06** Gửi email xác nhận khi Approve; thông báo hủy khi Reject
 - [ ] **P6-07** Bảng `audit_logs` (migration + model, JSON Diff before/after)
-- [ ] **P6-08** Interceptor NestJS ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) *(FN-LOG-01)*
+- [ ] **P6-08** Interceptor NestJS ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) _(FN-LOG-01)_
 - [ ] **P6-09** Ghi kèm IP Address + Device Fingerprint vào mỗi Audit Log
-- [ ] **P6-10** Màn hình CMS Quản lý Audit Logs — bộ lọc (thời gian/User/Role/Action/Level) *(SCR-13)*
-- [ ] **P6-11** Bảng hiển thị Nhật ký + popup Log Detail (JSON viewer) *(SCR-13)*
+- [ ] **P6-10** Màn hình CMS Quản lý Audit Logs — bộ lọc (thời gian/User/Role/Action/Level) _(SCR-13)_
+- [ ] **P6-11** Bảng hiển thị Nhật ký + popup Log Detail (JSON viewer) _(SCR-13)_
 - [ ] **P6-12** Đánh dấu đỏ hành vi `CRITICAL` (hạ cấp Admin, sửa số dư thủ công, duyệt dispute lớn, IP lạ)
 - [ ] **P6-13** API `GET /api/v1/admin/audit-logs` (phân trang, filter)
 - [ ] **P6-14** Test: 100% hành động trong danh sách CRITICAL đều xuất hiện đúng định dạng trong Audit Log
@@ -198,11 +198,11 @@
 
 **Mục tiêu:** Admin/Root Admin vận hành toàn bộ hệ thống qua CMS, không cần đụng DB trực tiếp.
 
-- [ ] **P7-01** Màn hình CMS Overview & Thống kê *(SCR-09)*
+- [ ] **P7-01** Màn hình CMS Overview & Thống kê _(SCR-09)_
 - [ ] **P7-02** Thống kê KPoint lưu thông
 - [ ] **P7-03** Thống kê số lượt review/ngày
 - [ ] **P7-04** Thống kê doanh thu phí khởi tạo Campaign
-- [ ] **P7-05** Màn hình CMS Quản lý RBAC & Root Admin *(SCR-12)*
+- [ ] **P7-05** Màn hình CMS Quản lý RBAC & Root Admin _(SCR-12)_
 - [ ] **P7-06** Chức năng tạo role + gán permission
 - [ ] **P7-07** Chức năng gán quyền Admin/Moderator
 - [ ] **P7-08** Chức năng phân công Campaign cho Moderator cụ thể
