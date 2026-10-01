@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor A as Bên A
+    participant FE as Frontend (Nạp Ví)
+    participant SEPAY as Cổng SePay
+    participant API as Backend API
+    participant WAL as Wallet DB
+
+    A->>FE: Chọn "Nạp SePay (Nội địa)"
+    FE->>SEPAY: Yêu cầu tạo mã VietQR<br/>Nội dung: KPOINT <UserID>
+    SEPAY-->>FE: Trả về mã QR
+    FE-->>A: Hiển thị QR để chuyển khoản
+    A->>SEPAY: Quét QR & chuyển khoản qua App Ngân hàng
+    SEPAY->>API: POST /api/v1/payments/sepay-webhook (API Key)
+    API->>WAL: Cộng KPoint vào balance_kpoint
+    WAL-->>API: OK
+    API-->>SEPAY: { status: 200, credited: true }
+    API-->>FE: Realtime update số dư (WebSocket/poll)
+    FE-->>A: Thông báo nạp tiền thành công

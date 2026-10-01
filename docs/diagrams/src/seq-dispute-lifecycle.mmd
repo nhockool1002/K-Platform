@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor B as Bên B
+    participant API as Backend API
+    participant DB as Disputes DB
+    actor MOD as Moderator
+    actor AD as Admin
+    participant WAL as Wallet DB
+    participant LOG as Audit Logs
+
+    Note over B,API: Bên A đã từ chối Proof
+    B->>API: POST /api/v1/disputes { submissionId, reason }
+    API->>WAL: Phong toả KPoint của slot liên quan
+    API->>DB: INSERT Dispute (status = OPEN)
+    API-->>B: { disputeId, status: "OPEN" }
+    API->>MOD: Thông báo Ticket tranh chấp mới
+    MOD->>API: PUT /mod/disputes/:id/recommend<br/>{ recommendation: PEND_APP | PEND_REJ }
+    API->>DB: UPDATE status = RECOMMENDED
+    API->>AD: Thông báo chờ phán quyết
+    AD->>API: POST /admin/disputes/:id/resolve<br/>{ decision: APPROVE | REJECT }
+    API->>WAL: Giải phóng KPoint về Ví Bên A hoặc Bên B
+    API->>LOG: Ghi Audit Log (DISPUTE_RESOLVE)
+    API->>DB: UPDATE status = RESOLVED
+    API-->>B: Thông báo kết quả phán quyết cuối cùng

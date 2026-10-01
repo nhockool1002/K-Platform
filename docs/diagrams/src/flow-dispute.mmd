@@ -1,0 +1,15 @@
+flowchart LR
+    S([Bên A từ chối Proof]) --> LOCK[Hệ thống phong toả KPoint của slot]
+    LOCK --> CREATE[Bên B tạo Dispute kèm bằng chứng]
+    CREATE --> TICKET[Tạo Ticket tranh chấp<br/>Chuyển cho Moderator]
+    TICKET --> REVIEW[Moderator xem bằng chứng 2 bên]
+    REVIEW --> REC{Đề xuất của Moderator}
+    REC -- Pend Approval --> NOTIFY1[Thông báo Admin]
+    REC -- Pend Reject --> NOTIFY1
+    NOTIFY1 --> FINAL[Admin xem xét & ra phán quyết cuối cùng]
+    FINAL --> OUT{Phán quyết}
+    OUT -- "Approve (thắng Bên B)" --> RB[Giải phóng KPoint về Ví Bên B]
+    OUT -- "Reject (thắng Bên A)" --> RA[Giải phóng KPoint về Ví Bên A]
+    RB --> LOG[Ghi Audit Log: DISPUTE_RESOLVE]
+    RA --> LOG
+    LOG --> E([Kết thúc])

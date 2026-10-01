@@ -1,0 +1,22 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#eaf1f8",
+    "primaryBorderColor": "#1d4e89",
+    "primaryTextColor": "#1a1a1a",
+    "lineColor": "#2f6ca2",
+    "secondaryColor": "#fdf1dd",
+    "tertiaryColor": "#ffffff",
+    "actorBkg": "#1d4e89",
+    "actorBorder": "#13324f",
+    "actorTextColor": "#ffffff",
+    "signalColor": "#2f6ca2",
+    "signalTextColor": "#1a1a1a",
+    "labelBoxBkgColor": "#e8a93a",
+    "labelBoxBorderColor": "#a9760f",
+    "labelTextColor": "#1a1a1a",
+    "noteBkgColor": "#fdf1dd",
+    "noteBorderColor": "#e8a93a",
+    "fontFamily": "Arial"
+  }
+}

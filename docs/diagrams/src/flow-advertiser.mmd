@@ -1,0 +1,22 @@
+flowchart LR
+    S([Bắt đầu]) --> L[Đăng ký / Đăng nhập<br/>Email hoặc Google/Facebook OAuth2]
+    L --> SW[Switch Mode sang Bên A]
+    SW --> TOP{Đủ số dư KPoint?}
+    TOP -- Chưa đủ --> PAY[Nạp KPoint<br/>SePay QR hoặc Buy Me a Coffee]
+    PAY --> TOP
+    TOP -- Đủ --> CR[Tạo Campaign & Survey Filter<br/>Cấu hình Slots, Price, Drip-feed]
+    CR --> LOCK[Hệ thống khóa tạm<br/>Tổng KPoint = Phí tạo + Slots × Price]
+    LOCK --> REV[Nhận & xét duyệt Survey ứng tuyển của Bên B]
+    REV --> INV{Chấp nhận ứng viên?}
+    INV -- Reject --> REV
+    INV -- Invite --> WAIT[Chờ Bên B nộp Proof]
+    WAIT --> CHK{Xét duyệt Proof}
+    CHK -- Từ chối --> DISP[Bên B có thể tạo Dispute]
+    CHK -- Duyệt --> PAYOUT[Giải ngân KPoint cho Bên B]
+    DISP --> MODR[Moderator thẩm định]
+    MODR --> ADMD[Admin phán quyết cuối cùng]
+    ADMD --> PAYOUT
+    PAYOUT --> DONE{Đủ Slots?}
+    DONE -- Chưa --> REV
+    DONE -- Đủ --> ARCHIVE[Archive Campaign<br/>Không thể xóa, chỉ Archive]
+    ARCHIVE --> E([Kết thúc])

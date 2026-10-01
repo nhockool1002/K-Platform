@@ -1,0 +1,16 @@
+sequenceDiagram
+    actor A as Bên A
+    participant FE as Frontend
+    participant API as POST /api/v1/campaigns
+    participant WAL as Wallet DB
+    participant DB as Campaigns DB
+
+    A->>FE: Điền Form Campaign + Survey Filter + Drip-feed
+    FE->>API: POST Campaign JSON config & Survey
+    API->>API: Tính Tổng KPoint = Phí tạo + (Slots × Price)
+    API->>WAL: Kiểm tra & khoá reserved_kpoint
+    WAL-->>API: OK (đủ số dư)
+    API->>DB: INSERT Campaign (status = ACTIVE)
+    DB-->>API: campaignId
+    API-->>FE: { campaignId, reservedPoints }
+    FE-->>A: Campaign đã khởi tạo & hiển thị công khai

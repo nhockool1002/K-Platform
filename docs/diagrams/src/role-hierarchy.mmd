@@ -1,0 +1,18 @@
+graph LR
+    RA["Root Administrator<br/>(Hard-coded DB ID)"]
+    AD["Administrator<br/>(Quyết định tối cao)"]
+    MOD["Super / Moderator<br/>(Duyệt Pend App / Pend Reject)"]
+    A["Bên A — Advertiser"]
+    B["Bên B — Publisher"]
+
+    RA --> AD
+    AD --> MOD
+    MOD --> A
+    MOD --> B
+    A <-->|"Switch Mode (1 click, cùng tài khoản)"| B
+
+    style RA fill:#1d4e89,color:#ffffff,stroke:#13324f,stroke-width:1px
+    style AD fill:#2f6ca2,color:#ffffff,stroke:#13324f,stroke-width:1px
+    style MOD fill:#4a90c4,color:#ffffff,stroke:#13324f,stroke-width:1px
+    style A fill:#e8a93a,color:#1a1a1a,stroke:#a9760f,stroke-width:1px
+    style B fill:#1d4e89,color:#ffffff,stroke:#13324f,stroke-width:1px

@@ -1,0 +1,13 @@
+sequenceDiagram
+    actor U as User (Bên A hoặc B)
+    participant FE as Frontend
+    participant API as API /api/v1/auth/switch-mode
+    participant DB as Users DB
+
+    U->>FE: Bấm nút "Switch Mode"
+    FE->>API: POST { targetRole: "A" | "B" } (JWT hiện tại)
+    API->>DB: UPDATE users.active_mode
+    DB-->>API: OK
+    API-->>FE: { success: true, activeRole }
+    Note over API,FE: Session JWT giữ nguyên — không re-login
+    FE-->>U: Chuyển giao diện tương ứng (Dashboard A/B)

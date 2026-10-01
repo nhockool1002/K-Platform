@@ -1,0 +1,71 @@
+erDiagram
+    USERS ||--o| WALLETS : "has"
+    USERS ||--o{ BMC_TOPUPS : "requests"
+    USERS ||--o{ CAMPAIGNS : "owns"
+    USERS ||--o{ SUBMISSIONS : "publishes"
+    USERS ||--o{ DISPUTES : "moderates/judges"
+    USERS ||--o{ AUDIT_LOGS : "performs"
+    CAMPAIGNS ||--o{ SUBMISSIONS : "contains"
+    SUBMISSIONS ||--o| DISPUTES : "may raise"
+
+    USERS {
+        uuid id PK
+        string email
+        string password_hash
+        string active_mode
+        bool is_root
+        int trust_score
+        string fingerprint_hash
+    }
+    WALLETS {
+        uuid id PK
+        uuid user_id FK
+        bigint balance_kpoint
+        bigint reserved_kpoint
+        datetime updated_at
+    }
+    BMC_TOPUPS {
+        uuid id PK
+        uuid user_id FK
+        decimal amount_usd
+        bigint kpoint_amount
+        string txn_id
+        string receipt_url
+        string status
+        uuid verified_by FK
+    }
+    CAMPAIGNS {
+        uuid id PK
+        uuid owner_id FK
+        string platform
+        int total_slots
+        bigint reward_per_slot
+        int drip_feed_limit
+        string status
+    }
+    SUBMISSIONS {
+        uuid id PK
+        uuid campaign_id FK
+        uuid publisher_id FK
+        string proof_url
+        string watermark_url
+        string status
+        datetime auto_approve_at
+    }
+    DISPUTES {
+        uuid id PK
+        uuid submission_id FK
+        uuid mod_id FK
+        string mod_recommendation
+        uuid admin_id FK
+        string final_decision
+        string status
+    }
+    AUDIT_LOGS {
+        uuid id PK
+        uuid actor_id FK
+        string target_resource
+        string action_type
+        string level
+        string ip
+    }

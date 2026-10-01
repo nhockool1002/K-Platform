@@ -1,0 +1,22 @@
+flowchart LR
+    S([Bắt đầu]) --> L[Đăng ký / Đăng nhập]
+    L --> SW[Switch Mode sang Bên B]
+    SW --> BROWSE[Tìm & chọn Campaign công khai]
+    BROWSE --> SURV[Làm Survey ứng tuyển<br/>Kiểm tra Fingerprint / IP / Trust Score]
+    SURV --> SLOT{Còn slot & được Invite?}
+    SLOT -- Reject / Hết slot --> BROWSE
+    SLOT -- Invite --> TASK[Thực hiện Review thực tế]
+    TASK --> PROOF[Nộp Proof ảnh/video<br/>Backend tự động chèn Watermark UserID + CampaignID]
+    PROOF --> WAITA{Bên A duyệt trong 48h?}
+    WAITA -- "Không phản hồi (quá 48h)" --> AUTO[Cronjob Auto-Approve<br/>Tự động Approve + trả thưởng]
+    WAITA -- Approve --> PAYOUT[KPoint cộng vào Ví]
+    WAITA -- Reject --> DISP[Tạo Dispute<br/>Phong tỏa tiền slot]
+    AUTO --> PAYOUT
+    DISP --> MODR[Moderator thẩm định<br/>Pend Approval / Pend Reject]
+    MODR --> ADMD[Admin phán quyết cuối cùng]
+    ADMD --> RESULT{Kết quả}
+    RESULT -- Thắng --> PAYOUT
+    RESULT -- Thua --> LOSE[KPoint trả về Bên A]
+    PAYOUT --> WD[Rút KPoint về ngân hàng]
+    WD --> E([Kết thúc])
+    LOSE --> E

@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor B as Bên B
+    participant FE as Frontend
+    participant API as Backend API
+    participant DB as Submissions DB
+    actor A as Bên A
+    participant CRON as Cronjob Auto-Approve
+
+    B->>FE: Ứng tuyển Survey (Fingerprint/IP/Trust Score)
+    FE->>API: POST /campaigns/:id/apply
+    API-->>FE: { applicationId, status: "PENDING" }
+    A->>API: Invite ứng viên
+    B->>FE: Thực hiện review & tải ảnh/video Proof
+    FE->>API: POST /submissions/:id/proof (multipart)
+    API->>API: Backend chèn Watermark (UserID + CampaignID)
+    API->>DB: INSERT Submission (status = PENDING, auto_approve_at = now+48h)
+    API-->>FE: { proofId, watermarkedUrl }
+    par Bên A duyệt trong 48h
+        A->>API: Duyệt / Từ chối Proof
+        API->>DB: UPDATE status
+    and Quá 48h không phản hồi
+        CRON->>DB: Quét Submissions quá auto_approve_at
+        CRON->>DB: UPDATE status = APPROVED (tự động)
+    end
+    DB-->>API: Trạng thái cuối cùng
+    API-->>B: Thông báo kết quả + cộng KPoint nếu Approved

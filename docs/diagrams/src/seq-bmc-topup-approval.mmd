@@ -1,0 +1,30 @@
+sequenceDiagram
+    actor A as Bên A
+    participant FE as Frontend (Nạp Ví)
+    participant BMC as Buy Me a Coffee
+    participant API as Backend API
+    participant CMS as CMS Admin
+    actor AD as Admin
+    participant WAL as Wallet DB
+    participant LOG as Audit Logs
+
+    A->>FE: Chọn "Nạp Buy Me a Coffee (Quốc tế)"
+    FE-->>A: Hiển thị link BMC + tỷ giá USD/KPoint
+    A->>BMC: Thanh toán USD trên Buy Me a Coffee
+    BMC-->>A: Transaction ID + Receipt
+    A->>FE: Nhập Transaction ID + tải ảnh Receipt
+    FE->>API: POST /api/v1/payments/bmc-topup
+    API-->>FE: { topupId, status: "PENDING" }
+    Note over API: Trạng thái PENDING_MANUAL_VERIFICATION
+    API->>CMS: Thông báo yêu cầu nạp tiền mới
+    AD->>CMS: Mở màn hình Duyệt Nạp Quốc Tế
+    CMS->>BMC: Đối soát thủ công với tài khoản BMC thực tế
+    alt Approve
+        AD->>API: POST /admin/payments/bmc/:id/approve
+        API->>WAL: ACID Transaction — cộng KPoint
+        API->>LOG: Ghi Audit Log (MANUAL_TOPUP)
+        API-->>A: Email + thông báo thành công
+    else Reject
+        AD->>API: Từ chối kèm lý do
+        API-->>A: Thông báo huỷ giao dịch
+    end

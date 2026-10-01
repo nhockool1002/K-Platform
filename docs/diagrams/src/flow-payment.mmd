@@ -1,0 +1,18 @@
+flowchart LR
+    S([Bắt đầu nạp KPoint]) --> CH{Chọn phương thức}
+    CH -- "Nội địa (VNĐ)" --> QR[Hệ thống tạo mã QR VietQR<br/>Nội dung: KPOINT UserID]
+    QR --> BANK[Người dùng chuyển khoản qua App Ngân hàng]
+    BANK --> WH[Webhook SePay gọi API xác nhận]
+    WH --> AUTOCREDIT[Tự động cộng KPoint vào Ví<br/>Tức thời, 24/7]
+    AUTOCREDIT --> E1([Hoàn tất])
+
+    CH -- "Quốc tế (USD)" --> BMCLINK[Hệ thống hiển thị link Buy Me a Coffee<br/>+ Tỷ giá quy đổi USD/KPoint]
+    BMCLINK --> BMCPAY[Người dùng thanh toán trên Buy Me a Coffee]
+    BMCPAY --> FORM[Nhập Transaction ID<br/>+ Tải ảnh Hóa đơn/Receipt]
+    FORM --> PEND[Trạng thái: PENDING_MANUAL_VERIFICATION]
+    PEND --> ADMINCHK[Admin đối soát trên CMS<br/>So khớp với tài khoản BMC thực tế]
+    ADMINCHK --> DEC{Quyết định}
+    DEC -- Approve --> ACID[ACID Transaction<br/>Cộng KPoint + gửi email + ghi Audit Log]
+    DEC -- Reject --> NOTI[Gửi thông báo huỷ giao dịch kèm lý do]
+    ACID --> E2([Hoàn tất])
+    NOTI --> E2
