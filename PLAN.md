@@ -118,12 +118,13 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 0 — Khởi tạo nền tảng (1 tuần)
 
-**Đầu việc**
-- [ ] Khởi tạo repo monorepo (frontend/, backend/, infra/), cấu hình TypeScript, ESLint/Prettier, Husky pre-commit
-- [ ] Dựng CSDL PostgreSQL theo đúng ERD trong SRS Section VII (migration tool: Prisma/TypeORM)
-- [ ] Thiết lập môi trường Dev/Staging (Docker Compose), biến môi trường (.env mẫu)
-- [ ] CI pipeline cơ bản: lint + build + test trên mỗi PR
-- [ ] Thiết kế hệ thống Design Token/UI Kit theo Branding (màu `#1d4e89` navy / `#e8a93a` gold, logo đính kèm)
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P0-01` `P0-02` `P0-03` Khởi tạo repo monorepo (frontend/, backend/, infra/), cấu hình TypeScript, ESLint/Prettier, Husky pre-commit
+- [ ] `P0-04` `P0-05` `P0-06` Dựng CSDL PostgreSQL theo đúng ERD trong SRS Section VII (migration tool: Prisma/TypeORM) + seed data mẫu
+- [ ] `P0-07` `P0-08` `P0-10` Thiết lập môi trường Dev/Staging (Docker Compose), biến môi trường (.env mẫu)
+- [ ] `P0-09` CI pipeline cơ bản: lint + build + test trên mỗi PR
+- [ ] `P0-11` Thiết kế hệ thống Design Token/UI Kit theo Branding (màu `#1d4e89` navy / `#e8a93a` gold, logo đính kèm)
+- [ ] `P0-12` Viết CONTRIBUTING.md / quy ước nhánh Git
 
 **Đầu ra:** Repo chạy được "Hello World" end-to-end (FE gọi BE gọi DB), CI xanh.
 
@@ -133,13 +134,16 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 1 — Auth, RBAC & Switch Mode (1.5 tuần)
 
-**Đầu việc**
-- [ ] SCR-02: Đăng ký/Đăng nhập Email+Password, quên mật khẩu
-- [ ] SCR-02: OAuth2 Google/Facebook
-- [ ] FN-AUTH-01: Switch Role Mode (đổi `active_mode`, giữ nguyên JWT — `POST /api/v1/auth/switch-mode`)
-- [ ] Thiết lập bảng `users`, `roles_permissions`, Guard theo role (Bên A/Bên B/Super-Moderator/Administrator/Root Administrator)
-- [ ] Ràng buộc bảo mật: Root Administrator hard-code ID, không thể bị xóa bởi bất kỳ API nào (test riêng cho rule này)
-- [ ] SCR-03/SCR-06 (khung Dashboard rỗng, chưa có dữ liệu) để xác thực luồng Switch Mode trên UI
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P1-01` Thiết lập bảng `users`, `roles_permissions`
+- [ ] `P1-02` `P1-03` SCR-02: Đăng ký/Đăng nhập Email+Password, quên mật khẩu
+- [ ] `P1-04` `P1-05` SCR-02: OAuth2 Google/Facebook
+- [ ] `P1-06` `P1-07` FN-AUTH-01: Switch Role Mode (đổi `active_mode`, giữ nguyên JWT — `POST /api/v1/auth/switch-mode`)
+- [ ] `P1-08` Guard RBAC theo role (Bên A/Bên B/Super-Moderator/Administrator/Root Administrator)
+- [ ] `P1-09` Ràng buộc bảo mật: Root Administrator hard-code ID, không thể bị xóa bởi bất kỳ API nào
+- [ ] `P1-10` `P1-11` SCR-03/SCR-06 (khung Dashboard rỗng, chưa có dữ liệu) để xác thực luồng Switch Mode trên UI
+- [ ] `P1-12` `P1-13` Test riêng cho luồng Switch Mode (không mất phiên) và rule Root Administrator bất khả xâm phạm
+- [ ] `P1-14` Demo cuối Phase cho Product Owner + đối chiếu DoD
 
 **Đầu ra:** Người dùng đăng ký → đăng nhập → bấm Switch Mode chuyển UI A ⇄ B mượt, không mất phiên.
 
@@ -149,12 +153,15 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 2 — Ví KPoint & Thanh toán nội địa (SePay) (1.5 tuần)
 
-**Đầu việc**
-- [ ] Bảng `wallets` (balance_kpoint, reserved_kpoint) — tạo tự động khi user được tạo
-- [ ] SCR-08: Màn hình Quản lý Ví & Nạp/Rút KPoint
-- [ ] FN-PAY-01: Tạo QR VietQR nội dung `KPOINT <UserID>`, tích hợp Webhook `POST /api/v1/payments/sepay-webhook`
-- [ ] Transaction ACID cho mọi thao tác cộng/trừ KPoint (dùng DB transaction + row lock, tuyệt đối không race-condition khi 2 request cùng lúc)
-- [ ] Lập lệnh rút tiền về ngân hàng (UI + trạng thái PENDING, xử lý thủ công bởi Admin ở Phase 7)
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P2-01` Bảng `wallets` (balance_kpoint, reserved_kpoint) — tạo tự động khi user được tạo
+- [ ] `P2-02` Xin sandbox/test credentials từ SePay *(ưu tiên cao — Rủi ro R1)*
+- [ ] `P2-03` SCR-08: Màn hình Quản lý Ví & Nạp/Rút KPoint
+- [ ] `P2-04` `P2-05` `P2-06` FN-PAY-01: Tạo QR VietQR nội dung `KPOINT <UserID>`, tích hợp Webhook `POST /api/v1/payments/sepay-webhook`, idempotency theo `txn_id`
+- [ ] `P2-07` Transaction ACID cho mọi thao tác cộng/trừ KPoint (dùng DB transaction + row lock, tuyệt đối không race-condition khi 2 request cùng lúc)
+- [ ] `P2-08` Lập lệnh rút tiền về ngân hàng (UI + trạng thái PENDING, xử lý thủ công bởi Admin ở Phase 7)
+- [ ] `P2-09` Lịch sử giao dịch ví tách biệt theo chế độ Bên A/Bên B
+- [ ] `P2-10` `P2-11` `P2-12` `P2-13` Test concurrency, test webhook retry, test nạp tiền thật trên sandbox, demo cuối Phase
 
 **Đầu ra:** Nạp tiền thật qua SePay sandbox → KPoint cộng vào ví tức thời, hiển thị đúng trên Dashboard.
 
@@ -164,13 +171,15 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 3 — Campaign & Survey (2 tuần)
 
-**Đầu việc**
-- [ ] SCR-04: Tạo Campaign & Survey Filter (cấu hình Slots, Price, Drip-feed, câu hỏi sàng lọc)
-- [ ] FN-CAMP-01: `POST /api/v1/campaigns` — tính `Tổng KPoint = Phí tạo + (Slots × Price)`, khóa `reserved_kpoint`
-- [ ] SCR-01: Trang chủ & Public Campaigns (danh sách, tìm kiếm, lọc theo nền tảng Google Maps/Facebook)
-- [ ] SCR-05: Quản lý Campaign & Appliers (danh sách Bên B nộp Survey, Invite/Reject)
-- [ ] FN-CAMP-02: Ứng tuyển Survey — kiểm tra Fingerprint/IP/Trust Score (chống multi-account)
-- [ ] Quy tắc: Campaign cũ không thể xóa, chỉ Archive
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P3-01` Bảng `campaigns` (migration + model)
+- [ ] `P3-02` `P3-03` `P3-04` SCR-04/FN-CAMP-01: Tạo Campaign & Survey Filter, tính `Tổng KPoint = Phí tạo + (Slots × Price)`, khóa `reserved_kpoint`
+- [ ] `P3-05` `P3-06` SCR-01: Trang chủ & Public Campaigns (danh sách, tìm kiếm, lọc theo nền tảng Google Maps/Facebook)
+- [ ] `P3-07` Hoàn thiện Dashboard Bên A với dữ liệu thật
+- [ ] `P3-08` `P3-12` SCR-05: Quản lý Campaign & Appliers (danh sách Bên B nộp Survey, Invite/Reject)
+- [ ] `P3-09` `P3-10` `P3-11` FN-CAMP-02: Ứng tuyển Survey — kiểm tra Fingerprint/IP/Trust Score (chống multi-account)
+- [ ] `P3-13` Quy tắc: Campaign cũ không thể xóa, chỉ Archive
+- [ ] `P3-14` `P3-15` Test chặn số dư không đủ & test chặn multi-account
 
 **Đầu ra:** Bên A tạo được Campaign thật, Bên B tìm thấy và nộp Survey ứng tuyển, Bên A duyệt Invite/Reject.
 
@@ -180,12 +189,15 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 4 — Submission, Proof & Auto-Approve (2 tuần)
 
-**Đầu việc**
-- [ ] SCR-07: Làm Survey & Submit Proof (upload ảnh/video)
-- [ ] FN-TASK-01: Nộp Proof & Watermark — xử lý bất đồng bộ (queue), chèn UserID + CampaignID lên file
-- [ ] FN-TASK-02: Cronjob Auto-Approve 48h — quét `submissions` quá hạn `auto_approve_at`, tự động Approve + trả thưởng
-- [ ] Giới hạn: Bên B chỉ nhận tối đa 1 slot/campaign
-- [ ] Luồng duyệt/từ chối Proof từ phía Bên A (nối tiếp SCR-05)
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P4-01` Bảng `submissions` (migration + model, có `auto_approve_at`)
+- [ ] `P4-02` `P4-03` SCR-07: Làm Survey & Submit Proof (upload ảnh/video)
+- [ ] `P4-04` `P4-05` `P4-06` `P4-07` FN-TASK-01: Nộp Proof & Watermark — xử lý bất đồng bộ (queue), chèn UserID + CampaignID lên ảnh/video, UI trạng thái đang xử lý
+- [ ] `P4-08` Giới hạn: Bên B chỉ nhận tối đa 1 slot/campaign
+- [ ] `P4-09` FN-TASK-02: Cronjob Auto-Approve 48h — quét `submissions` quá hạn `auto_approve_at`, tự động Approve + trả thưởng
+- [ ] `P4-10` Luồng duyệt/từ chối Proof từ phía Bên A (nối tiếp SCR-05)
+- [ ] `P4-11` Hoàn thiện Dashboard Bên B với dữ liệu thật
+- [ ] `P4-12` `P4-13` Test watermark trên ảnh/video & test cronjob không trả thưởng trùng
 
 **Đầu ra:** Vòng đời đầy đủ: ứng tuyển → review → nộp proof có watermark → Bên A duyệt hoặc hệ thống tự duyệt sau 48h → KPoint về ví Bên B.
 
@@ -195,11 +207,14 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 5 — Dispute Center (1.5 tuần)
 
-**Đầu việc**
-- [ ] FN-DISP-01: Tạo Dispute khi Bên A từ chối Proof — phong tỏa KPoint slot liên quan
-- [ ] SCR-11: CMS Tranh chấp (Dispute Center) — Moderator xem bằng chứng 2 bên
-- [ ] FN-DISP-02: Thẩm định Tranh chấp (Moderator) — chỉ chuyển `Pend Approval`/`Pend Reject`, không duyệt chi trực tiếp
-- [ ] FN-DISP-03: Phán quyết Tranh chấp (Admin) — chốt cuối cùng, giải phóng KPoint đúng bên thắng
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P5-01` Bảng `disputes` (migration + model)
+- [ ] `P5-02` `P5-03` FN-DISP-01: Tạo Dispute khi Bên A từ chối Proof — phong tỏa KPoint slot liên quan
+- [ ] `P5-04` SCR-11: CMS Tranh chấp (Dispute Center) — Moderator xem bằng chứng 2 bên
+- [ ] `P5-05` `P5-06` FN-DISP-02: Thẩm định Tranh chấp (Moderator) — chỉ chuyển `Pend Approval`/`Pend Reject`, không duyệt chi trực tiếp
+- [ ] `P5-07` `P5-08` FN-DISP-03: Phán quyết Tranh chấp (Admin) — chốt cuối cùng, giải phóng KPoint đúng bên thắng
+- [ ] `P5-09` Thông báo (email/app) cho Bên A & Bên B khi có cập nhật Dispute
+- [ ] `P5-10` `P5-11` `P5-12` Test 2 nhánh thắng/thua + test RBAC Moderator không gọi được API phán quyết cuối
 
 **Đầu ra:** Luồng tranh chấp đầy đủ 3 vai trò (Bên B tạo → Moderator đề xuất → Admin phán quyết).
 
@@ -209,12 +224,13 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 6 — Thanh toán Quốc tế (BMC) & Audit Logs (2 tuần)
 
-**Đầu việc**
-- [ ] FN-PAY-02: Form nạp Buy Me a Coffee — nhập Transaction ID + upload Receipt, trạng thái `PENDING_MANUAL_VERIFICATION`
-- [ ] SCR-10: CMS Duyệt Nạp Tiền Quốc Tế — Admin đối soát, Approve/Reject
-- [ ] FN-PAY-03: Approve → ACID Transaction cộng KPoint + email + Audit Log; Reject → thông báo hủy
-- [ ] FN-LOG-01: Interceptor ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) — JSON Diff trước/sau, IP, Device Fingerprint
-- [ ] SCR-13: CMS Quản lý Audit Logs — bộ lọc, bảng hiển thị, Log Detail (JSON viewer), cảnh báo CRITICAL (đổi màu đỏ)
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P6-01` `P6-02` `P6-03` FN-PAY-02: Bảng `bmc_topups` + Form nạp Buy Me a Coffee — nhập Transaction ID + upload Receipt, trạng thái `PENDING_MANUAL_VERIFICATION`
+- [ ] `P6-04` SCR-10: CMS Duyệt Nạp Tiền Quốc Tế — Admin đối soát, Approve/Reject
+- [ ] `P6-05` `P6-06` FN-PAY-03: Approve → ACID Transaction cộng KPoint + email + Audit Log; Reject → thông báo hủy
+- [ ] `P6-07` `P6-08` `P6-09` `P6-15` FN-LOG-01: Bảng `audit_logs` + Interceptor ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) — JSON Diff trước/sau, IP, Device Fingerprint, rà soát không còn backdoor
+- [ ] `P6-10` `P6-11` `P6-12` `P6-13` SCR-13: CMS Quản lý Audit Logs — bộ lọc, bảng hiển thị, Log Detail (JSON viewer), cảnh báo CRITICAL (đổi màu đỏ), API phân trang
+- [ ] `P6-14` Test 100% hành vi CRITICAL xuất hiện đúng định dạng trong Audit Log
 
 **Đầu ra:** Admin duyệt nạp tiền quốc tế thủ công đầy đủ; mọi thao tác nhạy cảm đều truy vết được qua Audit Log.
 
@@ -224,11 +240,12 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 7 — CMS Admin & RBAC nâng cao (1.5 tuần)
 
-**Đầu việc**
-- [ ] SCR-09: CMS Overview & Thống kê (KPoint lưu thông, lượt review/ngày, doanh thu phí khởi tạo)
-- [ ] SCR-12: CMS Quản lý RBAC & Root Admin — tạo role, gán permission, gán Admin/Mod, phân công Campaign cho Mod
-- [ ] Xử lý lệnh rút tiền về ngân hàng (hoàn thiện nốt phần Admin duyệt từ Phase 2)
-- [ ] Hoàn thiện toàn bộ ràng buộc RBAC còn lại theo bảng Section II của SRS
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P7-01` `P7-02` `P7-03` `P7-04` SCR-09: CMS Overview & Thống kê (KPoint lưu thông, lượt review/ngày, doanh thu phí khởi tạo)
+- [ ] `P7-05` `P7-06` `P7-07` `P7-08` SCR-12: CMS Quản lý RBAC & Root Admin — tạo role, gán permission, gán Admin/Mod, phân công Campaign cho Mod
+- [ ] `P7-09` Xử lý lệnh rút tiền về ngân hàng (hoàn thiện nốt phần Admin duyệt từ Phase 2)
+- [ ] `P7-10` Hoàn thiện toàn bộ ràng buộc RBAC còn lại theo bảng Section II của SRS
+- [ ] `P7-11` Test Root Administrator tạo/xóa Admin → ghi Audit Log đầy đủ
 
 **Đầu ra:** Admin/Root Admin vận hành toàn bộ hệ thống qua CMS mà không cần can thiệp DB trực tiếp.
 
@@ -238,13 +255,14 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 8 — Hardening, QA & Go-live (2 tuần)
 
-**Đầu việc**
-- [ ] Kiểm thử bảo mật cơ bản: OWASP Top 10 (injection, IDOR giữa các role, rate-limit auth)
-- [ ] Kiểm thử tải cho các luồng tài chính (nạp/rút/dispute) — mục tiêu p95 < 500ms ở tải dự kiến
-- [ ] Viết tài liệu vận hành (runbook): xử lý webhook lỗi, cronjob fail, rollback migration
-- [ ] UAT (User Acceptance Test) với checklist bám theo từng SCR/FN trong SRS
-- [ ] Thiết lập monitoring/alerting (uptime, lỗi 5xx, queue backlog, cronjob miss)
-- [ ] Soạn kịch bản go-live + rollback plan
+**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P8-01` `P8-02` Kiểm thử bảo mật cơ bản: OWASP Top 10 (injection, IDOR giữa các role, rate-limit auth)
+- [ ] `P8-03` `P8-04` `P8-05` Kiểm thử tải cho các luồng tài chính (nạp/rút/dispute) — mục tiêu p95 < 500ms ở tải dự kiến
+- [ ] `P8-06` `P8-07` `P8-08` Viết tài liệu vận hành (runbook): xử lý webhook lỗi, cronjob fail, rollback migration
+- [ ] `P8-09` `P8-10` UAT (User Acceptance Test) với checklist bám theo từng SCR/FN trong SRS
+- [ ] `P8-11` Thiết lập monitoring/alerting (uptime, lỗi 5xx, queue backlog, cronjob miss)
+- [ ] `P8-12` Soạn kịch bản go-live + rollback plan
+- [ ] `P8-13` `P8-14` Go-live + trực giám sát 48h đầu
 
 **Đầu ra:** Hệ thống sẵn sàng vận hành thật, có người trực giám sát 48h đầu sau go-live.
 
@@ -256,11 +274,12 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 > Theo đúng định hướng "mở rộng ứng dụng di động (React Native) trong giai đoạn tiếp theo" nêu tại SRS Section I. Lên kế hoạch chi tiết (sprint-by-sprint) sau khi Web Phase 1 ổn định ≥ 4 tuần.
 
-**Đầu việc (sơ bộ)**
-- [ ] Thiết kế lại UI/UX cho mobile (tái sử dụng API backend hiện có, không đổi hợp đồng API nếu có thể)
-- [ ] Đăng nhập sinh trắc học / push notification cho Invite, Duyệt Proof, Kết quả Dispute
-- [ ] Upload ảnh/video Proof tối ưu cho mobile (nén trước khi upload)
-- [ ] Phát hành thử nghiệm nội bộ (TestFlight / Internal Testing track)
+**Đầu việc (sơ bộ)** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+- [ ] `P9-01` Setup project React Native (Expo)
+- [ ] `P9-02` `P9-03` Thiết kế lại UI/UX cho mobile + màn hình Đăng nhập/Đăng ký (tái sử dụng API backend hiện có)
+- [ ] `P9-04` `P9-05` `P9-06` `P9-07` Đăng nhập sinh trắc học / push notification cho Invite, Duyệt Proof, Kết quả Dispute
+- [ ] `P9-08` Upload ảnh/video Proof tối ưu cho mobile (nén trước khi upload)
+- [ ] `P9-09` `P9-10` Phát hành thử nghiệm nội bộ (TestFlight / Internal Testing track) + thu thập feedback
 
 ---
 
@@ -350,11 +369,13 @@ Dự án Giai đoạn 1 được coi là **hoàn thành** khi:
 
 ## 11. Việc còn mở / Cần quyết định thêm
 
-- [ ] **Wireframe/UI chi tiết:** SRS mô tả chức năng màn hình nhưng chưa có thiết kế UI cụ thể — cần Figma trước khi Frontend bắt tay vào Phase 1.
-- [ ] **Chính sách phí rút tiền / tỷ giá KPoint↔VNĐ↔USD biến động:** SRS nêu tỷ giá "có thể điều chỉnh linh hoạt" nhưng chưa có quy tắc version hóa tỷ giá theo thời gian — cần chốt trước Phase 2 & 6.
-- [ ] **SLA xử lý Dispute & Duyệt nạp Quốc tế:** chưa có cam kết thời gian xử lý (vd. Admin phải duyệt trong X giờ) — nên bổ sung vào SRS.
-- [ ] **Chính sách chống gian lận chi tiết** (ngoài Fingerprint/IP/Trust Score): ngưỡng Trust Score cụ thể, quy tắc khóa tài khoản.
-- [ ] **Phiên bản SRS kế tiếp:** Tài liệu SRS hiện tại (README/DOCX) sẽ còn được bổ sung theo bạn đã đề cập — kế hoạch này cần đối chiếu lại mục 6 (ma trận FN/SCR) mỗi khi SRS cập nhật.
+*(mã task — xem mục "Backlog" trong [TASK.md](TASK.md))*
+
+- [ ] `B-01` **Wireframe/UI chi tiết:** SRS mô tả chức năng màn hình nhưng chưa có thiết kế UI cụ thể — cần Figma trước khi Frontend bắt tay vào Phase 1.
+- [ ] `B-02` **Chính sách phí rút tiền / tỷ giá KPoint↔VNĐ↔USD biến động:** SRS nêu tỷ giá "có thể điều chỉnh linh hoạt" nhưng chưa có quy tắc version hóa tỷ giá theo thời gian — cần chốt trước Phase 2 & 6.
+- [ ] `B-03` `B-04` **SLA xử lý Dispute & Duyệt nạp Quốc tế:** chưa có cam kết thời gian xử lý (vd. Admin phải duyệt trong X giờ) — nên bổ sung vào SRS.
+- [ ] `B-05` **Chính sách chống gian lận chi tiết** (ngoài Fingerprint/IP/Trust Score): ngưỡng Trust Score cụ thể, quy tắc khóa tài khoản.
+- [ ] `B-06` **Phiên bản SRS kế tiếp:** Tài liệu SRS hiện tại (README/DOCX) sẽ còn được bổ sung theo bạn đã đề cập — kế hoạch này cần đối chiếu lại mục 6 (ma trận FN/SCR) mỗi khi SRS cập nhật.
 
 ---
 
