@@ -44,7 +44,7 @@ export default function WireframesIndexPage() {
     <div className="mx-auto max-w-3xl px-6 py-12">
       <p className="text-navy text-sm font-medium">Wireframe review</p>
       <h1 className="font-display text-ink mt-1 text-2xl font-medium">
-        Sơ đồ 13 màn hình K-Point Platform
+        Sơ đồ 13 màn hình K-Platform
       </h1>
       <p className="text-ink-muted mt-2 text-sm">
         Dữ liệu là mock, chưa nối backend. Dùng trang này để duyệt qua toàn bộ sản phẩm trước khi

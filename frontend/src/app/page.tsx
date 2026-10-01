@@ -17,8 +17,8 @@ export default function Home() {
             Đi trải nghiệm thật, viết review thật, đổi lấy KPoint thật.
           </h1>
           <p className="text-ink-muted mt-4 max-w-xl text-base">
-            K-Point kết nối doanh nghiệp cần phản hồi xác thực với những người đã thật sự ghé thăm,
-            dùng thử, và sẵn sàng kể lại trải nghiệm của mình.
+            K-Platform kết nối doanh nghiệp cần phản hồi xác thực với những người đã thật sự ghé
+            thăm, dùng thử, và sẵn sàng kể lại trải nghiệm của mình.
           </p>
 
           {/* Khối tìm kiếm thật — "hero" là công cụ tìm Campaign, không phải minh họa trang trí */}
@@ -57,7 +57,7 @@ export default function Home() {
       </section>
 
       <footer className="border-line text-ink-muted border-t px-6 py-6 text-center text-xs">
-        © 2026 K-Point Platform
+        © 2026 K-Platform
       </footer>
     </div>
   );

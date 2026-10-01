@@ -1,4 +1,4 @@
-# K-Point Platform — Design Plan (Wireframe Pass)
+# K-Platform — Design Plan (Wireframe Pass)
 
 > Viết theo quy trình skill `frontend-design`: plan → review với brief → build → tự critique.
 > Đây là **wireframe fidelity** — đúng cấu trúc/bố cục theo SRS, dữ liệu mock
@@ -6,7 +6,7 @@
 
 ## Chất liệu đề bài
 
-K-Point không phải một SaaS dashboard chung chung. Nó là **sàn giao dịch lòng tin**: Bên A trả
+K-Platform không phải một SaaS dashboard chung chung. Nó là **sàn giao dịch lòng tin**: Bên A trả
 KPoint để có review thật, Bên B đi trải nghiệm thật và nộp bằng chứng có đóng dấu watermark, Admin
 là trọng tài xử lý tranh chấp. Cốt lõi sản phẩm là **một cuốn sổ cái nội bộ** (ví, giao dịch, audit
 log) cộng với **bằng chứng được xác thực**. Hướng thiết kế bám theo hai ý niệm này, tránh "SaaS

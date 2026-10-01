@@ -1,5 +1,5 @@
 /**
- * K-Point Platform — Design Tokens (JS/TS mirror of globals.css).
+ * K-Platform — Design Tokens (JS/TS mirror of globals.css).
  * Dùng khi cần giá trị màu trong code (chart, canvas, inline style) thay vì class Tailwind.
  * Đổi màu ở đây thì phải đổi đồng bộ trong globals.css (`:root`).
  */
