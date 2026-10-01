@@ -254,7 +254,7 @@
 
 > Tham chiếu PLAN.md § 11 — cần quyết định/bổ sung trước khi các Phase liên quan có thể hoàn thành 100%.
 
-- [ ] **B-01** Thiết kế Wireframe/UI chi tiết (Figma) — cần trước khi Frontend vào Phase 1
+- [x] **B-01** Thiết kế Wireframe/UI chi tiết — làm bằng Next.js/Tailwind thật (không phải Figma) tại `frontend/src/app/`, xem `/wireframes` + `frontend/DESIGN.md`. Cần Product Owner duyệt trước khi chuyển sang code production ở Phase 1.
 - [ ] **B-02** Chốt chính sách version hóa tỷ giá KPoint ↔ VNĐ ↔ USD theo thời gian — cần trước Phase 2 & 6
 - [ ] **B-03** Chốt SLA xử lý Dispute (thời gian Admin phải duyệt)
 - [ ] **B-04** Chốt SLA duyệt Nạp Quốc tế (thời gian Admin phải duyệt)
