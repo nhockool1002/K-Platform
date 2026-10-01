@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %      | Trạng thái      |
-| -------- | -------------------------------- | --------- | ---------- | ------ | --------------- |
-| 0        | Khởi tạo nền tảng                | 12        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 2        | Ví KPoint & SePay                | 13        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 3        | Campaign & Survey                | 15        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 5        | Dispute Center                   | 12        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%     | ⬜ Chưa bắt đầu |
-| **Tổng** |                                  | **129**   | **0**      | **0%** |                 |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %      | Trạng thái                           |
+| -------- | -------------------------------- | --------- | ---------- | ------ | ------------------------------------ |
+| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%    | 🔄 Gần xong (P0-10 cần hạ tầng thật) |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 2        | Ví KPoint & SePay                | 13        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 3        | Campaign & Survey                | 15        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 5        | Dispute Center                   | 12        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
+| **Tổng** |                                  | **129**   | **11**     | **9%** |                                      |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -55,18 +55,18 @@
 
 **Mục tiêu:** Repo chạy được end-to-end, CI xanh. _(DoD đầy đủ: xem PLAN.md § Phase 0)_
 
-- [ ] **P0-01** Khởi tạo monorepo (`frontend/`, `backend/`, `infra/`)
-- [ ] **P0-02** Cấu hình TypeScript dùng chung (tsconfig base) cho cả FE/BE
-- [ ] **P0-03** Cấu hình ESLint + Prettier + Husky pre-commit hook
-- [ ] **P0-04** Thiết kế schema CSDL PostgreSQL theo đúng ERD (SRS Section VII)
-- [ ] **P0-05** Cài migration tool (Prisma/TypeORM) + chạy migration khởi tạo
-- [ ] **P0-06** Viết seed data mẫu (user test cho từng role: Bên A, Bên B, Mod, Admin, Root Admin)
-- [ ] **P0-07** Dựng Docker Compose cho Dev (FE + BE + Postgres + Redis)
-- [ ] **P0-08** Tạo file `.env.example` liệt kê đầy đủ biến môi trường cần thiết
-- [ ] **P0-09** Thiết lập CI (GitHub Actions): lint + build + test chạy trên mỗi PR
-- [ ] **P0-10** Dựng môi trường Staging (hạ tầng tối thiểu để demo cuối mỗi Phase)
-- [ ] **P0-11** Thiết lập Design Token/UI Kit theo Branding (màu `#1d4e89`/`#e8a93a`, logo, typography)
-- [ ] **P0-12** Viết `CONTRIBUTING.md`/quy ước nhánh Git (tham chiếu PLAN.md § 9)
+- [x] **P0-01** Khởi tạo monorepo (`frontend/`, `backend/`, `infra/`)
+- [x] **P0-02** Cấu hình TypeScript dùng chung (tsconfig base) cho cả FE/BE
+- [x] **P0-03** Cấu hình ESLint + Prettier + Husky pre-commit hook
+- [x] **P0-04** Thiết kế schema CSDL PostgreSQL theo đúng ERD (SRS Section VII)
+- [x] **P0-05** Cài migration tool (Prisma/TypeORM) + chạy migration khởi tạo
+- [x] **P0-06** Viết seed data mẫu (user test cho từng role: Bên A, Bên B, Mod, Admin, Root Admin)
+- [x] **P0-07** Dựng Docker Compose cho Dev (FE + BE + Postgres + Redis)
+- [x] **P0-08** Tạo file `.env.example` liệt kê đầy đủ biến môi trường cần thiết
+- [x] **P0-09** Thiết lập CI (GitHub Actions): lint + build + test chạy trên mỗi PR
+- [~] **P0-10** Dựng môi trường Staging — _code sẵn sàng (compose/Dockerfile/workflow deploy), còn thiếu server thật + secrets; xem `infra/README.md`_
+- [x] **P0-11** Thiết lập Design Token/UI Kit theo Branding (màu `#1d4e89`/`#e8a93a`, logo, typography)
+- [x] **P0-12** Viết `CONTRIBUTING.md`/quy ước nhánh Git (tham chiếu PLAN.md § 9)
 
 ---
 
