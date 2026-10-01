@@ -1,0 +1,49 @@
+name: Deploy Staging
+
+# Chạy khi CI (ci.yml) pass trên nhánh staging. Cần cấu hình GitHub Environment
+# "staging" với các secret: STAGING_SSH_HOST, STAGING_SSH_USER, STAGING_SSH_KEY,
+# STAGING_DEPLOY_PATH — xem infra/README.md. Chưa có secrets thì job sẽ fail rõ
+# ràng ở bước "Guard", không âm thầm no-op.
+on:
+  workflow_run:
+    workflows: ['CI']
+    branches: [staging]
+    types: [completed]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Guard — required secrets present
+        run: |
+          missing=0
+          for v in STAGING_SSH_HOST STAGING_SSH_USER STAGING_SSH_KEY STAGING_DEPLOY_PATH; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Missing secret $v — xem infra/README.md để cấu hình GitHub Environment 'staging'."
+              missing=1
+            fi
+          done
+          exit $missing
+        env:
+          STAGING_SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+          STAGING_SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          STAGING_DEPLOY_PATH: ${{ secrets.STAGING_DEPLOY_PATH }}
+
+      - name: Deploy via SSH (git pull + docker compose up)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.STAGING_DEPLOY_PATH }}
+            git fetch origin staging
+            git checkout staging
+            git reset --hard origin/staging
+            docker compose pull || true
+            docker compose up -d --build
+            docker compose exec -T backend pnpm prisma:deploy

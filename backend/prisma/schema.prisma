@@ -1,0 +1,207 @@
+// K-Point Platform — Prisma schema
+// Mirrors the ERD in README.md / SRS Section VII (Thiết kế cơ sở dữ liệu cốt lõi).
+// Task: P0-04 (schema) / P0-05 (migration).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum ActiveMode {
+  A // Bên A — Advertiser
+  B // Bên B — Publisher
+}
+
+enum BmcTopupStatus {
+  PENDING_MANUAL_VERIFICATION
+  APPROVED
+  REJECTED
+}
+
+enum CampaignStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISPUTED
+}
+
+enum DisputeStatus {
+  OPEN
+  RECOMMENDED
+  RESOLVED
+}
+
+enum ModRecommendation {
+  PEND_APP
+  PEND_REJ
+}
+
+enum DisputeDecision {
+  APPROVE
+  REJECT
+}
+
+enum AuditActionType {
+  CREATE
+  UPDATE
+  DELETE
+  DISPUTE_RESOLVE
+  MANUAL_TOPUP
+}
+
+enum AuditLevel {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String     @map("password_hash")
+  activeMode      ActiveMode @default(A) @map("active_mode")
+  isRoot          Boolean    @default(false) @map("is_root")
+  trustScore      Int        @default(100) @map("trust_score")
+  fingerprintHash String?    @map("fingerprint_hash")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  wallet                 Wallet?
+  bmcTopups              BmcTopup[]      @relation("BmcTopupRequester")
+  bmcTopupsVerified      BmcTopup[]      @relation("BmcTopupVerifier")
+  campaignsOwned         Campaign[]      @relation("CampaignOwner")
+  submissionsAsPublisher Submission[]    @relation("SubmissionPublisher")
+  disputesAsModerator    DisputeTicket[] @relation("DisputeModerator")
+  disputesAsAdmin        DisputeTicket[] @relation("DisputeAdmin")
+  auditLogs              AuditLog[]      @relation("AuditActor")
+
+  @@map("users")
+}
+
+model RolePermission {
+  id             String @id @default(uuid())
+  roleName       String @map("role_name")
+  permissionCode String @map("permission_code")
+
+  @@unique([roleName, permissionCode])
+  @@map("roles_permissions")
+}
+
+model Wallet {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  balanceKpoint  BigInt   @default(0) @map("balance_kpoint")
+  reservedKpoint BigInt   @default(0) @map("reserved_kpoint")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model BmcTopup {
+  id           String         @id @default(uuid())
+  userId       String         @map("user_id")
+  amountUsd    Decimal        @map("amount_usd") @db.Decimal(12, 2)
+  kpointAmount BigInt         @map("kpoint_amount")
+  txnId        String         @unique @map("txn_id")
+  receiptUrl   String         @map("receipt_url")
+  status       BmcTopupStatus @default(PENDING_MANUAL_VERIFICATION)
+  verifiedById String?        @map("verified_by")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  user       User  @relation("BmcTopupRequester", fields: [userId], references: [id])
+  verifiedBy User? @relation("BmcTopupVerifier", fields: [verifiedById], references: [id])
+
+  @@map("bmc_topups")
+}
+
+model Campaign {
+  id            String         @id @default(uuid())
+  ownerId       String         @map("owner_id")
+  platform      String
+  totalSlots    Int            @map("total_slots")
+  rewardPerSlot BigInt         @map("reward_per_slot")
+  dripFeedLimit Int            @map("drip_feed_limit")
+  status        CampaignStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  owner       User         @relation("CampaignOwner", fields: [ownerId], references: [id])
+  submissions Submission[]
+
+  @@map("campaigns")
+}
+
+model Submission {
+  id            String           @id @default(uuid())
+  campaignId    String           @map("campaign_id")
+  publisherId   String           @map("publisher_id")
+  proofUrl      String           @map("proof_url")
+  watermarkUrl  String?          @map("watermark_url")
+  status        SubmissionStatus @default(PENDING)
+  autoApproveAt DateTime         @map("auto_approve_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  campaign  Campaign       @relation(fields: [campaignId], references: [id])
+  publisher User           @relation("SubmissionPublisher", fields: [publisherId], references: [id])
+  dispute   DisputeTicket?
+
+  @@map("submissions")
+}
+
+model DisputeTicket {
+  id                String             @id @default(uuid())
+  submissionId      String             @unique @map("submission_id")
+  modId             String?            @map("mod_id")
+  modRecommendation ModRecommendation? @map("mod_recommendation")
+  adminId           String?            @map("admin_id")
+  finalDecision     DisputeDecision?   @map("final_decision")
+  status            DisputeStatus      @default(OPEN)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  moderator  User?      @relation("DisputeModerator", fields: [modId], references: [id])
+  admin      User?      @relation("DisputeAdmin", fields: [adminId], references: [id])
+
+  @@map("disputes")
+}
+
+model AuditLog {
+  id             String          @id @default(uuid())
+  actorId        String          @map("actor_id")
+  targetResource String          @map("target_resource")
+  actionType     AuditActionType @map("action_type")
+  level          AuditLevel      @default(INFO)
+  payloadBefore  Json?           @map("payload_before")
+  payloadAfter   Json?           @map("payload_after")
+  ip             String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  actor User @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
