@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'K-Point Platform',
+  title: 'K-Platform',
   description: 'Nền tảng kết nối Khảo sát & Trải nghiệm Thực tế',
 };
 

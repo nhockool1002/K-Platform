@@ -7,7 +7,7 @@ export default function Home() {
       <main className="flex w-full max-w-xl flex-col items-center gap-6 rounded-xl bg-white p-10 text-center shadow-sm dark:bg-zinc-900">
         <Logo size={56} />
         <div>
-          <h1 className="text-brand-navy text-2xl font-bold tracking-tight">K-Point Platform</h1>
+          <h1 className="text-brand-navy text-2xl font-bold tracking-tight">K-Platform</h1>
           <p className="text-muted mt-2 text-sm">
             Nền tảng kết nối Khảo sát &amp; Trải nghiệm Thực tế — foundation scaffold (Phase 0).
           </p>

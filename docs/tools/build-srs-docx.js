@@ -216,7 +216,7 @@ function buildHeader() {
         spacing: { after: 120 },
         children: [
           new ImageRun({ data: logoBuf, transformation: { width: 22, height: 22 }, type: 'png' }),
-          new TextRun({ text: '   K-POINT PLATFORM', bold: true, color: NAVY, size: 20 }),
+          new TextRun({ text: '   K-PLATFORM', bold: true, color: NAVY, size: 20 }),
           new TextRun({
             text: '\tSRS — Official Specification',
             italics: true,
@@ -270,7 +270,7 @@ const titlePageChildren = [
   new Paragraph({
     alignment: AlignmentType.CENTER,
     spacing: { before: 300 },
-    children: [new TextRun({ text: 'K-POINT PLATFORM', bold: true, size: 56, color: NAVY })],
+    children: [new TextRun({ text: 'K-PLATFORM', bold: true, size: 56, color: NAVY })],
   }),
   new Paragraph({
     alignment: AlignmentType.CENTER,
@@ -310,7 +310,7 @@ const titlePageChildren = [
   dataTable(
     ['Dữ liệu', 'Thông tin chi tiết'],
     [
-      ['Tên dự án', 'Nền tảng KPoint Platform (Web/App Cross-Platform)'],
+      ['Tên dự án', 'Nền tảng K-Platform (Web/App Cross-Platform)'],
       ['Nội dung gốc tham chiếu', 'SRS v2.0 (Official Specification)'],
       [
         'Phiên bản tài liệu (Edition)',
@@ -348,7 +348,7 @@ body.push(
   dataTable(
     ['Dữ liệu', 'Thông tin chi tiết'],
     [
-      ['Tên dự án', 'Nền tảng KPoint Platform (Web/App Cross-Platform)'],
+      ['Tên dự án', 'Nền tảng K-Platform (Web/App Cross-Platform)'],
       ['Nội dung gốc tham chiếu', 'SRS v2.0 (Official Specification)'],
       [
         'Phiên bản tài liệu (Edition)',
@@ -897,7 +897,7 @@ body.push(
     spacing: { before: 400 },
     children: [
       new TextRun({
-        text: '© 2026 K-Point Platform — Tài liệu nội bộ, bảo mật theo chính sách công ty.',
+        text: '© 2026 K-Platform — Tài liệu nội bộ, bảo mật theo chính sách công ty.',
         italics: true,
         size: 18,
         color: '888888',
@@ -921,9 +921,9 @@ const MARGIN_PORTRAIT = {
 const MARGIN_LANDSCAPE = { top: 720, bottom: 720, left: 850, right: 850, header: 380, footer: 380 };
 
 const doc = new Document({
-  creator: 'K-Point Platform',
-  title: 'K-Point Platform — SRS v1.0',
-  description: 'Software Requirements Specification — K-Point Platform',
+  creator: 'K-Platform',
+  title: 'K-Platform — SRS v1.0',
+  description: 'Software Requirements Specification — K-Platform',
   features: { updateFields: true },
   styles: {
     default: {

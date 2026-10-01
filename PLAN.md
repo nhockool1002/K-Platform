@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/kplatform-logo.png" alt="K-Point Platform Logo" width="110"/>
+<img src="docs/assets/kplatform-logo.png" alt="K-Platform Logo" width="110"/>
 
-# K-POINT PLATFORM — KẾ HOẠCH TRIỂN KHAI DỰ ÁN
+# K-PLATFORM — KẾ HOẠCH TRIỂN KHAI DỰ ÁN
 
 ![Status](https://img.shields.io/badge/Status-Draft%20%E2%80%94%20chờ%20phê%20duyệt-e8a93a?style=flat-square)
 ![Based on](https://img.shields.io/badge/Dựa%20trên-SRS%20Document%20Edition%20v1.0-1d4e89?style=flat-square)
@@ -42,7 +42,7 @@
 
 ## 1. Mục tiêu & Phạm vi
 
-**Mục tiêu:** Xây dựng K-Point Platform — nền tảng kết nối Doanh nghiệp (Bên A) cần feedback/review thực tế với Người tiêu dùng (Bên B), vận hành bằng đơn vị tiền tệ nội bộ **KPoint**, có hệ thống phân quyền RBAC + Switch Mode, thanh toán nội địa tự động (SePay) và quốc tế bán tự động (Buy Me a Coffee), cùng CMS quản trị đầy đủ (Dispute, Audit Log, RBAC).
+**Mục tiêu:** Xây dựng K-Platform — nền tảng kết nối Doanh nghiệp (Bên A) cần feedback/review thực tế với Người tiêu dùng (Bên B), vận hành bằng đơn vị tiền tệ nội bộ **KPoint**, có hệ thống phân quyền RBAC + Switch Mode, thanh toán nội địa tự động (SePay) và quốc tế bán tự động (Buy Me a Coffee), cùng CMS quản trị đầy đủ (Dispute, Audit Log, RBAC).
 
 **Phạm vi Giai đoạn 1 (bản kế hoạch này):** 100% Web Responsive — toàn bộ 13 màn hình (SCR-01 → SCR-13), 13 chức năng (FN-*) và 11 API endpoint liệt kê trong SRS.
 
@@ -88,7 +88,7 @@ SRS hiện là đặc tả nghiệp vụ (business/functional spec), chưa chố
 
 ```mermaid
 gantt
-    title K-Point Platform — Lộ trình triển khai (Giai đoạn 1: Web)
+    title K-Platform — Lộ trình triển khai (Giai đoạn 1: Web)
     dateFormat  YYYY-MM-DD
     axisFormat  %d/%m
     section Nền tảng
@@ -390,5 +390,5 @@ _(mã task — xem mục "Backlog" trong [TASK.md](TASK.md))_
 ---
 
 <div align="center">
-<sub>© 2026 K-Point Platform — Tài liệu kế hoạch nội bộ, cập nhật song song với SRS.</sub>
+<sub>© 2026 K-Platform — Tài liệu kế hoạch nội bộ, cập nhật song song với SRS.</sub>
 </div>
