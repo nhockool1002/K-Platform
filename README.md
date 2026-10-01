@@ -2,7 +2,7 @@
 
 <img src="docs/assets/kplatform-logo.png" alt="K-Platform Logo" width="140"/>
 
-# K-POINT PLATFORM
+# K-PLATFORM
 
 ### Nền tảng Kết nối Khảo sát & Trải nghiệm Thực tế
 
@@ -46,7 +46,7 @@
 
 | Dữ liệu                      | Thông tin chi tiết                                                                |
 | ---------------------------- | --------------------------------------------------------------------------------- |
-| Tên dự án                    | Nền tảng KPoint Platform (Web/App Cross-Platform)                                 |
+| Tên dự án                    | Nền tảng K-Platform (Web/App Cross-Platform)                                      |
 | Nội dung gốc tham chiếu      | SRS v2.0 (Official Specification)                                                 |
 | Phiên bản tài liệu (Edition) | **v1.0** — Bản chuẩn hóa, bổ sung Branding, Mục lục, User Flow & Sequence Diagram |
 | Ngày cập nhật                | Tháng 10 / 2026                                                                   |
@@ -616,6 +616,6 @@ sequenceDiagram
 
 <div align="center">
 
-<sub>© 2026 K-Point Platform — Tài liệu nội bộ, bảo mật theo chính sách công ty.</sub>
+<sub>© 2026 K-Platform — Tài liệu nội bộ, bảo mật theo chính sách công ty.</sub>
 
 </div>

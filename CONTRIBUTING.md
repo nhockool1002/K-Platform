@@ -1,4 +1,4 @@
-# Contributing — K-Point Platform
+# Contributing — K-Platform
 
 Quy ước làm việc cho repo này. Đọc trước khi tạo branch/commit đầu tiên.
 

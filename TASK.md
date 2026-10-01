@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/kplatform-logo.png" alt="K-Point Platform Logo" width="110"/>
+<img src="docs/assets/kplatform-logo.png" alt="K-Platform Logo" width="110"/>
 
-# K-POINT PLATFORM — THEO DÕI TIẾN ĐỘ TASK
+# K-PLATFORM — THEO DÕI TIẾN ĐỘ TASK
 
 ![Based on](https://img.shields.io/badge/Dựa%20trên-PLAN.md-1d4e89?style=flat-square)
 ![Updated](https://img.shields.io/badge/Cập%20nhật-10%2F2026-2f6ca2?style=flat-square)
@@ -264,5 +264,5 @@
 ---
 
 <div align="center">
-<sub>© 2026 K-Point Platform — Cập nhật file này mỗi khi hoàn thành task hoặc khi PLAN.md/SRS thay đổi.</sub>
+<sub>© 2026 K-Platform — Cập nhật file này mỗi khi hoàn thành task hoặc khi PLAN.md/SRS thay đổi.</sub>
 </div>
