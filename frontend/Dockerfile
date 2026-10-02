@@ -1,4 +1,6 @@
-# K-Point Platform — frontend (Next.js, standalone output) image.
+# K-Platform — frontend (Next.js, standalone output) image. Dùng cho
+# `docker-compose.yml` full-stack ở local/dev — KHÔNG dùng để deploy lên
+# Vercel (Vercel tự build trực tiếp từ source, xem DEPLOY.md).
 # Build context PHẢI là thư mục gốc repo: `docker build -f frontend/Dockerfile .`
 
 FROM node:22-alpine AS base
