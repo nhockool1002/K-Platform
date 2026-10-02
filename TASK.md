@@ -22,14 +22,14 @@
 | 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)  |
 | 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth) |
 | 2        | Ví KPoint & SePay                | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 3        | Campaign & Survey                | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                               |
 | 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
 | 5        | Dispute Center                   | 12        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
 | 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
 | 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
 | 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
 | 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| **Tổng** |                                  | **129**   | **25**     | **19%** |                                       |
+| **Tổng** |                                  | **129**   | **40**     | **31%** |                                       |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -115,21 +115,21 @@
 
 **Mục tiêu:** Bên A tạo Campaign thật, Bên B tìm và ứng tuyển, chống gian lận multi-account.
 
-- [ ] **P3-01** Bảng `campaigns` (migration + model)
-- [ ] **P3-02** Form Tạo Campaign & Survey Filter (Slots, Price, Drip-feed, câu hỏi sàng lọc) _(SCR-04)_
-- [ ] **P3-03** API `POST /api/v1/campaigns` — tính `Tổng KPoint = Phí tạo + (Slots × Price)` _(FN-CAMP-01)_
-- [ ] **P3-04** Khóa `reserved_kpoint` trong Wallet khi Campaign Active
-- [ ] **P3-05** Trang chủ & Public Campaigns — danh sách, tìm kiếm _(SCR-01)_
-- [ ] **P3-06** Bộ lọc nền tảng (Google Maps / Facebook) trên trang Public _(SCR-01)_
-- [ ] **P3-07** Hoàn thiện Dashboard Bên A với dữ liệu thật (thống kê Campaign, KPoint đã chi) _(SCR-03)_
-- [ ] **P3-08** Màn hình Quản lý Campaign & Appliers _(SCR-05)_
-- [ ] **P3-09** API `POST /api/v1/campaigns/:id/apply` — Ứng tuyển Survey _(FN-CAMP-02)_
-- [ ] **P3-10** Kiểm tra Device Fingerprint khi ứng tuyển
-- [ ] **P3-11** Kiểm tra IP + Trust Score khi ứng tuyển
-- [ ] **P3-12** Chức năng Invite/Reject ứng viên (Bên A) _(SCR-05)_
-- [ ] **P3-13** Quy tắc: Campaign cũ không thể xóa, chỉ Archive
-- [ ] **P3-14** Test: tạo Campaign khi không đủ số dư → bị chặn đúng thông báo
-- [ ] **P3-15** Test: 1 user tạo 2 tài khoản ứng tuyển cùng Campaign → bị chặn bởi Fingerprint/IP
+- [x] **P3-01** Bảng `campaigns` (migration + model)
+- [x] **P3-02** Form Tạo Campaign & Survey Filter (Slots, Price, Drip-feed, câu hỏi sàng lọc) _(SCR-04)_
+- [x] **P3-03** API `POST /api/v1/campaigns` — tính `Tổng KPoint = Phí tạo + (Slots × Price)` _(FN-CAMP-01)_
+- [x] **P3-04** Khóa `reserved_kpoint` trong Wallet khi Campaign Active
+- [x] **P3-05** Trang chủ & Public Campaigns — danh sách, tìm kiếm _(SCR-01)_
+- [x] **P3-06** Bộ lọc nền tảng (Google Maps / Facebook) trên trang Public _(SCR-01)_
+- [x] **P3-07** Hoàn thiện Dashboard Bên A với dữ liệu thật (thống kê Campaign, KPoint đã chi) _(SCR-03)_
+- [x] **P3-08** Màn hình Quản lý Campaign & Appliers _(SCR-05)_
+- [x] **P3-09** API `POST /api/v1/campaigns/:id/apply` — Ứng tuyển Survey _(FN-CAMP-02)_
+- [x] **P3-10** Kiểm tra Device Fingerprint khi ứng tuyển
+- [x] **P3-11** Kiểm tra IP + Trust Score khi ứng tuyển
+- [x] **P3-12** Chức năng Invite/Reject ứng viên (Bên A) _(SCR-05)_
+- [x] **P3-13** Quy tắc: Campaign cũ không thể xóa, chỉ Archive
+- [x] **P3-14** Test: tạo Campaign khi không đủ số dư → bị chặn đúng thông báo
+- [x] **P3-15** Test: 1 user tạo 2 tài khoản ứng tuyển cùng Campaign → bị chặn bởi Fingerprint/IP
 
 ---
 

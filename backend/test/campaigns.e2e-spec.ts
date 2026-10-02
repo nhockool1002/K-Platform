@@ -215,6 +215,10 @@ describe('Campaigns & Survey (e2e)', () => {
       .send({ action: 'INVITE' })
       .expect(200);
     expect(invited.body.status).toBe('INVITED');
+    // FE render applicant card qua a.publisher.email — thiếu include này từng
+    // gây crash "Cannot read properties of undefined (reading 'email')" sau
+    // khi Invite/Reject (phát hiện qua QA thủ công trên trình duyệt).
+    expect(invited.body.publisher).toMatchObject({ email: publisherAEmail });
   });
 
   it('P3-13: Campaign chỉ Archive được, không có endpoint xoá', async () => {

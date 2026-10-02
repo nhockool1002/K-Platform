@@ -248,6 +248,9 @@ export class CampaignsService {
             ? SubmissionStatus.INVITED
             : SubmissionStatus.REJECTED_APPLICATION,
       },
+      include: {
+        publisher: { select: { id: true, email: true, trustScore: true } },
+      },
     });
   }
 
