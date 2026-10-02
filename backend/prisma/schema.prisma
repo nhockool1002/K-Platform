@@ -46,8 +46,14 @@ enum CampaignStatus {
   ARCHIVED
 }
 
+// Vòng đời đầy đủ 1 Submission, từ lúc Bên B ứng tuyển Survey (Phase 3, FN-CAMP-02)
+// tới lúc nộp Proof & được duyệt (Phase 4, FN-TASK-01/02) — khớp README.md § 9.5:
+// cùng 1 submissionId xuyên suốt applicationId ban đầu.
 enum SubmissionStatus {
-  PENDING
+  APPLIED // Đã nộp Survey, chờ Bên A Invite/Reject
+  INVITED // Bên A đã Invite, chờ Bên B nộp Proof
+  REJECTED_APPLICATION // Bên A từ chối đơn ứng tuyển (khác với từ chối Proof)
+  PENDING // Đã nộp Proof, chờ duyệt (người hoặc Auto-Approve 48h)
   APPROVED
   REJECTED
   DISPUTED
@@ -165,15 +171,21 @@ model BmcTopup {
 }
 
 model Campaign {
-  id            String         @id @default(uuid())
-  ownerId       String         @map("owner_id")
-  platform      String
-  totalSlots    Int            @map("total_slots")
-  rewardPerSlot BigInt         @map("reward_per_slot")
-  dripFeedLimit Int            @map("drip_feed_limit")
-  status        CampaignStatus @default(ACTIVE)
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  id              String         @id @default(uuid())
+  ownerId         String         @map("owner_id")
+  title           String
+  platform        String
+  location        String?
+  totalSlots      Int            @map("total_slots")
+  rewardPerSlot   BigInt         @map("reward_per_slot")
+  dripFeedLimit   Int            @map("drip_feed_limit")
+  minTrustScore   Int            @default(0) @map("min_trust_score")
+  // Mảng câu hỏi Survey sàng lọc (FN-CAMP-01/SCR-04), vd:
+  // [{ "question": "...", "answerType": "YES_NO" | "TEXT", "requiresReceipt": true }]
+  surveyQuestions Json?          @map("survey_questions")
+  status          CampaignStatus @default(ACTIVE)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
 
   owner       User         @relation("CampaignOwner", fields: [ownerId], references: [id])
   submissions Submission[]
@@ -182,20 +194,28 @@ model Campaign {
 }
 
 model Submission {
-  id            String           @id @default(uuid())
-  campaignId    String           @map("campaign_id")
-  publisherId   String           @map("publisher_id")
-  proofUrl      String           @map("proof_url")
-  watermarkUrl  String?          @map("watermark_url")
-  status        SubmissionStatus @default(PENDING)
-  autoApproveAt DateTime         @map("auto_approve_at")
-  createdAt     DateTime         @default(now()) @map("created_at")
-  updatedAt     DateTime         @updatedAt @map("updated_at")
+  id              String           @id @default(uuid())
+  campaignId      String           @map("campaign_id")
+  publisherId     String           @map("publisher_id")
+  // Câu trả lời Survey lúc ứng tuyển (FN-CAMP-02) — khớp surveyQuestions của Campaign.
+  surveyAnswers   Json?            @map("survey_answers")
+  fingerprintHash String?          @map("fingerprint_hash")
+  ip              String?
+  proofUrl        String?          @map("proof_url")
+  watermarkUrl    String?          @map("watermark_url")
+  status          SubmissionStatus @default(APPLIED)
+  autoApproveAt   DateTime?        @map("auto_approve_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
   campaign  Campaign       @relation(fields: [campaignId], references: [id])
   publisher User           @relation("SubmissionPublisher", fields: [publisherId], references: [id])
   dispute   DisputeTicket?
 
+  // Bên B chỉ ứng tuyển/nhận tối đa 1 slot/campaign (P4-08) — chặn luôn từ bước apply.
+  @@unique([campaignId, publisherId])
+  @@index([campaignId, fingerprintHash])
+  @@index([campaignId, ip])
   @@map("submissions")
 }
 

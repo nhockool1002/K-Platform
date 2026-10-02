@@ -7,6 +7,7 @@ import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { CommonModule } from './common/common.module.js';
+import { CampaignsModule } from './campaigns/campaigns.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CommonModule } from './common/common.module.js';
     HealthModule,
     AuthModule,
     UsersModule,
+    CampaignsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

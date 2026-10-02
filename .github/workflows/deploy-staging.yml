@@ -11,9 +11,20 @@ on:
     branches: [staging]
     types: [completed]
 
+# Chốt chặn thứ 2 (ngoài guard `event == 'push'` ở job bên dưới): nếu vẫn có
+# 2 run Deploy Staging bị kích hoạt gần nhau (vd. vừa merge PR vào staging
+# vừa mở PR khác từ staging đi nữa), group này đảm bảo chúng chạy TUẦN TỰ
+# thay vì chồng lên nhau trên cùng 1 VPS — không cancel run đang chạy dở để
+# tránh ngắt giữa chừng lúc `docker compose up`/`prisma migrate deploy`.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     environment: staging
     steps:
