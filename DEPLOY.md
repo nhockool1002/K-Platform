@@ -175,9 +175,11 @@ docker compose -f infra/docker-compose.deploy.yml --env-file .env ps   # cả 3 
 Chạy migration + (tuỳ chọn) seed dữ liệu demo:
 
 ```bash
-docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:deploy
-docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:seed
+docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend node_modules/.bin/prisma migrate deploy
+docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend node_modules/.bin/prisma db seed
 ```
+
+> Dùng thẳng `node_modules/.bin/prisma` thay vì `pnpm prisma:deploy`/`pnpm prisma:seed`: image production chỉ cài production dependencies (`pnpm deploy --prod`), package.json bên trong container vẫn liệt kê đủ devDependencies (eslint, vitest, ...) dù không cài — nếu gọi qua `pnpm run`, pnpm sẽ thấy "thiếu" so với package.json và tự tải lại toàn bộ (kể cả tải lại đúng phiên bản pnpm mới nhất qua corepack, có thể khác bản dùng lúc build), từng gây lỗi `ERR_PNPM_IGNORED_BUILDS`. Gọi thẳng binary đã có sẵn trong image thì không đụng tới pnpm/corepack chút nào.
 
 > Đặt `SEED_DEV_PASSWORD` trong `.env` trước khi seed nếu muốn mật khẩu cố định cho các tài khoản demo (xem `infra/.env.deploy.example` và README.md § 10.2) — không set thì mỗi lần seed sinh mật khẩu ngẫu nhiên khác nhau, in ra console. Seed là dữ liệu demo cho giai đoạn pre-launch — xoá/đổi mật khẩu các tài khoản này trước khi mở Production cho người dùng thật.
 
