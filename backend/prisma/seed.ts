@@ -1,7 +1,9 @@
 // Seed data mẫu cho dev/staging — 1 user đại diện mỗi role trong SRS Section II.
 // Task: P0-06, cập nhật ở P1-01/P1-09 (role field + Root Admin hard-coded ID).
 // Chạy: pnpm --filter backend prisma:seed
-import { PrismaClient, UserRole } from '@prisma/client';
+// @prisma/client là CommonJS; dưới Node ESM named import không resolve được.
+import pkg from '@prisma/client';
+const { PrismaClient, UserRole } = pkg;
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { ROOT_ADMIN_ID } from '../src/common/constants.ts';
