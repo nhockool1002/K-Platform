@@ -1,10 +1,42 @@
 import { MapPin, Search, ShieldCheck } from 'lucide-react';
 import { PublicNav } from '@/components/layout/PublicNav';
 import { CampaignTicketCard } from '@/components/ui/CampaignTicketCard';
-import { mockCampaigns } from '@/lib/mock-data';
+import type { Campaign } from '@/lib/campaigns-client';
+import type { PlatformKey } from '@/lib/mock-data';
 
-export default function Home() {
-  const openCampaigns = mockCampaigns.filter((c) => c.status === 'active');
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+
+const PLATFORM_OPTIONS: { value: PlatformKey | ''; label: string }[] = [
+  { value: '', label: 'Tất cả nền tảng' },
+  { value: 'GOOGLE_MAPS', label: 'Google Maps' },
+  { value: 'FACEBOOK', label: 'Facebook Check-in' },
+  { value: 'SHOPEE', label: 'Shopee Mall' },
+  { value: 'TIKTOK', label: 'TikTok Video' },
+];
+
+async function fetchPublicCampaigns(params: { platform?: string; search?: string }) {
+  const qs = new URLSearchParams();
+  if (params.platform) qs.set('platform', params.platform);
+  if (params.search) qs.set('search', params.search);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+
+  try {
+    const res = await fetch(`${API_URL}/campaigns${suffix}`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    return (await res.json()) as Campaign[];
+  } catch {
+    // Backend chưa sẵn sàng (dev offline...) — hiển thị rỗng thay vì crash trang.
+    return [];
+  }
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ platform?: string; search?: string }>;
+}) {
+  const params = await searchParams;
+  const campaigns = await fetchPublicCampaigns(params);
 
   return (
     <div className="flex flex-1 flex-col bg-slate-50">
@@ -32,22 +64,31 @@ export default function Home() {
               nhận KPoint (1 KP = 1 VNĐ). Tự động đóng dấu Watermark và Auto-Approve sau 48 giờ.
             </p>
 
-            {/* Khối tìm kiếm thật — hành động đầu tiên người dùng làm trên trang này */}
-            <form className="mt-2 flex max-w-xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center">
+            {/* Khối tìm kiếm thật — GET form, không cần JS, hoạt động cả khi disable JS */}
+            <form
+              action="/"
+              className="mt-2 flex max-w-xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center"
+            >
               <div className="relative flex-1">
                 <Search className="absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
+                  name="search"
+                  defaultValue={params.search}
                   placeholder="Tìm theo thương hiệu, quán ăn, khách sạn, địa chỉ..."
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-1 focus:ring-brand-blue focus:outline-none"
                 />
               </div>
-              <select className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none">
-                <option>Tất cả nền tảng</option>
-                <option>Google Maps</option>
-                <option>Facebook Check-in</option>
-                <option>Shopee Mall</option>
-                <option>TikTok Video</option>
+              <select
+                name="platform"
+                defaultValue={params.platform ?? ''}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none"
+              >
+                {PLATFORM_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
               <button
                 type="submit"
@@ -124,15 +165,36 @@ export default function Home() {
             </p>
           </div>
           <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-mono text-xs font-bold text-emerald-600">
-            ● {openCampaigns.length} Chiến dịch Đang Hoạt Động
+            ● {campaigns.length} Chiến dịch Đang Hoạt Động
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {openCampaigns.map((c) => (
-            <CampaignTicketCard key={c.id} {...c} href="/login" />
-          ))}
-        </div>
+        {campaigns.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+            <p className="font-bold text-slate-800">Chưa có chiến dịch phù hợp</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+              Thử bỏ bộ lọc hoặc quay lại sau — Campaign mới được Bên A tạo liên tục.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {campaigns.map((c) => (
+              <CampaignTicketCard
+                key={c.id}
+                id={c.id}
+                name={c.title}
+                platform={c.platform}
+                location={c.location ?? ''}
+                slots={c.totalSlots}
+                slotsFilled={c.slotsFilled}
+                rewardPerSlot={Number(c.rewardPerSlot)}
+                dripFeedPerDay={c.dripFeedLimit}
+                trustScoreRequired={c.minTrustScore}
+                href={`/b/campaigns/${c.id}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <footer className="flex items-center justify-center gap-1.5 border-t border-slate-200 px-6 py-6 text-center text-xs text-slate-500">

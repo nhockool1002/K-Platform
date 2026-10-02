@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, CheckCircle2 } from 'lucide-react';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { Check, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
 import { formatKpoint } from '@/lib/format';
+import { ApiError } from '@/lib/auth-client';
+import { createCampaign, type SurveyQuestion } from '@/lib/campaigns-client';
+import type { PlatformKey } from '@/lib/mock-data';
 
 const CREATION_FEE = 50_000;
 
@@ -17,7 +21,7 @@ function SectionHeading({
 }: {
   step: number;
   color: 'blue' | 'gold' | 'dark';
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const badge = {
     blue: 'bg-brand-blue text-white',
@@ -39,9 +43,61 @@ function SectionHeading({
 }
 
 export default function NewCampaignPage() {
+  const router = useRouter();
+
+  const [title, setTitle] = useState('The Artisan Roastery Coffee');
+  const [location, setLocation] = useState('Quận 1, TP. Hồ Chí Minh');
+  const [platform, setPlatform] = useState<PlatformKey>('GOOGLE_MAPS');
   const [slots, setSlots] = useState(10);
   const [reward, setReward] = useState(50_000);
+  const [dripFeed, setDripFeed] = useState(5);
+  const [minTrustScore, setMinTrustScore] = useState(80);
+  const [questions, setQuestions] = useState<SurveyQuestion[]>([
+    {
+      question: 'Bạn đã dùng bữa tại quán với hóa đơn từ 50.000đ trở lên trong 1 tháng qua chưa?',
+      answerType: 'YES_NO',
+      requiresReceipt: true,
+    },
+  ]);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const total = CREATION_FEE + slots * reward;
+
+  function addQuestion() {
+    setQuestions((qs) => [...qs, { question: '', answerType: 'TEXT' }]);
+  }
+
+  function updateQuestion(index: number, patch: Partial<SurveyQuestion>) {
+    setQuestions((qs) => qs.map((q, i) => (i === index ? { ...q, ...patch } : q)));
+  }
+
+  function removeQuestion(index: number) {
+    setQuestions((qs) => qs.filter((_, i) => i !== index));
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const campaign = await createCampaign({
+        title,
+        platform,
+        location: location || undefined,
+        totalSlots: slots,
+        rewardPerSlot: reward,
+        dripFeedLimit: dripFeed,
+        minTrustScore,
+        surveyQuestions: questions.filter((q) => q.question.trim().length > 0),
+      });
+      router.push(`/a/campaigns/${campaign.id}`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <AppShell role="advertiser" active="/a/campaigns">
@@ -51,28 +107,43 @@ export default function NewCampaignPage() {
           description="Thiết lập điều kiện khảo sát sàng lọc Bên B và cài đặt thuật toán rải review (Drip-feed)."
         />
 
-        <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+        >
           <div className="space-y-4">
             <SectionHeading step={1} color="blue">
               Thông Tin Cơ Bản Về Doanh Nghiệp
             </SectionHeading>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Tên Thương hiệu / Cơ sở dịch vụ *">
-                <Input defaultValue="The Artisan Roastery Coffee" required />
+                <Input
+                  required
+                  minLength={3}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </Field>
               <Field label="Địa điểm áp dụng (Tỉnh/Thành)">
-                <Input defaultValue="Quận 1, TP. Hồ Chí Minh" />
+                <Input value={location} onChange={(e) => setLocation(e.target.value)} />
               </Field>
               <Field label="Nền tảng mục tiêu">
-                <Select defaultValue="GOOGLE_MAPS">
+                <Select value={platform} onChange={(e) => setPlatform(e.target.value as PlatformKey)}>
                   <option value="GOOGLE_MAPS">Google Maps (Đánh giá địa điểm &amp; Ảnh)</option>
                   <option value="FACEBOOK">Facebook (Check-in bài viết kèm ảnh)</option>
                   <option value="SHOPEE">Shopee / E-Commerce Feedback</option>
                   <option value="TIKTOK">TikTok (Video ngắn trải nghiệm)</option>
                 </Select>
               </Field>
-              <Field label="Liên kết công khai (Google Maps / Page URL)">
-                <Input type="url" defaultValue="https://maps.google.com/?cid=91823101" />
+              <Field label="Trust Score tối thiểu yêu cầu">
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={minTrustScore}
+                  onChange={(e) => setMinTrustScore(Number(e.target.value) || 0)}
+                  className="font-mono font-bold"
+                />
               </Field>
             </div>
           </div>
@@ -86,7 +157,7 @@ export default function NewCampaignPage() {
                 <Input
                   type="number"
                   min={1}
-                  max={200}
+                  max={1000}
                   value={slots}
                   onChange={(e) => setSlots(Number(e.target.value) || 0)}
                   className="font-mono font-bold"
@@ -106,8 +177,9 @@ export default function NewCampaignPage() {
                 <Input
                   type="number"
                   min={1}
-                  max={20}
-                  defaultValue={5}
+                  max={100}
+                  value={dripFeed}
+                  onChange={(e) => setDripFeed(Number(e.target.value) || 0)}
                   className="font-mono font-bold"
                 />
               </Field>
@@ -138,51 +210,82 @@ export default function NewCampaignPage() {
               <SectionHeading step={3} color="dark">
                 Bộ Câu Hỏi Khảo Sát Sàng Lọc Bên B (Survey Filter)
               </SectionHeading>
-              <button type="button" className="text-xs font-bold text-brand-blue hover:underline">
+              <button
+                type="button"
+                onClick={addQuestion}
+                className="text-xs font-bold text-brand-blue hover:underline"
+              >
                 + Thêm câu hỏi
               </button>
             </div>
 
             <div className="space-y-3">
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs">
-                <label className="block font-bold text-slate-700">
-                  Câu hỏi 1: Điều kiện trải nghiệm dịch vụ
-                </label>
-                <Input defaultValue="Bạn đã dùng bữa tại quán với hóa đơn từ 50.000đ trở lên trong 1 tháng qua chưa?" />
-                <div className="flex items-center gap-4 text-[11px] text-slate-600">
-                  <span>
-                    Loại trả lời: <strong>Có / Không + Bắt buộc tải ảnh Hóa đơn</strong>
-                  </span>
+              {questions.length === 0 && (
+                <p className="text-xs text-slate-400">
+                  Chưa có câu hỏi nào — Bên B sẽ ứng tuyển trực tiếp không cần khảo sát.
+                </p>
+              )}
+              {questions.map((q, i) => (
+                <div
+                  key={i}
+                  className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-slate-700">Câu hỏi {i + 1}</label>
+                    <button
+                      type="button"
+                      onClick={() => removeQuestion(i)}
+                      className="text-slate-400 hover:text-rose-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <Input
+                    placeholder="Nội dung câu hỏi..."
+                    value={q.question}
+                    onChange={(e) => updateQuestion(i, { question: e.target.value })}
+                  />
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="flex items-center gap-1.5">
+                      <span className="text-slate-600">Loại trả lời:</span>
+                      <select
+                        value={q.answerType}
+                        onChange={(e) =>
+                          updateQuestion(i, { answerType: e.target.value as SurveyQuestion['answerType'] })
+                        }
+                        className="rounded-lg border border-slate-300 bg-white px-2 py-1"
+                      >
+                        <option value="YES_NO">Có / Không</option>
+                        <option value="TEXT">Trả lời tự do</option>
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-1.5 text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={!!q.requiresReceipt}
+                        onChange={(e) => updateQuestion(i, { requiresReceipt: e.target.checked })}
+                      />
+                      Bắt buộc tải ảnh hóa đơn
+                    </label>
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs">
-                <label className="block font-bold text-slate-700">
-                  Yêu cầu chất lượng bằng chứng (Proof):
-                </label>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span>
-                    Bắt buộc có 2 ảnh thực tế (1 ảnh hóa đơn thanh toán + 1 ảnh sản phẩm / không
-                    gian quán).
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span>
-                    Hệ thống tự động chèn Watermark định danh <code>UID + CampaignID</code> chống
-                    copy ảnh.
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          <Button variant="blue" className="w-full">
+          {error && (
+            <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+              {error}
+            </p>
+          )}
+
+          <Button variant="blue" type="submit" className="w-full" disabled={submitting}>
             <Check className="h-5 w-5" />
-            Xác Nhận Khởi Tạo Chiến Dịch (Khóa Quỹ {formatKpoint(total)})
+            {submitting
+              ? 'Đang khởi tạo...'
+              : `Xác Nhận Khởi Tạo Chiến Dịch (Khóa Quỹ ${formatKpoint(total)})`}
           </Button>
-        </div>
+        </form>
       </div>
     </AppShell>
   );
