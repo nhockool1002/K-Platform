@@ -152,15 +152,21 @@ nano .env   # điền giá trị thật — xem bảng dưới
 
 Giá trị cần điền khác nhau giữa 2 môi trường:
 
-| Biến                   | Staging (gợi ý)                     | Production (gợi ý)             |
-| ---------------------- | ----------------------------------- | ------------------------------ |
-| `COMPOSE_PROJECT_NAME` | `kplatform-staging`                 | `kplatform-production`         |
-| `POSTGRES_USER/DB`     | `kplatform_staging`                 | `kplatform_production`         |
-| `POSTGRES_PASSWORD`    | sinh bằng `openssl rand -hex 24`    | sinh **khác** staging          |
-| `BACKEND_PORT`         | `4001`                              | `4002`                         |
-| `FRONTEND_URL`         | `https://staging.kp.nhutnm.id.vn`   | `https://prod.kp.nhutnm.id.vn` |
-| `JWT_ACCESS_SECRET`    | sinh bằng `openssl rand -base64 48` | sinh **khác** staging          |
-| `JWT_REFRESH_SECRET`   | sinh bằng `openssl rand -base64 48` | sinh **khác** staging          |
+| Biến                        | Staging (gợi ý)                         | Production (gợi ý)                       |
+| --------------------------- | --------------------------------------- | ---------------------------------------- |
+| `COMPOSE_PROJECT_NAME`      | `kplatform-staging`                     | `kplatform-production`                   |
+| `POSTGRES_USER/DB`          | `kplatform_staging`                     | `kplatform_production`                   |
+| `POSTGRES_PASSWORD`         | sinh bằng `openssl rand -hex 24`        | sinh **khác** staging                    |
+| `BACKEND_PORT`              | `4001`                                  | `4002`                                   |
+| `FRONTEND_URL`              | `https://staging.kp.nhutnm.id.vn`       | `https://prod.kp.nhutnm.id.vn`           |
+| `JWT_ACCESS_SECRET`         | sinh bằng `openssl rand -base64 48`     | sinh **khác** staging                    |
+| `JWT_REFRESH_SECRET`        | sinh bằng `openssl rand -base64 48`     | sinh **khác** staging                    |
+| `SEPAY_WEBHOOK_API_KEY`     | API Key SePay (dashboard SePay)         | nên dùng key **khác** staging            |
+| `SEPAY_BANK_ID`             | mã ngân hàng theo VietQR (vd. `MBBank`) | giống staging (cùng tài khoản nhận tiền) |
+| `SEPAY_BANK_ACCOUNT_NUMBER` | số tài khoản nhận KPoint                | giống staging                            |
+| `SEPAY_BANK_ACCOUNT_NAME`   | tên chủ tài khoản (không dấu)           | giống staging                            |
+
+> **SePay webhook (Phase 2 — FN-PAY-01):** sau khi `.env` có `SEPAY_WEBHOOK_API_KEY`, vào dashboard SePay → Cấu hình Webhooks → thêm URL `https://api-staging.kp.nhutnm.id.vn/api/v1/payments/sepay-webhook` (và tương tự `api-prod...` cho production) → chọn xác thực **API Key** → dán đúng giá trị `SEPAY_WEBHOOK_API_KEY`. Backend tự ACK `200` cho mọi webhook (kể cả khi không cộng điểm) để SePay không retry vô ích — xem log container để biết lý do (`reason: topup_code_not_found | duplicate_txn | not_inbound`).
 
 > **`POSTGRES_PASSWORD` dùng `openssl rand -hex` (không phải `-base64`):** `docker-compose.deploy.yml` ráp trực tiếp `${POSTGRES_PASSWORD}` vào `DATABASE_URL` (`postgresql://user:pass@postgres:5432/db`) mà không URL-encode — nếu password sinh ra chứa `/`, `+` hoặc `@` (dễ gặp khi dùng `base64`), Prisma sẽ parse sai connection string và báo `PrismaClientInitializationError: invalid port number`, backend crash-loop ngay khi start. `hex` chỉ gồm `0-9a-f` nên luôn an toàn cho URL. `JWT_*_SECRET` không bị ráp vào URL nên `base64` vẫn an toàn.
 

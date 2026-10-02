@@ -76,6 +76,11 @@ describe('Campaigns & Survey (e2e)', () => {
     await prisma.submission.deleteMany({
       where: { publisher: { email: { in: seededEmails } } },
     });
+    // Phase 2 retrofit: create() giờ ghi 1 WalletTransaction (CAMPAIGN_RESERVE)
+    // cho mỗi Campaign tạo ra — phải xoá trước khi xoá user (FK user_id).
+    await prisma.walletTransaction.deleteMany({
+      where: { user: { email: { in: seededEmails } } },
+    });
     await prisma.campaign.deleteMany({
       where: { owner: { email: { in: seededEmails } } },
     });

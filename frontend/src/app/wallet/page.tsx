@@ -1,27 +1,137 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowUpRight, PlusCircle, QrCode, UploadCloud } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, Check, Copy, PlusCircle, UploadCloud } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Field, Input, Select } from '@/components/ui/Input';
 import { KpiCard } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
-import { mockTransactions, mockWallet } from '@/lib/mock-data';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatKpoint } from '@/lib/format';
+import { ApiError } from '@/lib/auth-client';
+import { useCurrentUser } from '@/lib/use-current-user';
+import { useWallet } from '@/lib/use-wallet';
+import {
+  VIETQR_BANKS,
+  createWithdrawal,
+  getSepayQr,
+  listTransactions,
+  type SepayQrInfo,
+  type WalletTransaction,
+} from '@/lib/wallet-client';
 
-const STATUS_TONE: Record<string, BadgeTone> = {
-  SUCCESS: 'positive',
-  RESERVED: 'warning',
+const TX_TYPE_LABEL: Record<WalletTransaction['type'], string> = {
+  TOPUP_SEPAY: 'Nạp KPoint qua SePay (VietQR)',
+  WITHDRAWAL_REQUEST: 'Yêu cầu rút tiền về ngân hàng',
+  CAMPAIGN_RESERVE: 'Ký quỹ tạo Campaign',
+};
+
+const TX_TYPE_TONE: Record<WalletTransaction['type'], BadgeTone> = {
+  TOPUP_SEPAY: 'positive',
+  WITHDRAWAL_REQUEST: 'warning',
+  CAMPAIGN_RESERVE: 'warning',
 };
 
 export default function WalletPage() {
+  const { user } = useCurrentUser();
+  const { wallet, loading: walletLoading, refresh: refreshWallet } = useWallet();
+
   const [topupOpen, setTopupOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [gateway, setGateway] = useState<'SEPAY' | 'BMC'>('SEPAY');
-  const available = mockWallet.balanceKpoint - mockWallet.reservedKpoint;
+
+  const [qr, setQr] = useState<SepayQrInfo | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const [transactions, setTransactions] = useState<WalletTransaction[] | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
+
+  const [withdrawForm, setWithdrawForm] = useState({
+    amountKpoint: '',
+    bankId: VIETQR_BANKS[0] as string,
+    bankAccountNumber: '',
+    bankAccountName: '',
+  });
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
+
+  useEffect(() => {
+    listTransactions(user?.activeMode)
+      .then(setTransactions)
+      .catch((err) => {
+        setTxError(err instanceof ApiError ? err.message : 'Không tải được lịch sử giao dịch');
+        setTransactions([]);
+      });
+  }, [user?.activeMode]);
+
+  function openTopup() {
+    setTopupOpen(true);
+    if (!qr) {
+      getSepayQr()
+        .then(setQr)
+        .catch((err) => {
+          setQrError(err instanceof ApiError ? err.message : 'Không tạo được mã QR nạp tiền');
+        });
+    }
+  }
+
+  function copyContent() {
+    if (!qr) return;
+    navigator.clipboard
+      .writeText(qr.content)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {
+        // Một số trình duyệt/context chặn Clipboard API (thiếu permission,
+        // không phải HTTPS...) — bỏ qua, người dùng vẫn đọc/chép tay được nội
+        // dung hiển thị ngay trên nút.
+      });
+  }
+
+  async function handleWithdrawSubmit() {
+    setWithdrawError(null);
+    const amount = Number(withdrawForm.amountKpoint);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      setWithdrawError('Số KPoint rút không hợp lệ');
+      return;
+    }
+    if (!withdrawForm.bankAccountNumber || !withdrawForm.bankAccountName) {
+      setWithdrawError('Vui lòng nhập đầy đủ thông tin tài khoản ngân hàng');
+      return;
+    }
+
+    setWithdrawSubmitting(true);
+    try {
+      await createWithdrawal({
+        amountKpoint: amount,
+        bankId: withdrawForm.bankId,
+        bankAccountNumber: withdrawForm.bankAccountNumber,
+        bankAccountName: withdrawForm.bankAccountName,
+      });
+      setWithdrawOpen(false);
+      setWithdrawForm({
+        amountKpoint: '',
+        bankId: VIETQR_BANKS[0] as string,
+        bankAccountNumber: '',
+        bankAccountName: '',
+      });
+      refreshWallet();
+      listTransactions(user?.activeMode)
+        .then(setTransactions)
+        .catch(() => {});
+    } catch (err) {
+      setWithdrawError(err instanceof ApiError ? err.message : 'Không gửi được lệnh rút tiền');
+    } finally {
+      setWithdrawSubmitting(false);
+    }
+  }
 
   return (
     <AppShell active="/wallet">
@@ -31,11 +141,11 @@ export default function WalletPage() {
           description="Quy chuẩn tài chính: 1 KPoint = 1 VNĐ. Tích hợp cổng VietQR SePay và Buy Me a Coffee quốc tế."
           actions={
             <>
-              <Button variant="gold" onClick={() => setTopupOpen(true)}>
+              <Button variant="gold" onClick={openTopup}>
                 <PlusCircle className="h-4 w-4" />
                 Nạp KPoint
               </Button>
-              <Button variant="dark">
+              <Button variant="dark" onClick={() => setWithdrawOpen(true)}>
                 <ArrowUpRight className="h-4 w-4" />
                 Rút Về Ngân Hàng
               </Button>
@@ -46,21 +156,21 @@ export default function WalletPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <KpiCard
             label="Số Dư Ví Khả Dụng"
-            value={formatKpoint(available)}
+            value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.availableKpoint))}
             valueClassName="text-brand-blue text-3xl"
             hint="Khả dụng cho mọi thanh toán / rút tiền"
           />
           <KpiCard
             label="Ký Quỹ Đang Khóa (Reserved)"
-            value={formatKpoint(mockWallet.reservedKpoint)}
+            value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.reservedKpoint))}
             valueClassName="text-amber-600 text-3xl"
-            hint="Chiến dịch CP-101 & CP-102"
+            hint="Campaign đang chạy + lệnh rút chờ duyệt"
           />
           <KpiCard
-            label="Tổng KPoint Đã Chi / Nhận"
-            value={formatKpoint(mockWallet.lifetimeFlow)}
+            label="Tổng Số Dư (Balance)"
+            value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.balanceKpoint))}
             valueClassName="text-slate-800 text-3xl"
-            hint="Tổng luân chuyển qua tài khoản"
+            hint="Khả dụng + đang khoá"
           />
         </div>
 
@@ -74,37 +184,76 @@ export default function WalletPage() {
             </span>
           </div>
 
-          <Table>
-            <Thead>
-              <Th>Mã giao dịch</Th>
-              <Th>Thời gian</Th>
-              <Th>Loại biến động</Th>
-              <Th>Biến động KPoint</Th>
-              <Th>Số dư sau GD</Th>
-              <Th>Phương thức</Th>
-              <Th>Trạng thái</Th>
-            </Thead>
-            <Tbody>
-              {mockTransactions.map((tx) => (
-                <tr key={tx.id} className="font-mono hover:bg-slate-50">
-                  <Td className="font-bold text-brand-blue">#{tx.id}</Td>
-                  <Td className="text-slate-500">{tx.time}</Td>
-                  <Td className="font-sans font-semibold text-slate-800">{tx.label}</Td>
-                  <Td
-                    className={`font-bold ${tx.amount >= 0 ? 'text-emerald-600' : 'text-amber-600'}`}
-                  >
-                    {tx.amount >= 0 ? '+' : ''}
-                    {formatKpoint(tx.amount)}
-                  </Td>
-                  <Td className="font-bold">{formatKpoint(tx.balanceAfter)}</Td>
-                  <Td className="font-sans">{tx.method}</Td>
-                  <Td>
-                    <Badge tone={STATUS_TONE[tx.status]}>{tx.status}</Badge>
-                  </Td>
-                </tr>
-              ))}
-            </Tbody>
-          </Table>
+          {txError && (
+            <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+              {txError}
+            </p>
+          )}
+
+          {transactions === null ? (
+            <p className="py-6 text-center text-xs text-slate-500">Đang tải...</p>
+          ) : transactions.length === 0 ? (
+            <EmptyState
+              title="Chưa có giao dịch nào"
+              body="Nạp KPoint qua SePay hoặc tạo Campaign để bắt đầu có lịch sử biến động."
+            />
+          ) : (
+            <Table>
+              <Thead>
+                <Th>Mã giao dịch</Th>
+                <Th>Thời gian</Th>
+                <Th>Loại biến động</Th>
+                <Th>Số dư</Th>
+                <Th>Ký quỹ</Th>
+                <Th>Ghi chú</Th>
+              </Thead>
+              <Tbody>
+                {transactions.map((tx) => (
+                  <tr key={tx.id} className="font-mono hover:bg-slate-50">
+                    <Td className="font-bold text-brand-blue">
+                      #{(tx.txnId ?? tx.id).slice(0, 8)}
+                    </Td>
+                    <Td className="text-slate-500">
+                      {new Date(tx.createdAt).toLocaleString('vi-VN')}
+                    </Td>
+                    <Td className="font-sans font-semibold text-slate-800">
+                      <Badge tone={TX_TYPE_TONE[tx.type]}>{TX_TYPE_LABEL[tx.type]}</Badge>
+                    </Td>
+                    <Td
+                      className={
+                        tx.balanceDeltaKpoint === '0'
+                          ? 'text-slate-300'
+                          : Number(tx.balanceDeltaKpoint) >= 0
+                            ? 'font-bold text-emerald-600'
+                            : 'font-bold text-rose-600'
+                      }
+                    >
+                      {tx.balanceDeltaKpoint === '0'
+                        ? '—'
+                        : `${Number(tx.balanceDeltaKpoint) >= 0 ? '+' : ''}${formatKpoint(Number(tx.balanceDeltaKpoint))}`}
+                    </Td>
+                    <Td
+                      className={
+                        tx.reservedDeltaKpoint === '0'
+                          ? 'text-slate-300'
+                          : 'font-bold text-amber-600'
+                      }
+                    >
+                      {tx.reservedDeltaKpoint === '0'
+                        ? '—'
+                        : `${Number(tx.reservedDeltaKpoint) >= 0 ? '+' : ''}${formatKpoint(Number(tx.reservedDeltaKpoint))}`}
+                    </Td>
+                    <Td
+                      className="max-w-[220px] truncate font-sans text-slate-500"
+                      title={tx.note ?? ''}
+                    >
+                      {tx.note ?? '—'}
+                    </Td>
+                  </tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
         </div>
       </div>
 
@@ -127,17 +276,36 @@ export default function WalletPage() {
           </div>
 
           {gateway === 'SEPAY' ? (
-            <div className="space-y-3 text-center">
-              <div className="inline-block rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <QrCode className="mx-auto h-32 w-32 text-slate-800" />
+            qrError ? (
+              <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                {qrError}
+              </p>
+            ) : !qr ? (
+              <p className="py-6 text-center text-xs text-slate-500">Đang tạo mã QR...</p>
+            ) : (
+              <div className="space-y-3 text-center">
+                <div className="inline-block rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- ảnh QR động từ img.vietqr.io, không qua Next/Image optimize */}
+                  <img src={qr.qrImageUrl} alt="Mã QR VietQR nạp KPoint" className="h-48 w-48" />
+                </div>
+                <div className="text-xs">
+                  <span className="block text-slate-500">
+                    Chuyển khoản tới {qr.accountName} — {qr.bankId} — {qr.accountNumber}
+                  </span>
+                  <span className="mt-1 block text-slate-500">Cú pháp chuyển khoản bắt buộc:</span>
+                  <button
+                    onClick={copyContent}
+                    className="mt-1 inline-flex items-center gap-1.5 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-sm font-bold text-brand-blue hover:bg-blue-100"
+                  >
+                    {qr.content}
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                  <p className="mt-2 text-[11px] text-slate-400">
+                    KPoint được cộng tự động trong vài giây sau khi chuyển khoản thành công.
+                  </p>
+                </div>
               </div>
-              <div className="text-xs">
-                <span className="block text-slate-500">Cú pháp chuyển khoản chuẩn:</span>
-                <span className="mt-1 inline-block rounded border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-sm font-bold text-brand-blue">
-                  KPOINT USR8829
-                </span>
-              </div>
-            </div>
+            )
           ) : (
             <div className="space-y-3 text-xs">
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 leading-tight text-amber-900">
@@ -146,14 +314,82 @@ export default function WalletPage() {
               </div>
               <div>
                 <label className="mb-1 block font-bold text-slate-700">Mã Giao Dịch BMC ID *</label>
-                <Input placeholder="#BMC-99120-TX" />
+                <Input placeholder="#BMC-99120-TX" disabled />
               </div>
-              <Button variant="gold" className="w-full" onClick={() => setTopupOpen(false)}>
+              <Button variant="gold" className="w-full" disabled title="Sắp ra mắt — Phase 6">
                 <UploadCloud className="h-4 w-4" />
-                Gửi Biên Lai Duyệt Nạp
+                Gửi Biên Lai Duyệt Nạp (Sắp ra mắt)
               </Button>
             </div>
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={withdrawOpen}
+        onClose={() => setWithdrawOpen(false)}
+        title="Rút KPoint Về Ngân Hàng"
+      >
+        <div className="space-y-3 text-xs">
+          <p className="rounded-xl border border-blue-100 bg-blue-50 p-3 leading-tight text-blue-900">
+            Lệnh rút sẽ khoá ngay số KPoint yêu cầu khỏi số dư khả dụng, trạng thái{' '}
+            <strong>Chờ duyệt (PENDING)</strong>. Admin xử lý chuyển khoản thủ công.
+          </p>
+
+          {withdrawError && (
+            <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700">
+              {withdrawError}
+            </p>
+          )}
+
+          <Field label="Số KPoint muốn rút (tối thiểu 50.000)">
+            <Input
+              type="number"
+              min={50_000}
+              step={1000}
+              value={withdrawForm.amountKpoint}
+              onChange={(e) => setWithdrawForm((f) => ({ ...f, amountKpoint: e.target.value }))}
+              placeholder="100000"
+            />
+          </Field>
+          <Field label="Ngân hàng">
+            <Select
+              value={withdrawForm.bankId}
+              onChange={(e) => setWithdrawForm((f) => ({ ...f, bankId: e.target.value }))}
+            >
+              {VIETQR_BANKS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Số tài khoản">
+            <Input
+              value={withdrawForm.bankAccountNumber}
+              onChange={(e) =>
+                setWithdrawForm((f) => ({ ...f, bankAccountNumber: e.target.value }))
+              }
+              placeholder="0123456789"
+            />
+          </Field>
+          <Field label="Tên chủ tài khoản">
+            <Input
+              value={withdrawForm.bankAccountName}
+              onChange={(e) => setWithdrawForm((f) => ({ ...f, bankAccountName: e.target.value }))}
+              placeholder="NGUYEN VAN A"
+            />
+          </Field>
+
+          <Button
+            variant="dark"
+            className="w-full"
+            onClick={handleWithdrawSubmit}
+            disabled={withdrawSubmitting}
+          >
+            <ArrowUpRight className="h-4 w-4" />
+            {withdrawSubmitting ? 'Đang gửi...' : 'Gửi Lệnh Rút Tiền'}
+          </Button>
         </div>
       </Modal>
     </AppShell>

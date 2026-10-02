@@ -17,55 +17,10 @@ export const PLATFORM_BADGE: Record<PlatformKey, string> = {
   TIKTOK: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
-export const mockWallet = {
-  balanceKpoint: 1_250_000,
-  reservedKpoint: 550_000,
-  lifetimeFlow: 4_120_000,
-};
-
-export const mockTransactions = [
-  {
-    id: 'TX-9901',
-    time: '2026-10-02 16:30',
-    label: 'Nạp tiền qua VietQR',
-    amount: 500_000,
-    balanceAfter: 1_250_000,
-    method: 'SePay (MB Bank)',
-    status: 'SUCCESS' as const,
-  },
-  {
-    id: 'TX-9844',
-    time: '2026-10-01 11:20',
-    label: 'Khóa quỹ Campaign CP-101',
-    amount: -550_000,
-    balanceAfter: 750_000,
-    method: 'Ví nội bộ',
-    status: 'RESERVED' as const,
-  },
-  {
-    id: 'TX-9802',
-    time: '2026-09-30 09:15',
-    label: 'Thưởng Review CP-98',
-    amount: 60_000,
-    balanceAfter: 1_300_000,
-    method: 'Auto-Approve 48h',
-    status: 'SUCCESS' as const,
-  },
-  {
-    id: 'TX-9780',
-    time: '2026-09-28 14:02',
-    label: 'Nạp Buy Me a Coffee — đã duyệt',
-    amount: 1_200_000,
-    balanceAfter: 1_240_000,
-    method: 'Buy Me a Coffee (USD)',
-    status: 'SUCCESS' as const,
-  },
-];
-
-// Campaign/Applicant/Submission ở giai đoạn apply (Phase 3) đã nối API thật
-// — xem src/lib/campaigns-client.ts. Mock bên dưới chỉ còn phục vụ các màn
-// hình thuộc Phase 2/4/5/6/7 (Wallet, Proof, Dispute, Payments, Audit, RBAC)
-// chưa có API thật.
+// Campaign/Applicant/Submission (Phase 3) và Wallet/SePay (Phase 2) đã nối
+// API thật — xem src/lib/campaigns-client.ts / src/lib/wallet-client.ts. Mock
+// bên dưới chỉ còn phục vụ các màn hình thuộc Phase 4/5/6/7 (Proof, Dispute,
+// BMC, Audit, RBAC) chưa có API thật.
 
 export const mockMyTasks = [
   {
