@@ -61,7 +61,7 @@ function ResetPasswordForm() {
               <input
                 type="password"
                 required
-                minLength={8}
+                minLength={6}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••"
