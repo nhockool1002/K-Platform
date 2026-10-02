@@ -41,6 +41,28 @@ enum BmcTopupStatus {
   REJECTED
 }
 
+// Loại biến động trong sổ cái ví (P2-09). Mở rộng ở phase sau: TOPUP_BMC (P6),
+// TASK_REWARD/CAMPAIGN_REFUND (P4/P5).
+enum WalletTxType {
+  TOPUP_SEPAY
+  WITHDRAWAL_REQUEST
+  CAMPAIGN_RESERVE
+}
+
+// Bên nào trong SRS Section II mà giao dịch này thuộc về — dùng để lọc Lịch
+// sử giao dịch theo Switch Mode (P2-09). SHARED = hiện ở cả 2 bên (nạp/rút).
+enum WalletTxSide {
+  A
+  B
+  SHARED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum CampaignStatus {
   ACTIVE
   ARCHIVED
@@ -101,10 +123,16 @@ model User {
   role            UserRole   @default(USER)
   trustScore      Int        @default(100) @map("trust_score")
   fingerprintHash String?    @map("fingerprint_hash")
+  // Mã ngắn duy nhất dùng làm nội dung chuyển khoản SePay (`KLP_<topupCode>`,
+  // P2-04) — sinh lười lúc user xin QR lần đầu, không phải lúc đăng ký, nên
+  // user cũ (trước migration này) vẫn luôn null cho tới khi họ vào ví.
+  topupCode       String?    @unique @map("topup_code")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
   wallet                 Wallet?
+  walletTransactions     WalletTransaction[]
+  withdrawals            Withdrawal[]
   bmcTopups              BmcTopup[]           @relation("BmcTopupRequester")
   bmcTopupsVerified      BmcTopup[]           @relation("BmcTopupVerifier")
   campaignsOwned         Campaign[]           @relation("CampaignOwner")
@@ -150,6 +178,48 @@ model Wallet {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("wallets")
+}
+
+// Sổ cái ví (P2-09) — mọi thao tác cộng/trừ `balance_kpoint`/`reserved_kpoint`
+// đều phải ghi 1 dòng ở đây trong cùng transaction ACID với lần update Wallet
+// tương ứng, để có lịch sử tra cứu được (khác với Wallet chỉ giữ số dư hiện tại).
+model WalletTransaction {
+  id                  String       @id @default(uuid())
+  userId              String       @map("user_id")
+  type                WalletTxType
+  side                WalletTxSide @default(SHARED)
+  balanceDeltaKpoint  BigInt       @default(0) @map("balance_delta_kpoint")
+  reservedDeltaKpoint BigInt       @default(0) @map("reserved_delta_kpoint")
+  // Mã giao dịch SePay (field `id`) — @unique là chốt chặn idempotency (P2-06):
+  // webhook gọi lại cùng txnId sẽ bị chặn bởi constraint này, không cộng 2 lần.
+  txnId               String?      @unique @map("txn_id")
+  relatedCampaignId   String?      @map("related_campaign_id")
+  note                String?
+  createdAt           DateTime     @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("wallet_transactions")
+}
+
+// P2-08 — lệnh rút tiền về ngân hàng, trạng thái PENDING khi tạo. Duyệt/từ
+// chối (Admin) là P7-09, ngoài phạm vi Phase 2.
+model Withdrawal {
+  id                String           @id @default(uuid())
+  userId            String           @map("user_id")
+  amountKpoint      BigInt           @map("amount_kpoint")
+  bankId            String           @map("bank_id")
+  bankAccountNumber String           @map("bank_account_number")
+  bankAccountName   String           @map("bank_account_name")
+  status            WithdrawalStatus @default(PENDING)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("withdrawals")
 }
 
 model BmcTopup {

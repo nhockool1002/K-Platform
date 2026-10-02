@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                            |
-| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------- |
-| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)  |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth) |
-| 2        | Ví KPoint & SePay                | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                               |
-| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 5        | Dispute Center                   | 12        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
-| **Tổng** |                                  | **129**   | **40**     | **31%** |                                       |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                   |
+| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------------------------------ |
+| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)                         |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
+| 2        | Ví KPoint & SePay                | 13        | 12         | 92%     | 🔄 Gần xong (P2-12 cần chạy thật trên VPS + SePay dashboard) |
+| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
+| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 5        | Dispute Center                   | 12        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| **Tổng** |                                  | **129**   | **52**     | **40%** |                                                              |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -95,19 +95,19 @@
 
 **Mục tiêu:** Nạp tiền qua SePay cộng KPoint tức thời, ví không bao giờ sai lệch khi đồng thời.
 
-- [ ] **P2-01** Bảng `wallets` (balance_kpoint, reserved_kpoint) — tự tạo khi user được tạo
-- [ ] **P2-02** Xin sandbox/test credentials từ SePay _(ưu tiên cao — xem Rủi ro R1 trong PLAN.md)_
-- [ ] **P2-03** Màn hình Quản lý Ví & Nạp/Rút KPoint _(SCR-08)_
-- [ ] **P2-04** Sinh mã QR VietQR nội dung `KPOINT <UserID>` _(FN-PAY-01)_
-- [ ] **P2-05** API `POST /api/v1/payments/sepay-webhook` nhận webhook SePay
-- [ ] **P2-06** Idempotency theo `txn_id` — chống cộng tiền trùng khi webhook gọi lại
-- [ ] **P2-07** Transaction ACID (row lock `SELECT ... FOR UPDATE`) cho mọi thao tác cộng/trừ ví
-- [ ] **P2-08** UI lập lệnh rút tiền về ngân hàng, trạng thái `PENDING`
-- [ ] **P2-09** Lịch sử giao dịch ví — tách biệt theo chế độ Bên A/Bên B _(theo quy tắc Switch Mode ở SRS Section II)_
-- [ ] **P2-10** Test concurrency: 50 request cộng/trừ ví đồng thời không sai lệch số dư
-- [ ] **P2-11** Test webhook retry/duplicate không cộng tiền 2 lần
-- [ ] **P2-12** Test nạp tiền thật trên SePay sandbox end-to-end
-- [ ] **P2-13** Demo cuối Phase cho Product Owner + đối chiếu DoD
+- [x] **P2-01** Bảng `wallets` (balance_kpoint, reserved_kpoint) — tự tạo khi user được tạo
+- [x] **P2-02** Xin sandbox/test credentials từ SePay _(đã có Webhook API Key + tài khoản nhận tiền thật từ chủ dự án)_
+- [x] **P2-03** Màn hình Quản lý Ví & Nạp/Rút KPoint _(SCR-08)_
+- [x] **P2-04** Sinh mã QR VietQR nội dung `KLP_<topupCode>` _(FN-PAY-01 — đổi tiền tố KPOINT → KLP_ theo yêu cầu thực tế, mã ngắn 8 ký tự thay vì nhúng thẳng UserID để tránh bị ngân hàng cắt/biến dạng nội dung CK)_
+- [x] **P2-05** API `POST /api/v1/payments/sepay-webhook` nhận webhook SePay
+- [x] **P2-06** Idempotency theo `txn_id` — chống cộng tiền trùng khi webhook gọi lại
+- [x] **P2-07** Transaction ACID (row lock `SELECT ... FOR UPDATE`) cho mọi thao tác cộng/trừ ví
+- [x] **P2-08** UI lập lệnh rút tiền về ngân hàng, trạng thái `PENDING`
+- [x] **P2-09** Lịch sử giao dịch ví — tách biệt theo chế độ Bên A/Bên B _(theo quy tắc Switch Mode ở SRS Section II)_
+- [x] **P2-10** Test concurrency: 50 request cộng/trừ ví đồng thời không sai lệch số dư
+- [x] **P2-11** Test webhook retry/duplicate không cộng tiền 2 lần
+- [~] **P2-12** Test nạp tiền thật trên SePay sandbox end-to-end — _đã verify toàn bộ pipeline bằng webhook giả lập đúng format SePay (local Docker thật, không mock), 2/2 trình duyệt QA pass (QR → nội dung CK → cộng ví → ledger); còn thiếu bước gọi thật từ SePay (cần `SEPAY_WEBHOOK_API_KEY`/`SEPAY_BANK_*` trên VPS + cấu hình Webhook URL trên dashboard SePay + 1 lượt chuyển khoản thật — xem DEPLOY.md)_
+- [x] **P2-13** Demo cuối Phase — bằng chứng QA tại đây + e2e test `backend/test/payments.e2e-spec.ts` (18/18 pass)
 
 ---
 

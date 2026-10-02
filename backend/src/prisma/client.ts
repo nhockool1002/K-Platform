@@ -12,6 +12,9 @@ import type {
   PrismaClient as PrismaClientClass,
   SubmissionStatus as SubmissionStatusEnum,
   UserRole as UserRoleEnum,
+  WalletTxSide as WalletTxSideEnum,
+  WalletTxType as WalletTxTypeEnum,
+  WithdrawalStatus as WithdrawalStatusEnum,
 } from '../../generated/prisma/index.js';
 import pkg from '../../generated/prisma/index.js';
 
@@ -22,9 +25,15 @@ export const UserRole = pkg.UserRole;
 export const ActiveMode = pkg.ActiveMode;
 export const CampaignStatus = pkg.CampaignStatus;
 export const SubmissionStatus = pkg.SubmissionStatus;
+export const WalletTxType = pkg.WalletTxType;
+export const WalletTxSide = pkg.WalletTxSide;
+export const WithdrawalStatus = pkg.WithdrawalStatus;
 
 export type PrismaClient = PrismaClientClass;
 export type UserRole = UserRoleEnum;
 export type ActiveMode = ActiveModeEnum;
 export type CampaignStatus = CampaignStatusEnum;
 export type SubmissionStatus = SubmissionStatusEnum;
+export type WalletTxType = WalletTxTypeEnum;
+export type WalletTxSide = WalletTxSideEnum;
+export type WithdrawalStatus = WithdrawalStatusEnum;
