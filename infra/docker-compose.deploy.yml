@@ -1,0 +1,78 @@
+# K-Platform — backend deploy stack cho VPS dùng chung (aaPanel + các site khác).
+# KHÔNG chạy frontend ở đây — frontend deploy qua Vercel (xem DEPLOY.md).
+#
+# Dùng chung 1 file này cho cả staging và production: mỗi môi trường có một
+# thư mục checkout riêng (vd. /www/wwwroot/kplatform-staging và
+# /www/wwwroot/kplatform-production), mỗi thư mục có `.env` riêng — Docker
+# Compose tự đặt tên project theo tên thư mục nên container/network/volume
+# của 2 môi trường không bao giờ đụng nhau.
+#
+# An toàn cho VPS dùng chung:
+#   - postgres/redis KHÔNG publish port ra host — chỉ backend gọi được qua
+#     network nội bộ `internal`.
+#   - backend chỉ bind vào 127.0.0.1:${BACKEND_PORT} (loopback) — không lộ ra
+#     internet. aaPanel's Nginx (chạy ngoài Docker) reverse-proxy từ
+#     domain công khai (HTTPS) vào 127.0.0.1:${BACKEND_PORT}.
+#
+# Chạy: docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build
+name: ${COMPOSE_PROJECT_NAME:-kplatform-deploy}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [internal]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      REDIS_URL: redis://redis:6379
+      PORT: 4000
+      FRONTEND_URL: ${FRONTEND_URL}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    ports:
+      - '127.0.0.1:${BACKEND_PORT}:4000'
+    networks: [internal]
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4000/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  internal:
+
+volumes:
+  postgres_data:

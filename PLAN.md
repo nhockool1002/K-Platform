@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/kplatform-logo.png" alt="K-Point Platform Logo" width="110"/>
+<img src="docs/assets/kplatform-logo.png" alt="K-Platform Logo" width="110"/>
 
-# K-POINT PLATFORM — KẾ HOẠCH TRIỂN KHAI DỰ ÁN
+# K-PLATFORM — KẾ HOẠCH TRIỂN KHAI DỰ ÁN
 
 ![Status](https://img.shields.io/badge/Status-Draft%20%E2%80%94%20chờ%20phê%20duyệt-e8a93a?style=flat-square)
 ![Based on](https://img.shields.io/badge/Dựa%20trên-SRS%20Document%20Edition%20v1.0-1d4e89?style=flat-square)
@@ -42,7 +42,7 @@
 
 ## 1. Mục tiêu & Phạm vi
 
-**Mục tiêu:** Xây dựng K-Point Platform — nền tảng kết nối Doanh nghiệp (Bên A) cần feedback/review thực tế với Người tiêu dùng (Bên B), vận hành bằng đơn vị tiền tệ nội bộ **KPoint**, có hệ thống phân quyền RBAC + Switch Mode, thanh toán nội địa tự động (SePay) và quốc tế bán tự động (Buy Me a Coffee), cùng CMS quản trị đầy đủ (Dispute, Audit Log, RBAC).
+**Mục tiêu:** Xây dựng K-Platform — nền tảng kết nối Doanh nghiệp (Bên A) cần feedback/review thực tế với Người tiêu dùng (Bên B), vận hành bằng đơn vị tiền tệ nội bộ **KPoint**, có hệ thống phân quyền RBAC + Switch Mode, thanh toán nội địa tự động (SePay) và quốc tế bán tự động (Buy Me a Coffee), cùng CMS quản trị đầy đủ (Dispute, Audit Log, RBAC).
 
 **Phạm vi Giai đoạn 1 (bản kế hoạch này):** 100% Web Responsive — toàn bộ 13 màn hình (SCR-01 → SCR-13), 13 chức năng (FN-*) và 11 API endpoint liệt kê trong SRS.
 
@@ -54,31 +54,31 @@
 
 SRS hiện là đặc tả nghiệp vụ (business/functional spec), chưa chốt công nghệ triển khai cụ thể. Kế hoạch này đưa ra **đề xuất** tech stack ở mục 3 dựa trên các ràng buộc đã nêu trong SRS (ACID transaction cho ví, webhook SePay, cronjob auto-approve, JWT, watermark ảnh/video, JSON diff cho audit log). Các giả định cần Product Owner xác nhận trước khi vào Phase 0:
 
-| # | Giả định | Ảnh hưởng nếu sai |
-|---|---|---|
-| A1 | Dùng kiến trúc monolith modular (1 backend service) thay vì microservices ngay từ đầu, để tối ưu tốc độ ra MVP | Nếu cần tách service sớm (vd. do scale), cần refactor giữa Phase 6–7 |
-| A2 | PostgreSQL là CSDL chính (phù hợp ACID transaction cho ví KPoint + quan hệ dữ liệu phức tạp ở ERD) | Đổi DB ảnh hưởng toàn bộ Phase 1–7 |
-| A3 | Lưu trữ file (ảnh/video proof, receipt) dùng object storage (S3-compatible) chứ không lưu local disk | Ảnh hưởng FN-TASK-01, FN-PAY-02, hạ tầng triển khai |
-| A4 | Webhook SePay & tích hợp Buy Me a Coffee dùng được ở môi trường sandbox/test trước go-live | Có thể trễ Phase 2 & Phase 6 nếu nhà cung cấp chưa cấp sandbox |
-| A5 | Watermark ảnh/video (FN-TASK-01) xử lý server-side bất đồng bộ qua queue, không chặn request | Nếu xử lý đồng bộ, ảnh hưởng UX & cần resize timeout |
+| #   | Giả định                                                                                                       | Ảnh hưởng nếu sai                                                    |
+| --- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| A1  | Dùng kiến trúc monolith modular (1 backend service) thay vì microservices ngay từ đầu, để tối ưu tốc độ ra MVP | Nếu cần tách service sớm (vd. do scale), cần refactor giữa Phase 6–7 |
+| A2  | PostgreSQL là CSDL chính (phù hợp ACID transaction cho ví KPoint + quan hệ dữ liệu phức tạp ở ERD)             | Đổi DB ảnh hưởng toàn bộ Phase 1–7                                   |
+| A3  | Lưu trữ file (ảnh/video proof, receipt) dùng object storage (S3-compatible) chứ không lưu local disk           | Ảnh hưởng FN-TASK-01, FN-PAY-02, hạ tầng triển khai                  |
+| A4  | Webhook SePay & tích hợp Buy Me a Coffee dùng được ở môi trường sandbox/test trước go-live                     | Có thể trễ Phase 2 & Phase 6 nếu nhà cung cấp chưa cấp sandbox       |
+| A5  | Watermark ảnh/video (FN-TASK-01) xử lý server-side bất đồng bộ qua queue, không chặn request                   | Nếu xử lý đồng bộ, ảnh hưởng UX & cần resize timeout                 |
 
 ---
 
 ## 3. Tech Stack đề xuất
 
-| Layer | Đề xuất | Lý do |
-|---|---|---|
-| Frontend Web | **Next.js (React) + TypeScript** + TailwindCSS | SSR cho SEO trang Public Campaign (SCR-01), Responsive nhanh, hệ sinh thái lớn |
-| Backend API | **NestJS (Node.js/TypeScript)** | Kiến trúc module hóa rõ ràng (khớp theo FN-*), hỗ trợ tốt Guard/RBAC, Interceptor (khớp FN-LOG-01 Audit Log), Queue, Cron (FN-TASK-02) |
-| Database | **PostgreSQL 15+** | ACID Transaction bắt buộc cho ví KPoint (FN-PAY-03, FN-DISP-03), quan hệ FK phức tạp đúng như ERD |
-| Cache / Queue | **Redis** + BullMQ | Session/rate-limit, hàng đợi xử lý watermark, cronjob auto-approve 48h |
-| Object Storage | **S3-compatible (AWS S3 / MinIO / Cloudflare R2)** | Lưu ảnh/video proof, receipt BMC, ảnh watermark |
-| Auth | **JWT (access + refresh)**, OAuth2 Google/Facebook qua Passport.js | Đúng SCR-02, FN-AUTH-01 (switch mode không đổi JWT) |
-| Thanh toán nội địa | **SePay API + Webhook** | Theo đặc tả FN-PAY-01 |
-| Thanh toán quốc tế | **Buy Me a Coffee (thủ công, có màn hình đối soát CMS)** | Theo đặc tả FN-PAY-02/03 |
-| Audit & Logging | **Interceptor NestJS ghi vào bảng `audit_logs`** + (tùy chọn) ELK/Prometheus-Grafana cho vận hành | Theo FN-LOG-01 |
-| CI/CD | **GitHub Actions** → Docker image → Deploy (VPS/K8s tùy ngân sách) | Phù hợp repo đang host trên GitHub |
-| Mobile (Phase 2) | **React Native (Expo)** | Theo đúng định hướng "mở rộng ứng dụng di động" nêu trong SRS mục I |
+| Layer              | Đề xuất                                                                                           | Lý do                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend Web       | **Next.js (React) + TypeScript** + TailwindCSS                                                    | SSR cho SEO trang Public Campaign (SCR-01), Responsive nhanh, hệ sinh thái lớn                                                         |
+| Backend API        | **NestJS (Node.js/TypeScript)**                                                                   | Kiến trúc module hóa rõ ràng (khớp theo FN-*), hỗ trợ tốt Guard/RBAC, Interceptor (khớp FN-LOG-01 Audit Log), Queue, Cron (FN-TASK-02) |
+| Database           | **PostgreSQL 15+**                                                                                | ACID Transaction bắt buộc cho ví KPoint (FN-PAY-03, FN-DISP-03), quan hệ FK phức tạp đúng như ERD                                      |
+| Cache / Queue      | **Redis** + BullMQ                                                                                | Session/rate-limit, hàng đợi xử lý watermark, cronjob auto-approve 48h                                                                 |
+| Object Storage     | **S3-compatible (AWS S3 / MinIO / Cloudflare R2)**                                                | Lưu ảnh/video proof, receipt BMC, ảnh watermark                                                                                        |
+| Auth               | **JWT (access + refresh)**, OAuth2 Google/Facebook qua Passport.js                                | Đúng SCR-02, FN-AUTH-01 (switch mode không đổi JWT)                                                                                    |
+| Thanh toán nội địa | **SePay API + Webhook**                                                                           | Theo đặc tả FN-PAY-01                                                                                                                  |
+| Thanh toán quốc tế | **Buy Me a Coffee (thủ công, có màn hình đối soát CMS)**                                          | Theo đặc tả FN-PAY-02/03                                                                                                               |
+| Audit & Logging    | **Interceptor NestJS ghi vào bảng `audit_logs`** + (tùy chọn) ELK/Prometheus-Grafana cho vận hành | Theo FN-LOG-01                                                                                                                         |
+| CI/CD              | **GitHub Actions** → Docker image → Deploy (VPS/K8s tùy ngân sách)                                | Phù hợp repo đang host trên GitHub                                                                                                     |
+| Mobile (Phase 2)   | **React Native (Expo)**                                                                           | Theo đúng định hướng "mở rộng ứng dụng di động" nêu trong SRS mục I                                                                    |
 
 > Đây là đề xuất khởi điểm — có thể điều chỉnh theo năng lực đội ngũ hiện có. Điểm bắt buộc giữ nguyên: **CSDL hỗ trợ ACID transaction thật sự** (không dùng NoSQL thuần cho module Ví/Campaign/Dispute).
 
@@ -88,7 +88,7 @@ SRS hiện là đặc tả nghiệp vụ (business/functional spec), chưa chố
 
 ```mermaid
 gantt
-    title K-Point Platform — Lộ trình triển khai (Giai đoạn 1: Web)
+    title K-Platform — Lộ trình triển khai (Giai đoạn 1: Web)
     dateFormat  YYYY-MM-DD
     axisFormat  %d/%m
     section Nền tảng
@@ -118,7 +118,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 0 — Khởi tạo nền tảng (1 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P0-01` `P0-02` `P0-03` Khởi tạo repo monorepo (frontend/, backend/, infra/), cấu hình TypeScript, ESLint/Prettier, Husky pre-commit
 - [ ] `P0-04` `P0-05` `P0-06` Dựng CSDL PostgreSQL theo đúng ERD trong SRS Section VII (migration tool: Prisma/TypeORM) + seed data mẫu
 - [ ] `P0-07` `P0-08` `P0-10` Thiết lập môi trường Dev/Staging (Docker Compose), biến môi trường (.env mẫu)
@@ -134,7 +135,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 1 — Auth, RBAC & Switch Mode (1.5 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P1-01` Thiết lập bảng `users`, `roles_permissions`
 - [ ] `P1-02` `P1-03` SCR-02: Đăng ký/Đăng nhập Email+Password, quên mật khẩu
 - [ ] `P1-04` `P1-05` SCR-02: OAuth2 Google/Facebook
@@ -153,9 +155,10 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 2 — Ví KPoint & Thanh toán nội địa (SePay) (1.5 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P2-01` Bảng `wallets` (balance_kpoint, reserved_kpoint) — tạo tự động khi user được tạo
-- [ ] `P2-02` Xin sandbox/test credentials từ SePay *(ưu tiên cao — Rủi ro R1)*
+- [ ] `P2-02` Xin sandbox/test credentials từ SePay _(ưu tiên cao — Rủi ro R1)_
 - [ ] `P2-03` SCR-08: Màn hình Quản lý Ví & Nạp/Rút KPoint
 - [ ] `P2-04` `P2-05` `P2-06` FN-PAY-01: Tạo QR VietQR nội dung `KPOINT <UserID>`, tích hợp Webhook `POST /api/v1/payments/sepay-webhook`, idempotency theo `txn_id`
 - [ ] `P2-07` Transaction ACID cho mọi thao tác cộng/trừ KPoint (dùng DB transaction + row lock, tuyệt đối không race-condition khi 2 request cùng lúc)
@@ -171,7 +174,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 3 — Campaign & Survey (2 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P3-01` Bảng `campaigns` (migration + model)
 - [ ] `P3-02` `P3-03` `P3-04` SCR-04/FN-CAMP-01: Tạo Campaign & Survey Filter, tính `Tổng KPoint = Phí tạo + (Slots × Price)`, khóa `reserved_kpoint`
 - [ ] `P3-05` `P3-06` SCR-01: Trang chủ & Public Campaigns (danh sách, tìm kiếm, lọc theo nền tảng Google Maps/Facebook)
@@ -189,7 +193,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 4 — Submission, Proof & Auto-Approve (2 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P4-01` Bảng `submissions` (migration + model, có `auto_approve_at`)
 - [ ] `P4-02` `P4-03` SCR-07: Làm Survey & Submit Proof (upload ảnh/video)
 - [ ] `P4-04` `P4-05` `P4-06` `P4-07` FN-TASK-01: Nộp Proof & Watermark — xử lý bất đồng bộ (queue), chèn UserID + CampaignID lên ảnh/video, UI trạng thái đang xử lý
@@ -207,7 +212,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 5 — Dispute Center (1.5 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P5-01` Bảng `disputes` (migration + model)
 - [ ] `P5-02` `P5-03` FN-DISP-01: Tạo Dispute khi Bên A từ chối Proof — phong tỏa KPoint slot liên quan
 - [ ] `P5-04` SCR-11: CMS Tranh chấp (Dispute Center) — Moderator xem bằng chứng 2 bên
@@ -224,7 +230,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 6 — Thanh toán Quốc tế (BMC) & Audit Logs (2 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P6-01` `P6-02` `P6-03` FN-PAY-02: Bảng `bmc_topups` + Form nạp Buy Me a Coffee — nhập Transaction ID + upload Receipt, trạng thái `PENDING_MANUAL_VERIFICATION`
 - [ ] `P6-04` SCR-10: CMS Duyệt Nạp Tiền Quốc Tế — Admin đối soát, Approve/Reject
 - [ ] `P6-05` `P6-06` FN-PAY-03: Approve → ACID Transaction cộng KPoint + email + Audit Log; Reject → thông báo hủy
@@ -240,7 +247,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 7 — CMS Admin & RBAC nâng cao (1.5 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P7-01` `P7-02` `P7-03` `P7-04` SCR-09: CMS Overview & Thống kê (KPoint lưu thông, lượt review/ngày, doanh thu phí khởi tạo)
 - [ ] `P7-05` `P7-06` `P7-07` `P7-08` SCR-12: CMS Quản lý RBAC & Root Admin — tạo role, gán permission, gán Admin/Mod, phân công Campaign cho Mod
 - [ ] `P7-09` Xử lý lệnh rút tiền về ngân hàng (hoàn thiện nốt phần Admin duyệt từ Phase 2)
@@ -255,7 +263,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ### Phase 8 — Hardening, QA & Go-live (2 tuần)
 
-**Đầu việc** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P8-01` `P8-02` Kiểm thử bảo mật cơ bản: OWASP Top 10 (injection, IDOR giữa các role, rate-limit auth)
 - [ ] `P8-03` `P8-04` `P8-05` Kiểm thử tải cho các luồng tài chính (nạp/rút/dispute) — mục tiêu p95 < 500ms ở tải dự kiến
 - [ ] `P8-06` `P8-07` `P8-08` Viết tài liệu vận hành (runbook): xử lý webhook lỗi, cronjob fail, rollback migration
@@ -274,7 +283,8 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 > Theo đúng định hướng "mở rộng ứng dụng di động (React Native) trong giai đoạn tiếp theo" nêu tại SRS Section I. Lên kế hoạch chi tiết (sprint-by-sprint) sau khi Web Phase 1 ổn định ≥ 4 tuần.
 
-**Đầu việc (sơ bộ)** *(mã task chi tiết — xem [TASK.md](TASK.md))*
+**Đầu việc (sơ bộ)** _(mã task chi tiết — xem [TASK.md](TASK.md))_
+
 - [ ] `P9-01` Setup project React Native (Expo)
 - [ ] `P9-02` `P9-03` Thiết kế lại UI/UX cho mobile + màn hình Đăng nhập/Đăng ký (tái sử dụng API backend hiện có)
 - [ ] `P9-04` `P9-05` `P9-06` `P9-07` Đăng nhập sinh trắc học / push notification cho Invite, Duyệt Proof, Kết quả Dispute
@@ -285,61 +295,61 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ## 6. Ma trận FN/SCR → Module → Phase
 
-| Mã | Tên | Module | Phase |
-|---|---|---|---|
-| FN-AUTH-01 | Switch Role Mode | Auth | 1 |
-| FN-PAY-01 | Nạp SePay Tự động | Wallet | 2 |
-| FN-PAY-02 | Nạp BuyMeACoffee | Wallet | 6 |
-| FN-PAY-03 | Duyệt Nạp Quốc tế | Wallet/CMS | 6 |
-| FN-CAMP-01 | Khởi tạo Campaign | Campaign | 3 |
-| FN-CAMP-02 | Ứng tuyển Survey | Campaign | 3 |
-| FN-TASK-01 | Nộp Proof & Watermark | Submission | 4 |
-| FN-TASK-02 | Auto-Approve 48h | Submission | 4 |
-| FN-DISP-01 | Tạo Khiếu nại | Dispute | 5 |
-| FN-DISP-02 | Thẩm định Tranh chấp | Dispute | 5 |
-| FN-DISP-03 | Phán quyết Tranh chấp | Dispute | 5 |
-| FN-LOG-01 | Ghi Audit Logs | Audit | 6 |
-| SCR-01 | Trang chủ & Public Campaigns | Public | 3 |
-| SCR-02 | Đăng ký/Đăng nhập/OAuth | Auth | 1 |
-| SCR-03 | Dashboard Bên A | Campaign | 1 (khung) / 3 (dữ liệu) |
-| SCR-04 | Tạo Campaign & Survey Filter | Campaign | 3 |
-| SCR-05 | Quản lý Campaign & Appliers | Campaign | 3 / 4 |
-| SCR-06 | Dashboard Bên B | Submission | 1 (khung) / 4 (dữ liệu) |
-| SCR-07 | Làm Survey & Submit Proof | Submission | 4 |
-| SCR-08 | Quản lý Ví & Nạp/Rút | Wallet | 2 |
-| SCR-09 | CMS Overview & Thống kê | CMS | 7 |
-| SCR-10 | CMS Duyệt Nạp Tiền Quốc Tế | CMS | 6 |
-| SCR-11 | CMS Tranh chấp | CMS | 5 |
-| SCR-12 | CMS Quản lý RBAC & Root Admin | CMS | 7 |
-| SCR-13 | CMS Quản lý Audit Logs | CMS | 6 |
+| Mã         | Tên                           | Module     | Phase                   |
+| ---------- | ----------------------------- | ---------- | ----------------------- |
+| FN-AUTH-01 | Switch Role Mode              | Auth       | 1                       |
+| FN-PAY-01  | Nạp SePay Tự động             | Wallet     | 2                       |
+| FN-PAY-02  | Nạp BuyMeACoffee              | Wallet     | 6                       |
+| FN-PAY-03  | Duyệt Nạp Quốc tế             | Wallet/CMS | 6                       |
+| FN-CAMP-01 | Khởi tạo Campaign             | Campaign   | 3                       |
+| FN-CAMP-02 | Ứng tuyển Survey              | Campaign   | 3                       |
+| FN-TASK-01 | Nộp Proof & Watermark         | Submission | 4                       |
+| FN-TASK-02 | Auto-Approve 48h              | Submission | 4                       |
+| FN-DISP-01 | Tạo Khiếu nại                 | Dispute    | 5                       |
+| FN-DISP-02 | Thẩm định Tranh chấp          | Dispute    | 5                       |
+| FN-DISP-03 | Phán quyết Tranh chấp         | Dispute    | 5                       |
+| FN-LOG-01  | Ghi Audit Logs                | Audit      | 6                       |
+| SCR-01     | Trang chủ & Public Campaigns  | Public     | 3                       |
+| SCR-02     | Đăng ký/Đăng nhập/OAuth       | Auth       | 1                       |
+| SCR-03     | Dashboard Bên A               | Campaign   | 1 (khung) / 3 (dữ liệu) |
+| SCR-04     | Tạo Campaign & Survey Filter  | Campaign   | 3                       |
+| SCR-05     | Quản lý Campaign & Appliers   | Campaign   | 3 / 4                   |
+| SCR-06     | Dashboard Bên B               | Submission | 1 (khung) / 4 (dữ liệu) |
+| SCR-07     | Làm Survey & Submit Proof     | Submission | 4                       |
+| SCR-08     | Quản lý Ví & Nạp/Rút          | Wallet     | 2                       |
+| SCR-09     | CMS Overview & Thống kê       | CMS        | 7                       |
+| SCR-10     | CMS Duyệt Nạp Tiền Quốc Tế    | CMS        | 6                       |
+| SCR-11     | CMS Tranh chấp                | CMS        | 5                       |
+| SCR-12     | CMS Quản lý RBAC & Root Admin | CMS        | 7                       |
+| SCR-13     | CMS Quản lý Audit Logs        | CMS        | 6                       |
 
 ---
 
 ## 7. Rủi ro & Giảm thiểu
 
-| # | Rủi ro | Mức độ | Giảm thiểu |
-|---|---|---|---|
-| R1 | Webhook SePay không có sandbox sớm → chặn Phase 2 | Cao | Làm việc với SePay ngay từ Phase 0 để xin sandbox; song song mock webhook nội bộ để không block dev |
-| R2 | Race-condition trên Ví KPoint khi nhiều giao dịch đồng thời | Cao | Bắt buộc DB transaction + row-level lock (`SELECT ... FOR UPDATE`) cho mọi thao tác ví, viết test concurrency từ Phase 2 |
-| R3 | Buy Me a Coffee không có API đối soát tự động → Admin đối soát thủ công có thể sai sót | Trung bình | Thiết kế SCR-10 hiển thị rõ ràng Transaction ID + Receipt side-by-side, log lại người duyệt (`verified_by`) để truy vết |
-| R4 | Watermark xử lý chậm ảnh hưởng UX khi upload video lớn | Trung bình | Xử lý bất đồng bộ qua queue (Phase 4), hiển thị trạng thái "đang xử lý" trên UI |
-| R5 | Lạm dụng multi-account để nhận nhiều slot Campaign | Trung bình | FN-CAMP-02 kiểm tra Fingerprint/IP/Trust Score — cần đầu tư kỹ ngay từ Phase 3, không để tới cuối dự án |
-| R6 | Phạm vi Audit Log quá rộng gây quá tải DB | Thấp | Đánh index đúng (actor_id, action_type, created_at), cân nhắc archive log cũ sang cold storage sau 6–12 tháng |
-| R7 | SRS còn thiếu chi tiết UI/UX, wireframe | Trung bình | Cần thiết kế UI/UX song song Phase 0–1 (không nằm trong phạm vi SRS hiện tại) — xem mục 11 |
+| #   | Rủi ro                                                                                 | Mức độ     | Giảm thiểu                                                                                                               |
+| --- | -------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| R1  | Webhook SePay không có sandbox sớm → chặn Phase 2                                      | Cao        | Làm việc với SePay ngay từ Phase 0 để xin sandbox; song song mock webhook nội bộ để không block dev                      |
+| R2  | Race-condition trên Ví KPoint khi nhiều giao dịch đồng thời                            | Cao        | Bắt buộc DB transaction + row-level lock (`SELECT ... FOR UPDATE`) cho mọi thao tác ví, viết test concurrency từ Phase 2 |
+| R3  | Buy Me a Coffee không có API đối soát tự động → Admin đối soát thủ công có thể sai sót | Trung bình | Thiết kế SCR-10 hiển thị rõ ràng Transaction ID + Receipt side-by-side, log lại người duyệt (`verified_by`) để truy vết  |
+| R4  | Watermark xử lý chậm ảnh hưởng UX khi upload video lớn                                 | Trung bình | Xử lý bất đồng bộ qua queue (Phase 4), hiển thị trạng thái "đang xử lý" trên UI                                          |
+| R5  | Lạm dụng multi-account để nhận nhiều slot Campaign                                     | Trung bình | FN-CAMP-02 kiểm tra Fingerprint/IP/Trust Score — cần đầu tư kỹ ngay từ Phase 3, không để tới cuối dự án                  |
+| R6  | Phạm vi Audit Log quá rộng gây quá tải DB                                              | Thấp       | Đánh index đúng (actor_id, action_type, created_at), cân nhắc archive log cũ sang cold storage sau 6–12 tháng            |
+| R7  | SRS còn thiếu chi tiết UI/UX, wireframe                                                | Trung bình | Cần thiết kế UI/UX song song Phase 0–1 (không nằm trong phạm vi SRS hiện tại) — xem mục 11                               |
 
 ---
 
 ## 8. Nhân sự & Vai trò
 
-| Vai trò | Số lượng đề xuất | Trách nhiệm chính |
-|---|---|---|
-| Product Owner / BA | 1 | Chốt yêu cầu, ưu tiên hóa backlog, duyệt UAT |
-| Tech Lead / Solution Architect | 1 | Quyết định kiến trúc (mục 2–3), review code, đảm bảo ACID cho ví |
-| Backend Engineer | 2 | NestJS modules theo FN-*, tích hợp SePay/BMC, cronjob, audit interceptor |
-| Frontend Engineer | 2 | Next.js UI theo SCR-*, responsive, tích hợp API |
-| QA Engineer | 1 | Viết test case theo DoD từng Phase, UAT, kiểm thử bảo mật cơ bản |
-| DevOps (bán thời gian) | 1 | CI/CD, hạ tầng Docker/K8s, monitoring |
-| UI/UX Designer (bán thời gian) | 1 | Thiết kế UI chi tiết dựa trên Branding (xem mục 11) |
+| Vai trò                        | Số lượng đề xuất | Trách nhiệm chính                                                        |
+| ------------------------------ | ---------------- | ------------------------------------------------------------------------ |
+| Product Owner / BA             | 1                | Chốt yêu cầu, ưu tiên hóa backlog, duyệt UAT                             |
+| Tech Lead / Solution Architect | 1                | Quyết định kiến trúc (mục 2–3), review code, đảm bảo ACID cho ví         |
+| Backend Engineer               | 2                | NestJS modules theo FN-*, tích hợp SePay/BMC, cronjob, audit interceptor |
+| Frontend Engineer              | 2                | Next.js UI theo SCR-*, responsive, tích hợp API                          |
+| QA Engineer                    | 1                | Viết test case theo DoD từng Phase, UAT, kiểm thử bảo mật cơ bản         |
+| DevOps (bán thời gian)         | 1                | CI/CD, hạ tầng Docker/K8s, monitoring                                    |
+| UI/UX Designer (bán thời gian) | 1                | Thiết kế UI chi tiết dựa trên Branding (xem mục 11)                      |
 
 ---
 
@@ -369,7 +379,7 @@ Dự án Giai đoạn 1 được coi là **hoàn thành** khi:
 
 ## 11. Việc còn mở / Cần quyết định thêm
 
-*(mã task — xem mục "Backlog" trong [TASK.md](TASK.md))*
+_(mã task — xem mục "Backlog" trong [TASK.md](TASK.md))_
 
 - [ ] `B-01` **Wireframe/UI chi tiết:** SRS mô tả chức năng màn hình nhưng chưa có thiết kế UI cụ thể — cần Figma trước khi Frontend bắt tay vào Phase 1.
 - [ ] `B-02` **Chính sách phí rút tiền / tỷ giá KPoint↔VNĐ↔USD biến động:** SRS nêu tỷ giá "có thể điều chỉnh linh hoạt" nhưng chưa có quy tắc version hóa tỷ giá theo thời gian — cần chốt trước Phase 2 & 6.
@@ -380,5 +390,5 @@ Dự án Giai đoạn 1 được coi là **hoàn thành** khi:
 ---
 
 <div align="center">
-<sub>© 2026 K-Point Platform — Tài liệu kế hoạch nội bộ, cập nhật song song với SRS.</sub>
+<sub>© 2026 K-Platform — Tài liệu kế hoạch nội bộ, cập nhật song song với SRS.</sub>
 </div>

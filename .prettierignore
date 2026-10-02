@@ -1,0 +1,16 @@
+node_modules
+.next
+dist
+coverage
+*.min.js
+docs/diagrams/out
+docs/assets
+SRS_K-PLATFORM-v1.0.docx
+backend/prisma/migrations
+pnpm-lock.yaml
+frontend/next-env.d.ts
+
+# Nội dung skill cài qua `npx skills add` — vendored, có hash trong skills-lock.json.
+# Không bao giờ format lại, kể cả khi chạy `pnpm format` ở root.
+.agents/
+.claude/skills/
