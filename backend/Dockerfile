@@ -32,6 +32,11 @@ WORKDIR /app
 COPY --from=build /app/deploy/dist ./dist
 COPY --from=build /app/deploy/generated ./generated
 COPY --from=build /app/deploy/prisma ./prisma
+COPY --from=build /app/deploy/prisma.config.ts ./prisma.config.ts
+# `prisma/seed.ts` chạy trực tiếp qua `node --experimental-strip-types` (không qua
+# build), nên cần src/ gốc có mặt trong image — seed import từ src/prisma/client.ts
+# và src/common/constants.ts.
+COPY --from=build /app/deploy/src ./src
 COPY --from=build /app/deploy/node_modules ./node_modules
 COPY --from=build /app/deploy/package.json ./package.json
 EXPOSE 4000
