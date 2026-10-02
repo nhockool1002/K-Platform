@@ -35,6 +35,9 @@
       "@prisma/engines",
       "prisma",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "ora": "5.4.1"
+    }
   }
 }
