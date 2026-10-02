@@ -1,23 +1,17 @@
 import type { Metadata } from 'next';
-import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const fraunces = Fraunces({
-  variable: '--font-display',
+const inter = Inter({
+  variable: '--font-sans',
   subsets: ['latin', 'vietnamese'],
-  style: ['normal', 'italic'],
+  weight: ['400', '500', '600', '700', '800'],
 });
 
-const plexSans = IBM_Plex_Sans({
-  variable: '--font-ui',
-  subsets: ['latin', 'vietnamese'],
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: '--font-ledger',
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -27,11 +21,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html
-      lang="vi"
-      className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
-    >
-      <body className="bg-paper text-ink min-h-full">{children}</body>
+    <html lang="vi" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+      <body className="bg-slate-50 text-slate-800 min-h-full font-sans">{children}</body>
     </html>
   );
 }

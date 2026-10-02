@@ -14,9 +14,17 @@ on:
     branches: [main]
     types: [completed]
 
+# Chốt chặn thứ 2 (ngoài guard `event == 'push'` ở job bên dưới) — xem giải
+# thích chi tiết trong deploy-staging.yml.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     environment: production
     steps:

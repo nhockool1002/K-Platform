@@ -1,7 +1,9 @@
+import { Camera, Scale, Stamp, UploadCloud } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
-import { mockMyTasks } from '@/lib/mock-data';
+import { Field, Input, Textarea } from '@/components/ui/Input';
+import { PLATFORM_LABEL, mockMyTasks } from '@/lib/mock-data';
 import { formatKpoint } from '@/lib/format';
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,66 +12,81 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <AppShell role="publisher" active="/b/dashboard">
-      <PageHeader
-        eyebrow={task.id}
-        title={task.campaign}
-        description={`Phần thưởng ${formatKpoint(task.reward)} — hoàn tất cả 2 bước để được xét duyệt.`}
-      />
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PageHeader
+          title="Làm Survey & Nộp Bằng Chứng"
+          description="Tải lên liên kết review và ảnh chụp thực tế. Hệ thống tự động chèn Watermark bản quyền."
+        />
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <section className="border-line border-t pt-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="font-ledger bg-navy flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-white">
-              1
-            </span>
-            <h2 className="font-display text-ink text-base font-medium">Trả lời Survey</h2>
+        <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="font-mono text-[10px] font-bold text-brand-blue uppercase">
+                Đang thực hiện cho:
+              </span>
+              <h4 className="text-base font-extrabold text-slate-900">
+                {task.campaignId}: {task.campaign}
+              </h4>
+              <span className="text-xs text-slate-500">
+                {PLATFORM_LABEL[task.platform]} • Thưởng: {formatKpoint(task.reward)}
+              </span>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">
+              Auto-Approve: 48h tự động
+            </div>
           </div>
-          <div className="flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-ink font-medium">
-                Bạn đã từng ghé địa điểm này trong 30 ngày qua chưa?
-              </span>
-              <div className="flex gap-4 text-sm">
-                <label className="flex items-center gap-1.5">
-                  <input type="radio" name="visited" /> Rồi
-                </label>
-                <label className="flex items-center gap-1.5">
-                  <input type="radio" name="visited" /> Chưa
-                </label>
-              </div>
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-ink font-medium">
-                Mô tả ngắn trải nghiệm gần nhất của bạn tại đây
-              </span>
-              <textarea
+
+          <form className="space-y-4 text-xs">
+            <Field label="Liên kết bài đánh giá công khai (Public Review URL) *">
+              <Input type="url" required placeholder="https://maps.app.goo.gl/..." />
+            </Field>
+
+            <Field label="Nội dung tóm tắt đánh giá của bạn">
+              <Textarea
                 rows={3}
-                className="border-line text-ink border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-navy"
-                placeholder="Tôi đã ghé quán vào..."
+                placeholder="Không gian yên tĩnh, cà phê đậm vị hạt Arabica Cầu Đất, nhân viên phục vụ chu đáo..."
               />
-            </label>
-          </div>
-        </section>
+            </Field>
 
-        <section className="border-line border-t pt-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="font-ledger bg-navy flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-white">
-              2
-            </span>
-            <h2 className="font-display text-ink text-base font-medium">Nộp Proof</h2>
-          </div>
-          <div className="border-line flex flex-col items-center gap-2 border border-dashed px-6 py-10 text-center">
-            <p className="text-ink text-sm font-medium">Kéo thả ảnh hoặc video vào đây</p>
-            <p className="text-ink-muted text-xs">
-              Hệ thống sẽ tự động đóng dấu UserID + CampaignID lên file trước khi gửi cho Bên A.
-            </p>
-            <button className="border-navy text-navy mt-2 border px-4 py-1.5 text-sm font-medium">
-              Chọn file
-            </button>
-          </div>
+            <Field label="Tải lên hình ảnh bằng chứng (Proof Image) *">
+              <div className="cursor-pointer space-y-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center transition hover:bg-slate-100/70">
+                <Camera className="mx-auto h-8 w-8 text-brand-blue" />
+                <div className="font-semibold text-slate-600">
+                  Nhấp hoặc kéo thả ảnh chụp màn hình review &amp; hóa đơn vào đây
+                </div>
+                <div className="text-[10px] text-slate-400">Định dạng PNG, JPG (Tối đa 5MB)</div>
+              </div>
+            </Field>
 
-          <Button className="mt-6 w-full">Gửi Survey &amp; Proof</Button>
-        </section>
+            <div className="space-y-1 rounded-xl border border-blue-200 bg-blue-50/80 p-3 text-slate-700">
+              <div className="flex items-center gap-1.5 font-bold text-brand-blue">
+                <Stamp className="h-4 w-4" />
+                <span>Cơ chế bảo mật SRS (FN-TASK-01):</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                Ngay khi bạn tải lên, máy chủ sẽ tự động in chìm văn bản Watermark chứa{' '}
+                <code>UserID</code> + <code>CampaignID ({task.campaignId})</code> và thời gian thực
+                lên toàn bộ ảnh nhằm ngăn chặn tuyệt đối việc tái sử dụng bằng chứng cho các chiến
+                dịch khác.
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 rounded-xl border border-purple-200 bg-purple-50 p-3 text-purple-900">
+              <Scale className="mt-0.5 h-4 w-4 shrink-0 text-purple-700" />
+              <div className="text-[11px]">
+                <strong>Bảo vệ quyền lợi Bên B:</strong> Nếu Bên A từ chối duyệt bài nộp của bạn một
+                cách không thỏa đáng, bạn có quyền bấm{' '}
+                <strong>&ldquo;Tạo Dispute Khiếu Nại&rdquo;</strong> để Moderator và Admin
+                K-Platform đứng ra phân xử công bằng.
+              </div>
+            </div>
+
+            <Button variant="blue" type="submit" className="w-full">
+              <UploadCloud className="h-4 w-4" />
+              Gửi Bài Nộp &amp; Kích Hoạt Đồng Hồ 48h
+            </Button>
+          </form>
+        </div>
       </div>
     </AppShell>
   );

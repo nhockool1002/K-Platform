@@ -8,15 +8,23 @@
 // import thẳng không resolve được dưới Node ESM — xem package.json "type": "module").
 import type {
   ActiveMode as ActiveModeEnum,
+  CampaignStatus as CampaignStatusEnum,
   PrismaClient as PrismaClientClass,
+  SubmissionStatus as SubmissionStatusEnum,
   UserRole as UserRoleEnum,
 } from '../../generated/prisma/index.js';
 import pkg from '../../generated/prisma/index.js';
 
+export type { Prisma } from '../../generated/prisma/index.js';
+
 export const PrismaClient = pkg.PrismaClient;
 export const UserRole = pkg.UserRole;
 export const ActiveMode = pkg.ActiveMode;
+export const CampaignStatus = pkg.CampaignStatus;
+export const SubmissionStatus = pkg.SubmissionStatus;
 
 export type PrismaClient = PrismaClientClass;
 export type UserRole = UserRoleEnum;
 export type ActiveMode = ActiveModeEnum;
+export type CampaignStatus = CampaignStatusEnum;
+export type SubmissionStatus = SubmissionStatusEnum;
