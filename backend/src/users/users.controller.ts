@@ -8,9 +8,7 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
-// @prisma/client là CommonJS; dưới Node ESM named import không resolve được.
-import pkg from '@prisma/client';
-const { UserRole } = pkg;
+import { UserRole } from '../prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';

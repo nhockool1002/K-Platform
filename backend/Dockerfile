@@ -18,11 +18,19 @@ RUN pnpm --filter backend build
 # backend không inject package workspace nào (frontend/package.json chỉ copy để
 # pnpm install không báo thiếu thành viên workspace) — legacy là đúng cho case này.
 RUN pnpm --filter backend deploy --prod --legacy /app/deploy
+# pnpm deploy không đảm bảo copy backend/generated/ (output tuỳ chỉnh của `prisma
+# generate` — xem schema.prisma, nằm ngoài node_modules) — copy thủ công để chắc
+# chắn Prisma Client (kèm query engine binary) luôn có trong image runtime. Dùng
+# output tuỳ chỉnh thay vì node_modules/.prisma/client mặc định vì pnpm deploy
+# --legacy không bảo toàn đúng cấu trúc node_modules/.prisma của pnpm, từng gây lỗi
+# "Cannot find module '.prisma/client/default'" lúc runtime.
+RUN cp -r backend/generated /app/deploy/generated
 
 FROM base AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app/deploy/dist ./dist
+COPY --from=build /app/deploy/generated ./generated
 COPY --from=build /app/deploy/prisma ./prisma
 COPY --from=build /app/deploy/node_modules ./node_modules
 COPY --from=build /app/deploy/package.json ./package.json
