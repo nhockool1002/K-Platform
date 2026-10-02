@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { CommonModule } from './common/common.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CampaignsModule } from './campaigns/campaigns.module.js';
     AuthModule,
     UsersModule,
     CampaignsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

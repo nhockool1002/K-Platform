@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Briefcase, LogOut, Sparkles, Wallet } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { formatKpoint } from '@/lib/format';
-import { mockWallet } from '@/lib/mock-data';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { useWallet } from '@/lib/use-wallet';
 import { switchMode, logout, type ActiveMode } from '@/lib/auth-client';
 
 export type AppRole = 'advertiser' | 'publisher';
@@ -44,7 +44,8 @@ export function AppShell({
   children: ReactNode;
 }) {
   const router = useRouter();
-  const { user, loading } = useCurrentUser();
+  const { user } = useCurrentUser();
+  const { wallet, loading: walletLoading } = useWallet();
   const activeMode: ActiveMode = role
     ? role === 'advertiser'
       ? 'A'
@@ -122,9 +123,7 @@ export function AppShell({
             >
               <Wallet className="h-3.5 w-3.5 text-brand-gold" />
               <span className="font-mono text-xs font-bold text-white">
-                {loading
-                  ? '···'
-                  : formatKpoint(mockWallet.balanceKpoint - mockWallet.reservedKpoint)}
+                {walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.availableKpoint))}
               </span>
             </Link>
 
