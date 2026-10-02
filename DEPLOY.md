@@ -172,12 +172,14 @@ docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build
 docker compose -f infra/docker-compose.deploy.yml --env-file .env ps   # cả 3 service phải "healthy"/"running"
 ```
 
-Chạy migration + (tuỳ chọn) seed dữ liệu demo cho staging:
+Chạy migration + (tuỳ chọn) seed dữ liệu demo:
 
 ```bash
 docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:deploy
-docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:seed   # chỉ staging, KHÔNG chạy trên production
+docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:seed
 ```
+
+> Đặt `SEED_DEV_PASSWORD` trong `.env` trước khi seed nếu muốn mật khẩu cố định cho các tài khoản demo (xem `infra/.env.deploy.example` và README.md § 10.2) — không set thì mỗi lần seed sinh mật khẩu ngẫu nhiên khác nhau, in ra console. Seed là dữ liệu demo cho giai đoạn pre-launch — xoá/đổi mật khẩu các tài khoản này trước khi mở Production cho người dùng thật.
 
 Kiểm tra backend đã chạy đúng cổng loopback đã cấu hình:
 
@@ -186,7 +188,7 @@ curl http://127.0.0.1:4001/api/v1/health
 # -> {"status":"ok","db":"up",...}
 ```
 
-Lặp lại toàn bộ Bước 2.3 cho `/www/wwwroot/kplatform-production` (dùng cổng `4002`, **không** chạy `prisma:seed`).
+Lặp lại toàn bộ Bước 2.3 cho `/www/wwwroot/kplatform-production` (dùng cổng `4002`, `SEED_DEV_PASSWORD` khác staging).
 
 ---
 

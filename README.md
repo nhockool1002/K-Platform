@@ -41,6 +41,7 @@
   - [9.6. Vòng đời Dispute](#96-vòng-đời-dispute)
 - [X. Phụ lục — Bằng chứng triển khai (Implementation Evidence)](#x-phụ-lục--bằng-chứng-triển-khai-implementation-evidence)
   - [10.1. Phase 1 — Auth, RBAC & Switch Mode](#101-phase-1--auth-rbac--switch-mode)
+  - [10.2. Tài khoản Demo (Staging & Production)](#102-tài-khoản-demo-staging--production)
 
 ---
 
@@ -691,6 +692,29 @@ Hoàn thành **P1-01 → P1-14** (xem tiến độ chi tiết tại [TASK.md § 
 
 <img src="screenshots/p1-rbac-tests-passing.png" alt="Kết quả chạy pnpm test:e2e — 6/6 test case Auth & RBAC pass, bao gồm chặn xóa/hạ cấp Root Admin và Switch Mode không bị 401"/>
 <p align="center"><sub><code>pnpm --filter backend test:e2e</code> — 6/6 pass: Switch Mode không bị 401 (P1-12), chặn xóa/hạ cấp Root Administrator (P1-13), RBAC chặn role USER truy cập API admin (P1-08). Xem <code>backend/test/auth.e2e-spec.ts</code>.</sub></p>
+
+---
+
+### 10.2. Tài khoản Demo (Staging & Production)
+
+Seed sẵn qua `pnpm prisma:seed` (`backend/prisma/seed.ts`) — mỗi role trong README § II có đúng 1 tài khoản đại diện, dùng chung cho cả 2 môi trường bên dưới.
+
+| Email                      | Role         | Switch Mode mặc định   |
+| -------------------------- | ------------ | ---------------------- |
+| `root@kplatform.dev`       | `ROOT_ADMIN` | A                      |
+| `admin@kplatform.dev`      | `ADMIN`      | A                      |
+| `moderator@kplatform.dev`  | `MODERATOR`  | A                      |
+| `advertiser@kplatform.dev` | `USER`       | A (Bên A — Advertiser) |
+| `publisher@kplatform.dev`  | `USER`       | B (Bên B — Publisher)  |
+
+| Môi trường | Frontend (đăng nhập tại đây)          | Backend API                                |
+| ---------- | ------------------------------------- | ------------------------------------------ |
+| Staging    | https://staging.kp.nhutnm.id.vn/login | https://api-staging.kp.nhutnm.id.vn/api/v1 |
+| Production | https://prod.kp.nhutnm.id.vn/login    | https://api-prod.kp.nhutnm.id.vn/api/v1    |
+
+> **Mật khẩu:** đặt qua biến `SEED_DEV_PASSWORD` trong file `.env` trên từng server khi chạy seed (xem `infra/.env.deploy.example`) — **không commit vào repo**, chỉ người vận hành nắm. Không set thì mỗi lần seed sinh mật khẩu ngẫu nhiên khác nhau, in ra console lúc chạy `pnpm prisma:seed`.
+>
+> Đây là tài khoản demo cho giai đoạn phát triển/pre-launch — xoá hoặc đổi mật khẩu tất cả trước khi mở Production cho người dùng thật.
 
 ---
 
