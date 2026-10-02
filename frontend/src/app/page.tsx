@@ -1,63 +1,142 @@
+import { MapPin, Search, ShieldCheck } from 'lucide-react';
 import { PublicNav } from '@/components/layout/PublicNav';
 import { CampaignTicketCard } from '@/components/ui/CampaignTicketCard';
 import { mockCampaigns } from '@/lib/mock-data';
-
-const PLATFORMS = ['Tất cả nền tảng', 'Google Maps', 'Facebook'];
 
 export default function Home() {
   const openCampaigns = mockCampaigns.filter((c) => c.status === 'active');
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col bg-slate-50">
       <PublicNav />
 
-      <section className="border-line border-b">
-        <div className="mx-auto max-w-5xl px-6 py-16">
-          <h1 className="font-display text-ink max-w-2xl text-4xl leading-tight font-medium">
-            Đi trải nghiệm thật, viết review thật, đổi lấy KPoint thật.
-          </h1>
-          <p className="text-ink-muted mt-4 max-w-xl text-base">
-            K-Platform kết nối doanh nghiệp cần phản hồi xác thực với những người đã thật sự ghé
-            thăm, dùng thử, và sẵn sàng kể lại trải nghiệm của mình.
-          </p>
+      {/* Hero */}
+      <div className="border-b border-slate-200 bg-gradient-to-b from-white via-blue-50/20 to-slate-50 px-4 py-10 sm:px-8">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-7">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-brand-blue-light px-3 py-1 text-xs font-semibold text-brand-blue">
+              <ShieldCheck className="h-4 w-4" />
+              <span>Nền tảng Kết nối Đánh giá &amp; Khảo sát Thực tế 100%</span>
+            </div>
 
-          {/* Khối tìm kiếm thật — "hero" là công cụ tìm Campaign, không phải minh họa trang trí */}
-          <form className="border-line bg-paper-raised mt-8 flex max-w-xl flex-col gap-3 border p-3 sm:flex-row">
-            <input
-              type="text"
-              placeholder="Tìm theo tên địa điểm, thương hiệu..."
-              className="text-ink placeholder:text-ink-muted flex-1 bg-transparent px-2 py-2 text-sm outline-none"
-            />
-            <select className="border-line text-ink border bg-transparent px-2 py-2 text-sm sm:border-y-0 sm:border-r-0 sm:border-l">
-              {PLATFORMS.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              className="bg-navy hover:bg-navy-dark px-5 py-2 text-sm font-medium text-white"
-            >
-              Tìm Campaign
-            </button>
-          </form>
+            <h1 className="text-3xl leading-tight font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Gia tăng Đánh giá Thực tế,
+              <br />
+              Nhận Thưởng Dễ Dàng cùng <span className="text-brand-blue">K-Platform</span>.
+            </h1>
+
+            <p className="max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
+              Cầu nối minh bạch giữa{' '}
+              <strong className="text-slate-900">Doanh nghiệp (Bên A)</strong> cần review trải
+              nghiệm thực và <strong className="text-slate-900">Người tiêu dùng (Bên B)</strong>{' '}
+              nhận KPoint (1 KP = 1 VNĐ). Tự động đóng dấu Watermark và Auto-Approve sau 48 giờ.
+            </p>
+
+            {/* Khối tìm kiếm thật — hành động đầu tiên người dùng làm trên trang này */}
+            <form className="mt-2 flex max-w-xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm theo thương hiệu, quán ăn, khách sạn, địa chỉ..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-1 focus:ring-brand-blue focus:outline-none"
+                />
+              </div>
+              <select className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none">
+                <option>Tất cả nền tảng</option>
+                <option>Google Maps</option>
+                <option>Facebook Check-in</option>
+                <option>Shopee Mall</option>
+                <option>TikTok Video</option>
+              </select>
+              <button
+                type="submit"
+                className="rounded-xl bg-brand-blue px-5 py-2 text-xs font-bold text-white transition hover:bg-brand-blue-dark"
+              >
+                Tìm Campaign
+              </button>
+            </form>
+          </div>
+
+          {/* Hero Infographic — quy trình khép kín, không phải minh họa trang trí */}
+          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg lg:col-span-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-mono text-xs font-bold text-slate-500 uppercase">
+                Quy trình Khép kín (SRS Flow)
+              </span>
+              <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                ACID Transaction
+              </span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-brand-gold text-xs font-bold text-slate-950">
+                  1
+                </div>
+                <div>
+                  <strong className="block text-slate-800">Bên A: Tạo Campaign &amp; Ký Quỹ</strong>
+                  <span className="text-slate-500">
+                    Phí khởi tạo 50k + Khóa tạm KPoint theo số slot.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-2.5">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-brand-blue text-xs font-bold text-white">
+                  2
+                </div>
+                <div>
+                  <strong className="block text-slate-800">
+                    Bên B: Trả Lời Survey &amp; Nộp Review
+                  </strong>
+                  <span className="text-slate-500">
+                    Hệ thống tự động chèn Watermark ID chống clone.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-2.5">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">
+                  3
+                </div>
+                <div>
+                  <strong className="block text-slate-800">Duyệt Thưởng Hoặc Auto 48h</strong>
+                  <span className="text-slate-500">
+                    KPoint giải ngân về ví Bên B hoặc chuyển sang Dispute.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
-        <div className="mb-5 flex items-baseline justify-between">
-          <h2 className="font-display text-ink text-xl font-medium">Campaign đang mở</h2>
-          <p className="text-ink-muted text-sm">{openCampaigns.length} chiến dịch</p>
+      {/* Campaigns Grid */}
+      <section className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-8">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+              Chiến dịch Đang Tuyển
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Tìm kiếm nhiệm vụ phù hợp với vị trí và độ uy tín (Trust Score) của bạn.
+            </p>
+          </div>
+          <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-mono text-xs font-bold text-emerald-600">
+            ● {openCampaigns.length} Chiến dịch Đang Hoạt Động
+          </span>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {openCampaigns.map((c) => (
             <CampaignTicketCard key={c.id} {...c} href="/login" />
           ))}
         </div>
       </section>
 
-      <footer className="border-line text-ink-muted border-t px-6 py-6 text-center text-xs">
-        © 2026 K-Platform
+      <footer className="flex items-center justify-center gap-1.5 border-t border-slate-200 px-6 py-6 text-center text-xs text-slate-500">
+        <MapPin className="h-3.5 w-3.5" />© 2026 K-Platform
       </footer>
     </div>
   );
