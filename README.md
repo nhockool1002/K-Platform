@@ -39,6 +39,8 @@
   - [9.4. Khởi tạo Campaign](#94-khởi-tạo-campaign)
   - [9.5. Nộp Proof & Auto-Approve 48h](#95-nộp-proof--auto-approve-48h)
   - [9.6. Vòng đời Dispute](#96-vòng-đời-dispute)
+- [X. Phụ lục — Bằng chứng triển khai (Implementation Evidence)](#x-phụ-lục--bằng-chứng-triển-khai-implementation-evidence)
+  - [10.1. Phase 1 — Auth, RBAC & Switch Mode](#101-phase-1--auth-rbac--switch-mode)
 
 ---
 
@@ -611,6 +613,84 @@ sequenceDiagram
     API->>DB: UPDATE status = RESOLVED
     API-->>B: Thông báo kết quả phán quyết cuối cùng
 ```
+
+---
+
+## X. Phụ lục — Bằng chứng triển khai (Implementation Evidence)
+
+> Mục này tổng hợp screenshot bằng chứng cho các task đã hoàn thành trong `TASK.md`, chụp trực tiếp từ môi trường dev (frontend Next.js + backend NestJS/Prisma/PostgreSQL chạy thật, không phải mockup tĩnh). Ảnh gốc nằm ở [`screenshots/`](screenshots/).
+
+### 10.1. Phase 1 — Auth, RBAC & Switch Mode
+
+Hoàn thành **P1-01 → P1-14** (xem tiến độ chi tiết tại [TASK.md § Phase 1](TASK.md#phase-1--auth-rbac--switch-mode)). OAuth Google/Facebook (P1-04/P1-05) ở mức mockup UI — nút hiển thị nhãn "Sắp ra mắt", backend trả `501 Not Implemented`; tích hợp OAuth thật sẽ triển khai ở phase sau.
+
+**Đăng nhập / Đăng ký (P1-02) — kết nối API thật, không còn form tĩnh**
+
+<table>
+<tr>
+<td width="50%">
+
+<img src="screenshots/p1-login.png" alt="Màn hình đăng nhập — nút OAuth Google/Facebook gắn nhãn Sắp ra mắt"/>
+<p align="center"><sub>Đăng nhập — nút OAuth gắn nhãn "Sắp ra mắt" (P1-04/P1-05 mockup)</sub></p>
+
+</td>
+<td width="50%">
+
+<img src="screenshots/p1-register.png" alt="Màn hình đăng ký — chọn vai trò Bên A hoặc Bên B"/>
+<p align="center"><sub>Đăng ký — chọn `activeMode` A/B ngay khi tạo tài khoản</sub></p>
+
+</td>
+</tr>
+</table>
+
+**Switch Mode (P1-07) — giữ nguyên phiên đăng nhập, không mất JWT (FN-AUTH-01)**
+
+<table>
+<tr>
+<td width="50%">
+
+<img src="screenshots/p1-dashboard-a-login.png" alt="Dashboard Bên A sau khi đăng nhập — header hiển thị email thật từ API /auth/me"/>
+<p align="center"><sub>Đăng nhập bằng <code>advertiser@kplatform.dev</code> → Dashboard Bên A, header lấy email thật từ <code>GET /auth/me</code></sub></p>
+
+</td>
+<td width="50%">
+
+<img src="screenshots/p1-dashboard-b-switch-mode.png" alt="Sau khi bấm Switch Mode — chuyển sang Dashboard Bên B, vẫn cùng tài khoản"/>
+<p align="center"><sub>Bấm "Switch Mode" → chuyển sang Dashboard Bên B, <b>vẫn cùng tài khoản</b> — không yêu cầu đăng nhập lại</sub></p>
+
+</td>
+</tr>
+</table>
+
+**Quên mật khẩu / Đặt lại mật khẩu (P1-03)**
+
+<table>
+<tr>
+<td width="33%">
+
+<img src="screenshots/p1-forgot-password.png" alt="Form quên mật khẩu — hiển thị link reset (dev mode) vì chưa tích hợp SMTP thật"/>
+<p align="center"><sub>Quên mật khẩu — token reset (dev mode, chưa có SMTP thật ở Phase 1)</sub></p>
+
+</td>
+<td width="33%">
+
+<img src="screenshots/p1-reset-password.png" alt="Form đặt mật khẩu mới từ link reset"/>
+<p align="center"><sub>Đặt mật khẩu mới từ link reset</sub></p>
+
+</td>
+<td width="33%">
+
+<img src="screenshots/p1-reset-password-success.png" alt="Đặt lại mật khẩu thành công"/>
+<p align="center"><sub>Thành công — đăng nhập lại bằng mật khẩu mới</sub></p>
+
+</td>
+</tr>
+</table>
+
+**RBAC Guard & bảo vệ Root Administrator (P1-08, P1-09, P1-12, P1-13) — kiểm chứng bằng automated e2e test**
+
+<img src="screenshots/p1-rbac-tests-passing.png" alt="Kết quả chạy pnpm test:e2e — 6/6 test case Auth & RBAC pass, bao gồm chặn xóa/hạ cấp Root Admin và Switch Mode không bị 401"/>
+<p align="center"><sub><code>pnpm --filter backend test:e2e</code> — 6/6 pass: Switch Mode không bị 401 (P1-12), chặn xóa/hạ cấp Root Administrator (P1-13), RBAC chặn role USER truy cập API admin (P1-08). Xem <code>backend/test/auth.e2e-spec.ts</code>.</sub></p>
 
 ---
 
