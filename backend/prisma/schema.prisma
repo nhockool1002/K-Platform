@@ -2,8 +2,14 @@
 // Mirrors the ERD in README.md / SRS Section VII (Thiết kế cơ sở dữ liệu cốt lõi).
 // Task: P0-04 (schema) / P0-05 (migration) / P1-01 (role field + password reset tokens).
 
+// output tùy chỉnh (thay vì mặc định trong node_modules/.prisma/client): `pnpm deploy`
+// dùng để đóng gói backend cho Docker không copy đúng node_modules/.prisma khi build
+// trên pnpm v10 (lỗi "Cannot find module '.prisma/client/default'" lúc runtime) — generate
+// thẳng ra thư mục trong package thì luôn được copy cùng, không phụ thuộc cấu trúc
+// node_modules của pnpm.
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
