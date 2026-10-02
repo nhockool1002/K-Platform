@@ -7,7 +7,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CampaignStatus, SubmissionStatus, type Prisma } from '../prisma/client.js';
+import {
+  CampaignStatus,
+  SubmissionStatus,
+  WalletTxSide,
+  WalletTxType,
+  type Prisma,
+} from '../prisma/client.js';
 import type { CreateCampaignDto } from './dto/create-campaign.dto.js';
 import type { ApplyCampaignDto } from './dto/apply-campaign.dto.js';
 import type { ApplicantActionDto } from './dto/applicant-action.dto.js';
@@ -82,6 +88,19 @@ export class CampaignsService {
             : undefined,
         },
       });
+
+      // P2-09 — ghi sổ cái để Bên A xem được lịch sử ký quỹ Campaign ở Ví.
+      await tx.walletTransaction.create({
+        data: {
+          userId: ownerId,
+          type: WalletTxType.CAMPAIGN_RESERVE,
+          side: WalletTxSide.A,
+          reservedDeltaKpoint: totalCost,
+          relatedCampaignId: campaign.id,
+          note: `Ký quỹ tạo Campaign "${dto.title}"`,
+        },
+      });
+
       return this.toPublicCampaign(campaign);
     });
   }

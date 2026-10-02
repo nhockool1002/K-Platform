@@ -9,14 +9,16 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, KpiCard } from '@/components/ui/Card';
 import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
-import { PLATFORM_BADGE, PLATFORM_LABEL, mockWallet } from '@/lib/mock-data';
+import { PLATFORM_BADGE, PLATFORM_LABEL } from '@/lib/mock-data';
 import { formatKpoint } from '@/lib/format';
 import { archiveCampaign, listMyCampaigns, type Campaign } from '@/lib/campaigns-client';
 import { ApiError } from '@/lib/auth-client';
+import { useWallet } from '@/lib/use-wallet';
 
 export default function AdvertiserDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { wallet, loading: walletLoading } = useWallet();
 
   useEffect(() => {
     listMyCampaigns()
@@ -59,15 +61,18 @@ export default function AdvertiserDashboard() {
           }
         />
 
-        {/* Số dư ví: Phase 2 (Wallet/SePay) chưa build API thật — vẫn dùng mock. */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             label="Số Dư Ví Khả Dụng"
-            value={formatKpoint(mockWallet.balanceKpoint)}
+            value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.availableKpoint))}
             valueClassName="text-brand-blue"
             hint={
               <div className="flex items-center justify-between">
-                <span>(= {mockWallet.balanceKpoint.toLocaleString('vi-VN')} VNĐ)</span>
+                <span>
+                  {wallet
+                    ? `(= ${Number(wallet.availableKpoint).toLocaleString('vi-VN')} VNĐ)`
+                    : ''}
+                </span>
                 <Link href="/wallet" className="font-bold text-brand-gold hover:underline">
                   Nạp thêm
                 </Link>
@@ -76,7 +81,7 @@ export default function AdvertiserDashboard() {
           />
           <KpiCard
             label="Ký Quỹ Đang Khóa (Reserved)"
-            value={formatKpoint(mockWallet.reservedKpoint)}
+            value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.reservedKpoint))}
             valueClassName="text-amber-600"
             hint="Bảo chứng trả thưởng cho Bên B"
           />

@@ -1,15 +1,19 @@
+'use client';
+
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card, KpiCard } from '@/components/ui/Card';
-import { PLATFORM_BADGE, PLATFORM_LABEL, mockMyTasks, mockWallet } from '@/lib/mock-data';
+import { PLATFORM_BADGE, PLATFORM_LABEL, mockMyTasks } from '@/lib/mock-data';
 import { formatKpoint } from '@/lib/format';
+import { useWallet } from '@/lib/use-wallet';
 
 export default function PublisherDashboard() {
   const inProgress = mockMyTasks.filter((t) => t.status === 'awaiting_proof');
   const totalEarned = 1_820_000;
+  const { wallet, loading: walletLoading } = useWallet();
 
   return (
     <AppShell role="publisher" active="/b/dashboard">
@@ -35,7 +39,7 @@ export default function PublisherDashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             label="Số Dư Khả Dụng Trong Ví"
-            value={formatKpoint(mockWallet.balanceKpoint - mockWallet.reservedKpoint)}
+            value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.availableKpoint))}
             valueClassName="text-emerald-600"
             hint="Đủ điều kiện rút về ATM nội địa"
           />

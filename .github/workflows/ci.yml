@@ -15,6 +15,13 @@ env:
   DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
   JWT_ACCESS_SECRET: 'ci-only-access-secret'
   JWT_REFRESH_SECRET: 'ci-only-refresh-secret'
+  # Từ Phase 2: test (e2e) cho webhook SePay (payments.e2e-spec.ts) — giá trị
+  # giả, không phải secret thật, chỉ cần tồn tại để SepayWebhookGuard/getTopupQr
+  # không bị chặn. Phải khớp SEPAY_TEST_KEY trong payments.e2e-spec.ts.
+  SEPAY_WEBHOOK_API_KEY: 'test-sepay-key'
+  SEPAY_BANK_ID: 'TestBank'
+  SEPAY_BANK_ACCOUNT_NUMBER: '0123456789'
+  SEPAY_BANK_ACCOUNT_NAME: 'CI TEST ACCOUNT'
 
 jobs:
   lint-build-test:
