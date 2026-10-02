@@ -60,7 +60,7 @@ jobs:
       - name: Verify — health check qua domain công khai
         run: |
           for i in $(seq 1 10); do
-            if curl -fsS "https://prod.kp.nhutnm.id.vn/api/v1/health"; then
+            if curl -fsS "https://api-prod.kp.nhutnm.id.vn/api/v1/health"; then
               echo "OK"
               exit 0
             fi
