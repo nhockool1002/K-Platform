@@ -1,5 +1,8 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+// @prisma/client là CommonJS; dưới Node ESM (package.json "type": "module")
+// named import không resolve được (xem https://github.com/prisma/prisma/issues/18103).
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
