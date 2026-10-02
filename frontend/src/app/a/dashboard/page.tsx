@@ -21,9 +21,10 @@ export default function AdvertiserDashboard() {
   useEffect(() => {
     listMyCampaigns()
       .then(setCampaigns)
-      .catch((err) =>
-        setError(err instanceof ApiError ? err.message : 'Không tải được danh sách Campaign'),
-      );
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'Không tải được danh sách Campaign');
+        setCampaigns([]);
+      });
   }, []);
 
   async function handleArchive(id: string) {

@@ -42,9 +42,10 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
         setCampaign(c);
         setApplicants(apps);
       })
-      .catch((err) =>
-        setError(err instanceof ApiError ? err.message : 'Không tải được dữ liệu Campaign'),
-      );
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'Không tải được dữ liệu Campaign');
+        setApplicants([]);
+      });
   }, [id]);
 
   async function handleDecide(submissionId: string, action: 'INVITE' | 'REJECT') {
