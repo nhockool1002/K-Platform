@@ -136,7 +136,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
-                minLength={8}
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"

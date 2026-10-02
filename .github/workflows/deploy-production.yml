@@ -49,8 +49,13 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
-            docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build
-            docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:deploy
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build --wait --wait-timeout 120
+            # Dùng thẳng node_modules/.bin/prisma thay vì `pnpm prisma:deploy`: image
+            # production chỉ cài production dependencies (pnpm deploy --prod), gọi qua
+            # `pnpm run` khiến pnpm thấy "thiếu" devDependencies so với package.json và
+            # tự tải lại pnpm mới nhất qua corepack — từng gây lỗi ERR_PNPM_IGNORED_BUILDS.
+            # Xem DEPLOY.md § Troubleshooting.
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend node_modules/.bin/prisma migrate deploy
 
       - name: Verify — health check qua domain công khai
         run: |
