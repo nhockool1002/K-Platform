@@ -1,0 +1,105 @@
+@import 'tailwindcss';
+
+/*
+ * K-Platform — Design System (wireframe pass)
+ * Bám theo "Design plan" đã duyệt: sổ cái tài chính + xác thực review thật,
+ * không phải SaaS dashboard chung chung. Xem frontend/DESIGN.md.
+ */
+:root {
+  /* Brand — giữ nguyên từ SRS/README đã duyệt */
+  --color-navy: #1d4e89;
+  --color-navy-dark: #13324f;
+  --color-gold: #e8a93a;
+  --color-gold-dark: #a9760f;
+
+  /* Hệ thống mở rộng cho wireframe */
+  --color-paper: #f3f5f8;
+  --color-paper-raised: #ffffff;
+  --color-ink: #16202b;
+  --color-ink-muted: #5b6b7b;
+  --color-line: #d7dee6;
+  --color-ledger-green: #2f9e6e;
+  --color-ledger-green-bg: #e9f6f0;
+  --color-ledger-red: #c2483a;
+  --color-ledger-red-bg: #fbebe9;
+}
+
+@theme inline {
+  --color-navy: var(--color-navy);
+  --color-navy-dark: var(--color-navy-dark);
+  --color-gold: var(--color-gold);
+  --color-gold-dark: var(--color-gold-dark);
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-line: var(--color-line);
+  --color-ledger-green: var(--color-ledger-green);
+  --color-ledger-green-bg: var(--color-ledger-green-bg);
+  --color-ledger-red: var(--color-ledger-red);
+  --color-ledger-red-bg: var(--color-ledger-red-bg);
+
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-ledger: var(--font-ledger);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: #0f1720;
+    --color-paper-raised: #16212c;
+    --color-ink: #e7edf3;
+    --color-ink-muted: #93a4b5;
+    --color-line: #2a3744;
+    --color-ledger-green-bg: #10281f;
+    --color-ledger-red-bg: #2c1613;
+  }
+}
+
+body {
+  font-family:
+    var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), ui-serif, serif;
+}
+
+.font-ledger,
+.tabular-figures {
+  font-family: var(--font-ledger), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mô-típ "dòng sổ cái": đường kẻ mảnh + chấm tick, dùng cho lịch sử giao dịch & audit log */
+.ledger-row {
+  position: relative;
+  border-bottom: 1px solid var(--color-line);
+}
+.ledger-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--color-line);
+  transform: translate(-2px, -50%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
