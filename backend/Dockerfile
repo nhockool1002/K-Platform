@@ -14,7 +14,10 @@ COPY frontend/package.json ./frontend/package.json
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter backend prisma:generate
 RUN pnpm --filter backend build
-RUN pnpm --filter backend deploy --prod /app/deploy
+# --legacy: pnpm v10 mặc định chỉ deploy workspace có inject-workspace-packages=true.
+# backend không inject package workspace nào (frontend/package.json chỉ copy để
+# pnpm install không báo thiếu thành viên workspace) — legacy là đúng cho case này.
+RUN pnpm --filter backend deploy --prod --legacy /app/deploy
 
 FROM base AS runtime
 ENV NODE_ENV=production
