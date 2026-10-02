@@ -1,88 +1,71 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { CmsShell } from '@/components/layout/CmsShell';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { StatusPill } from '@/components/ui/StatusPill';
-import { mockDisputes } from '@/lib/mock-data';
 import { formatKpoint } from '@/lib/format';
-
-const STATUS_TONE = {
-  open: 'critical',
-  recommended: 'warning',
-  resolved: 'positive',
-} as const;
-
-const STATUS_LABEL = {
-  open: 'Mới mở',
-  recommended: 'Mod đã đề xuất',
-  resolved: 'Đã phán quyết',
-} as const;
+import { mockDisputes } from '@/lib/mock-data';
 
 export default function DisputeCenterPage() {
   const current = mockDisputes[0];
 
   return (
-    <AppShell role="admin" active="/cms/disputes">
-      <PageHeader
-        title="Trung tâm tranh chấp"
-        description="Moderator chỉ được đề xuất Pend Approval/Pend Reject — Admin chốt phán quyết cuối cùng."
-      />
-
-      <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-        <div className="flex flex-col gap-2">
-          {mockDisputes.map((d) => (
-            <button
-              key={d.id}
-              className={`border-line flex flex-col gap-1 border p-3 text-left ${
-                d.id === current.id ? 'bg-paper-raised border-navy' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-ink text-sm font-medium">{d.id}</span>
-                <StatusPill tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status]}</StatusPill>
-              </div>
-              <p className="text-ink-muted truncate text-xs">{d.campaign}</p>
-            </button>
-          ))}
+    <CmsShell active="/cms/disputes">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-base font-extrabold text-slate-900">
+            SCR-11: CMS Dispute Center (Tranh Chấp 2 Cấp)
+          </h3>
         </div>
 
-        <div className="border-line border-t pt-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-ink-muted text-xs">
-                {current.id} · Submission {current.submission}
-              </p>
-              <h2 className="font-display text-ink mt-1 text-lg font-medium">{current.campaign}</h2>
-            </div>
-            <span className="font-ledger text-navy text-lg font-semibold">
-              {formatKpoint(current.amount)}
+        <div className="space-y-3 rounded-2xl border-2 border-purple-200 bg-purple-50/20 p-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-mono font-bold text-purple-900">
+              CASE #{current.id} • KPoint Phong Tỏa: {formatKpoint(current.amountLocked)}
             </span>
-          </div>
-          <p className="text-ink mt-4 text-sm">{current.reason}</p>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="border-line border p-3">
-              <p className="text-ink-muted text-xs">Bằng chứng Bên B</p>
-              <div className="bg-paper mt-2 aspect-video w-full" />
-            </div>
-            <div className="border-line border p-3">
-              <p className="text-ink-muted text-xs">Lý do từ chối của Bên A</p>
-              <p className="text-ink mt-2 text-sm">
-                &ldquo;Ảnh mờ, không thấy biển hiệu địa điểm.&rdquo;
-              </p>
-            </div>
+            <Badge tone="purple">Đang Thẩm Định</Badge>
           </div>
 
-          <div className="border-line mt-6 border-t pt-6">
-            <p className="text-ink-muted mb-3 text-xs">Phán quyết cuối cùng (Admin)</p>
-            <div className="flex gap-2">
-              <Button>Approve — trả KPoint cho Bên B</Button>
-              <button className="border-ledger-red text-ledger-red border px-4 py-2 text-sm font-medium">
-                Reject — hoàn KPoint cho Bên A
+          <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+            <div className="space-y-1 rounded-xl border border-slate-200 bg-white p-3">
+              <strong className="block text-amber-700">
+                Lý do Bên A từ chối — {current.partyA.name} ({current.partyA.uid})
+              </strong>
+              <p className="text-slate-600">&ldquo;{current.partyA.reason}&rdquo;</p>
+            </div>
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+              <strong className="block text-brand-blue">
+                Bên B khiếu nại — {current.partyB.name} (Trust: {current.partyB.trustScore})
+              </strong>
+              <p className="text-slate-600">&ldquo;{current.partyB.appeal}&rdquo;</p>
+              <div className="watermark-overlay rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-center">
+                <span className="font-mono text-[10px] font-bold text-brand-blue">
+                  WATERMARK: {current.partyB.watermark}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-purple-100 pt-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-600">Moderator:</span>
+              <button className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-brand-blue transition hover:bg-blue-100">
+                Pend App
               </button>
+              <Button variant="outline" size="sm">
+                Pend Reject
+              </Button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-600">Admin Phán Quyết:</span>
+              <button className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700">
+                Thắng Bên B
+              </button>
+              <Button variant="dark" size="sm">
+                Hoàn Bên A
+              </Button>
             </div>
           </div>
         </div>
       </div>
-    </AppShell>
+    </CmsShell>
   );
 }

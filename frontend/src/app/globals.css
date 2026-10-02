@@ -1,98 +1,82 @@
 @import 'tailwindcss';
 
 /*
- * K-Platform — Design System (wireframe pass)
- * Bám theo "Design plan" đã duyệt: sổ cái tài chính + xác thực review thật,
- * không phải SaaS dashboard chung chung. Xem frontend/DESIGN.md.
+ * K-Platform — Design System v2
+ * Nguồn: wireframe SRS 13 màn hình (SCR-01 → SCR-13) đã duyệt. Xem frontend/DESIGN.md.
+ * Thương hiệu: brand-blue/brand-gold theo logo chính thức. Nền & trạng thái dùng thẳng
+ * thang màu slate/emerald/amber/rose/purple có sẵn của Tailwind — không định nghĩa lại.
  */
 :root {
-  /* Brand — giữ nguyên từ SRS/README đã duyệt */
-  --color-navy: #1d4e89;
-  --color-navy-dark: #13324f;
-  --color-gold: #e8a93a;
-  --color-gold-dark: #a9760f;
-
-  /* Hệ thống mở rộng cho wireframe */
-  --color-paper: #f3f5f8;
-  --color-paper-raised: #ffffff;
-  --color-ink: #16202b;
-  --color-ink-muted: #5b6b7b;
-  --color-line: #d7dee6;
-  --color-ledger-green: #2f9e6e;
-  --color-ledger-green-bg: #e9f6f0;
-  --color-ledger-red: #c2483a;
-  --color-ledger-red-bg: #fbebe9;
+  --color-brand-blue: #195b9b;
+  --color-brand-blue-dark: #0f3c69;
+  --color-brand-blue-light: #ebf3fa;
+  --color-brand-gold: #e69a19;
+  --color-brand-gold-hover: #ce850e;
+  --color-brand-gold-light: #fef7ea;
+  --color-brand-slate: #1e293b;
 }
 
 @theme inline {
-  --color-navy: var(--color-navy);
-  --color-navy-dark: var(--color-navy-dark);
-  --color-gold: var(--color-gold);
-  --color-gold-dark: var(--color-gold-dark);
-  --color-paper: var(--color-paper);
-  --color-paper-raised: var(--color-paper-raised);
-  --color-ink: var(--color-ink);
-  --color-ink-muted: var(--color-ink-muted);
-  --color-line: var(--color-line);
-  --color-ledger-green: var(--color-ledger-green);
-  --color-ledger-green-bg: var(--color-ledger-green-bg);
-  --color-ledger-red: var(--color-ledger-red);
-  --color-ledger-red-bg: var(--color-ledger-red-bg);
+  --color-brand-blue: var(--color-brand-blue);
+  --color-brand-blue-dark: var(--color-brand-blue-dark);
+  --color-brand-blue-light: var(--color-brand-blue-light);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-gold-hover: var(--color-brand-gold-hover);
+  --color-brand-gold-light: var(--color-brand-gold-light);
+  --color-brand-slate: var(--color-brand-slate);
 
-  --font-display: var(--font-display);
-  --font-ui: var(--font-ui);
-  --font-ledger: var(--font-ledger);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-paper: #0f1720;
-    --color-paper-raised: #16212c;
-    --color-ink: #e7edf3;
-    --color-ink-muted: #93a4b5;
-    --color-line: #2a3744;
-    --color-ledger-green-bg: #10281f;
-    --color-ledger-red-bg: #2c1613;
-  }
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 body {
   font-family:
-    var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+    var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-h1,
-h2,
-h3,
-.font-display {
-  font-family: var(--font-display), ui-serif, serif;
-}
-
-.font-ledger,
+.font-mono,
 .tabular-figures {
-  font-family: var(--font-ledger), ui-monospace, monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* Mô-típ "dòng sổ cái": đường kẻ mảnh + chấm tick, dùng cho lịch sử giao dịch & audit log */
-.ledger-row {
-  position: relative;
-  border-bottom: 1px solid var(--color-line);
+/* Hiệu ứng watermark mô phỏng proof thật (FN-TASK-01) trên ảnh bằng chứng review */
+.watermark-overlay {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(25, 91, 155, 0.08),
+    rgba(25, 91, 155, 0.08) 35px,
+    rgba(230, 154, 25, 0.08) 35px,
+    rgba(230, 154, 25, 0.08) 70px
+  );
 }
-.ledger-row::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--color-line);
-  transform: translate(-2px, -50%);
+
+/* Khối JSON Diff trong Audit Log Inspector (SCR-13) */
+.json-code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-navy);
+  outline: 2px solid var(--color-brand-blue);
   outline-offset: 2px;
 }
 
