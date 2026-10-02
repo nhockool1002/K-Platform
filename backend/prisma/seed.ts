@@ -3,11 +3,15 @@
 // Chạy: pnpm --filter backend prisma:seed
 import { PrismaClient, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
 import { ROOT_ADMIN_ID } from '../src/common/constants.ts';
 
 const prisma = new PrismaClient();
 
-const DEV_PASSWORD = 'Passw0rd!'; // Chỉ dùng cho seed dev/staging, không dùng ở production.
+// Đọc từ SEED_DEV_PASSWORD nếu có (vd. đặt trong .env khi seed staging thật),
+// không thì sinh ngẫu nhiên — tránh để lộ chuỗi giống mật khẩu thật trong source.
+// Dùng chung 1 giá trị cho cả 5 user demo trong 1 lần chạy, in ra console để lấy lại.
+const DEV_PASSWORD = process.env.SEED_DEV_PASSWORD ?? randomBytes(9).toString('base64url');
 
 async function upsertUser(params: {
   id?: string;
@@ -67,7 +71,8 @@ async function main() {
     skipDuplicates: true,
   });
 
-  console.log('Seeded users (password dùng chung cho dev):', DEV_PASSWORD);
+  console.log('Seeded users — mật khẩu dùng chung cho dev (lưu lại, không in lại lần 2):');
+  console.log(DEV_PASSWORD);
   console.table(
     [root, admin, moderator, advertiser, publisher].map((u) => ({
       email: u.email,
