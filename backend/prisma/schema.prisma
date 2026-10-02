@@ -1,6 +1,6 @@
-// K-Point Platform — Prisma schema
+// K-Platform — Prisma schema
 // Mirrors the ERD in README.md / SRS Section VII (Thiết kế cơ sở dữ liệu cốt lõi).
-// Task: P0-04 (schema) / P0-05 (migration).
+// Task: P0-04 (schema) / P0-05 (migration) / P1-01 (role field + password reset tokens).
 
 generator client {
   provider = "prisma-client-js"
@@ -18,6 +18,15 @@ datasource db {
 enum ActiveMode {
   A // Bên A — Advertiser
   B // Bên B — Publisher
+}
+
+// Vai trò staff theo phân cấp RBAC (README.md § II). Bên A/Bên B không phải
+// role riêng — chúng là `activeMode` của role USER.
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  ROOT_ADMIN
 }
 
 enum BmcTopupStatus {
@@ -77,22 +86,37 @@ model User {
   email           String     @unique
   passwordHash    String     @map("password_hash")
   activeMode      ActiveMode @default(A) @map("active_mode")
-  isRoot          Boolean    @default(false) @map("is_root")
+  role            UserRole   @default(USER)
   trustScore      Int        @default(100) @map("trust_score")
   fingerprintHash String?    @map("fingerprint_hash")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
   wallet                 Wallet?
-  bmcTopups              BmcTopup[]      @relation("BmcTopupRequester")
-  bmcTopupsVerified      BmcTopup[]      @relation("BmcTopupVerifier")
-  campaignsOwned         Campaign[]      @relation("CampaignOwner")
-  submissionsAsPublisher Submission[]    @relation("SubmissionPublisher")
-  disputesAsModerator    DisputeTicket[] @relation("DisputeModerator")
-  disputesAsAdmin        DisputeTicket[] @relation("DisputeAdmin")
-  auditLogs              AuditLog[]      @relation("AuditActor")
+  bmcTopups              BmcTopup[]           @relation("BmcTopupRequester")
+  bmcTopupsVerified      BmcTopup[]           @relation("BmcTopupVerifier")
+  campaignsOwned         Campaign[]           @relation("CampaignOwner")
+  submissionsAsPublisher Submission[]         @relation("SubmissionPublisher")
+  disputesAsModerator    DisputeTicket[]      @relation("DisputeModerator")
+  disputesAsAdmin        DisputeTicket[]      @relation("DisputeAdmin")
+  auditLogs              AuditLog[]           @relation("AuditActor")
+  passwordResetTokens    PasswordResetToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model RolePermission {

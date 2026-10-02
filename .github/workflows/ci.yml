@@ -11,12 +11,30 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Chỉ dùng để `prisma generate`/build qua, không cần DB thật kết nối được.
+  # Từ Phase 1: test (e2e) cần DB thật để verify Auth/RBAC — trỏ vào service postgres bên dưới.
   DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+  JWT_ACCESS_SECRET: 'ci-only-access-secret'
+  JWT_REFRESH_SECRET: 'ci-only-refresh-secret'
 
 jobs:
   lint-build-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -44,5 +62,11 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Test (backend)
+      - name: Prisma migrate deploy
+        run: pnpm --filter backend prisma:deploy
+
+      - name: Test (backend — unit)
         run: pnpm test
+
+      - name: Test (backend — e2e)
+        run: pnpm --filter backend test:e2e

@@ -1,8 +1,13 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/ui/Logo';
 import { formatKpoint } from '@/lib/format';
 import { mockWallet } from '@/lib/mock-data';
+import { useCurrentUser } from '@/lib/use-current-user';
+import { switchMode, logout, type ActiveMode } from '@/lib/auth-client';
 
 export type AppRole = 'advertiser' | 'publisher' | 'admin';
 
@@ -37,6 +42,11 @@ const ROLE_LABEL: Record<AppRole, string> = {
   admin: 'Quản trị hệ thống',
 };
 
+const DASHBOARD_HREF: Record<ActiveMode, string> = {
+  A: '/a/dashboard',
+  B: '/b/dashboard',
+};
+
 export function AppShell({
   role,
   active,
@@ -46,7 +56,20 @@ export function AppShell({
   active: string;
   children: ReactNode;
 }) {
+  const router = useRouter();
+  const { user, loading } = useCurrentUser();
   const items = NAV_BY_ROLE[role];
+
+  async function handleSwitchMode() {
+    const targetRole: ActiveMode = role === 'advertiser' ? 'B' : 'A';
+    const newMode = await switchMode(targetRole);
+    router.push(DASHBOARD_HREF[newMode]);
+  }
+
+  function handleLogout() {
+    logout();
+    router.push('/login');
+  }
 
   return (
     <div className="flex min-h-full">
@@ -74,12 +97,12 @@ export function AppShell({
 
         {role !== 'admin' && (
           <div className="border-line border-t p-3">
-            <Link
-              href={role === 'advertiser' ? '/b/dashboard' : '/a/dashboard'}
-              className="border-line text-ink-muted hover:text-navy block border px-3 py-2 text-center text-xs"
+            <button
+              onClick={handleSwitchMode}
+              className="border-line text-ink-muted hover:text-navy hover:border-navy block w-full border px-3 py-2 text-center text-xs"
             >
               Switch Mode → {role === 'advertiser' ? 'Bên B' : 'Bên A'}
-            </Link>
+            </button>
           </div>
         )}
       </aside>
@@ -88,6 +111,9 @@ export function AppShell({
         <header className="border-line bg-paper-raised flex items-center justify-between border-b px-4 py-3 md:px-8">
           <div>
             <p className="text-ink-muted text-xs">{ROLE_LABEL[role]}</p>
+            <p className="text-ink text-sm font-medium">
+              {loading ? 'Đang tải...' : (user?.email ?? 'Chưa đăng nhập')}
+            </p>
           </div>
           <div className="flex items-center gap-4">
             {role !== 'admin' && (
@@ -98,9 +124,13 @@ export function AppShell({
                 </p>
               </div>
             )}
-            <div className="bg-navy flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium text-white">
+            <button
+              onClick={handleLogout}
+              title="Đăng xuất"
+              className="bg-navy hover:bg-navy-dark flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium text-white"
+            >
               {role === 'admin' ? 'AD' : role === 'advertiser' ? 'A' : 'B'}
-            </div>
+            </button>
           </div>
         </header>
 

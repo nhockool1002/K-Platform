@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %      | Trạng thái                           |
-| -------- | -------------------------------- | --------- | ---------- | ------ | ------------------------------------ |
-| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%    | 🔄 Gần xong (P0-10 cần hạ tầng thật) |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 2        | Ví KPoint & SePay                | 13        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 3        | Campaign & Survey                | 15        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 5        | Dispute Center                   | 12        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%     | ⬜ Chưa bắt đầu                      |
-| **Tổng** |                                  | **129**   | **11**     | **9%** |                                      |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                            |
+| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------- |
+| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)  |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth) |
+| 2        | Ví KPoint & SePay                | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 3        | Campaign & Survey                | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 5        | Dispute Center                   | 12        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                       |
+| **Tổng** |                                  | **129**   | **25**     | **19%** |                                       |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -74,20 +74,20 @@
 
 **Mục tiêu:** Đăng ký/đăng nhập, Switch Mode mượt không mất phiên, RBAC chặn đúng theo role.
 
-- [ ] **P1-01** Bảng `users` + `roles_permissions` (migration + model)
-- [ ] **P1-02** Đăng ký/Đăng nhập bằng Email + Password _(SCR-02)_
-- [ ] **P1-03** Quên mật khẩu / reset password qua email _(SCR-02)_
-- [ ] **P1-04** OAuth2 Google _(SCR-02)_
-- [ ] **P1-05** OAuth2 Facebook _(SCR-02)_
-- [ ] **P1-06** Phát hành JWT (access + refresh token)
-- [ ] **P1-07** API `POST /api/v1/auth/switch-mode` — đổi `active_mode`, giữ nguyên JWT _(FN-AUTH-01)_
-- [ ] **P1-08** Guard RBAC theo role (Bên A/Bên B/Super-Moderator/Administrator/Root Administrator)
-- [ ] **P1-09** Ràng buộc: Root Administrator hard-code ID, chặn mọi API xóa/hạ cấp Root
-- [ ] **P1-10** Khung Dashboard Bên A rỗng (chưa data) để test UI Switch Mode _(SCR-03)_
-- [ ] **P1-11** Khung Dashboard Bên B rỗng (chưa data) để test UI Switch Mode _(SCR-06)_
-- [ ] **P1-12** Test case: đăng nhập A → Switch B → gọi API bất kỳ không bị 401
-- [ ] **P1-13** Test case: thử xóa/hạ cấp Root Administrator qua mọi endpoint → bị chặn 403/409
-- [ ] **P1-14** Demo cuối Phase cho Product Owner + đối chiếu DoD
+- [x] **P1-01** Bảng `users` (+ cột `role` enum) + `roles_permissions` (migration + model)
+- [x] **P1-02** Đăng ký/Đăng nhập bằng Email + Password _(SCR-02)_ — API thật + UI nối API, xem `screenshots/p1-login.png`, `p1-register.png`
+- [x] **P1-03** Quên mật khẩu / reset password _(SCR-02)_ — chưa có SMTP thật, dùng mock mailer (log + dev token), xem `screenshots/p1-forgot-password.png`, `p1-reset-password*.png`
+- [x] **P1-04** OAuth2 Google _(SCR-02)_ — **mockup**: nút UI "Sắp ra mắt" + endpoint `501 Not Implemented`; tích hợp OAuth thật để phase sau
+- [x] **P1-05** OAuth2 Facebook _(SCR-02)_ — **mockup**, tương tự P1-04
+- [x] **P1-06** Phát hành JWT (access 15m + refresh 7d)
+- [x] **P1-07** API `POST /api/v1/auth/switch-mode` — đổi `active_mode`, giữ nguyên phiên (refresh token) _(FN-AUTH-01)_
+- [x] **P1-08** Guard RBAC theo role (`JwtAuthGuard` + `RolesGuard`, enum `USER/MODERATOR/ADMIN/ROOT_ADMIN`)
+- [x] **P1-09** Ràng buộc: Root Administrator hard-code ID (`ROOT_ADMIN_ID`), `RootAdminTargetGuard` chặn mọi API xóa/hạ cấp Root
+- [x] **P1-10** Dashboard Bên A nối Auth/Switch Mode thật (header lấy từ `GET /auth/me`) _(SCR-03)_
+- [x] **P1-11** Dashboard Bên B nối Auth/Switch Mode thật, cùng cơ chế _(SCR-06)_
+- [x] **P1-12** Test case (e2e, pass): đăng nhập A → Switch B → gọi API khác không bị 401 — `backend/test/auth.e2e-spec.ts`
+- [x] **P1-13** Test case (e2e, pass): xóa/hạ cấp Root Administrator qua API → bị chặn 403 — `backend/test/auth.e2e-spec.ts`
+- [x] **P1-14** Demo cuối Phase — bằng chứng screenshot + e2e test tại README.md § X.1, chờ Product Owner duyệt chính thức
 
 ---
 
