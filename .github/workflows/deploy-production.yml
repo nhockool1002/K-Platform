@@ -14,6 +14,12 @@ on:
     branches: [main]
     types: [completed]
 
+# Chốt chặn thứ 2 (ngoài guard `event == 'push'` ở job bên dưới) — xem giải
+# thích chi tiết trong deploy-staging.yml.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     if: |

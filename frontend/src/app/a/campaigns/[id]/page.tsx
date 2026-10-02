@@ -112,7 +112,11 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
 
                 {a.status === 'APPLIED' && (
                   <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                    <Button variant="gold" className="flex-1" onClick={() => handleDecide(a.id, 'INVITE')}>
+                    <Button
+                      variant="gold"
+                      className="flex-1"
+                      onClick={() => handleDecide(a.id, 'INVITE')}
+                    >
                       <Send className="h-4 w-4" />
                       Chấp Nhận (Invite Làm Review)
                     </Button>

@@ -53,10 +53,22 @@ describe('Campaigns & Survey (e2e)', () => {
     });
 
     await prisma.user.create({
-      data: { email: publisherAEmail, passwordHash, activeMode: 'B', role: 'USER', trustScore: 100 },
+      data: {
+        email: publisherAEmail,
+        passwordHash,
+        activeMode: 'B',
+        role: 'USER',
+        trustScore: 100,
+      },
     });
     await prisma.user.create({
-      data: { email: publisherBEmail, passwordHash, activeMode: 'B', role: 'USER', trustScore: 100 },
+      data: {
+        email: publisherBEmail,
+        passwordHash,
+        activeMode: 'B',
+        role: 'USER',
+        trustScore: 100,
+      },
     });
   });
 
@@ -99,7 +111,9 @@ describe('Campaigns & Survey (e2e)', () => {
     expect(res.body.rewardPerSlot).toBe('20000');
 
     const wallet = await prisma.wallet.findUniqueOrThrow({
-      where: { userId: (await prisma.user.findUniqueOrThrow({ where: { email: richAdvertiserEmail } })).id },
+      where: {
+        userId: (await prisma.user.findUniqueOrThrow({ where: { email: richAdvertiserEmail } })).id,
+      },
     });
     expect(wallet.reservedKpoint).toBe(150_000n);
   });
@@ -123,7 +137,9 @@ describe('Campaigns & Survey (e2e)', () => {
 
     // Không có Campaign nào được tạo, ví không bị khoá nhầm.
     const wallet = await prisma.wallet.findUniqueOrThrow({
-      where: { userId: (await prisma.user.findUniqueOrThrow({ where: { email: poorAdvertiserEmail } })).id },
+      where: {
+        userId: (await prisma.user.findUniqueOrThrow({ where: { email: poorAdvertiserEmail } })).id,
+      },
     });
     expect(wallet.reservedKpoint).toBe(0n);
   });
