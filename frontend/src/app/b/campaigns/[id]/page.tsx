@@ -83,9 +83,12 @@ export default function ApplyCampaignPage({ params }: { params: Promise<{ id: st
                 </p>
               )}
               <p className="text-xs text-slate-500">
-                Thưởng: <strong className="text-brand-blue">{formatKpoint(Number(campaign.rewardPerSlot))}</strong>{' '}
-                · Trust ≥ {campaign.minTrustScore} · Còn {campaign.totalSlots - campaign.slotsFilled} /{' '}
-                {campaign.totalSlots} slot
+                Thưởng:{' '}
+                <strong className="text-brand-blue">
+                  {formatKpoint(Number(campaign.rewardPerSlot))}
+                </strong>{' '}
+                · Trust ≥ {campaign.minTrustScore} · Còn{' '}
+                {campaign.totalSlots - campaign.slotsFilled} / {campaign.totalSlots} slot
               </p>
             </div>
 

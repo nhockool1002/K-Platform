@@ -128,7 +128,10 @@ export default function NewCampaignPage() {
                 <Input value={location} onChange={(e) => setLocation(e.target.value)} />
               </Field>
               <Field label="Nền tảng mục tiêu">
-                <Select value={platform} onChange={(e) => setPlatform(e.target.value as PlatformKey)}>
+                <Select
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value as PlatformKey)}
+                >
                   <option value="GOOGLE_MAPS">Google Maps (Đánh giá địa điểm &amp; Ảnh)</option>
                   <option value="FACEBOOK">Facebook (Check-in bài viết kèm ảnh)</option>
                   <option value="SHOPEE">Shopee / E-Commerce Feedback</option>
@@ -251,7 +254,9 @@ export default function NewCampaignPage() {
                       <select
                         value={q.answerType}
                         onChange={(e) =>
-                          updateQuestion(i, { answerType: e.target.value as SurveyQuestion['answerType'] })
+                          updateQuestion(i, {
+                            answerType: e.target.value as SurveyQuestion['answerType'],
+                          })
                         }
                         className="rounded-lg border border-slate-300 bg-white px-2 py-1"
                       >

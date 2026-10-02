@@ -243,7 +243,10 @@ export class CampaignsService {
     return this.prisma.submission.update({
       where: { id: submissionId },
       data: {
-        status: dto.action === 'INVITE' ? SubmissionStatus.INVITED : SubmissionStatus.REJECTED_APPLICATION,
+        status:
+          dto.action === 'INVITE'
+            ? SubmissionStatus.INVITED
+            : SubmissionStatus.REJECTED_APPLICATION,
       },
     });
   }

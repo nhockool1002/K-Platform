@@ -32,13 +32,7 @@ export interface Campaign {
 }
 
 export type SubmissionStatus =
-  | 'APPLIED'
-  | 'INVITED'
-  | 'REJECTED_APPLICATION'
-  | 'PENDING'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'DISPUTED';
+  'APPLIED' | 'INVITED' | 'REJECTED_APPLICATION' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISPUTED';
 
 export interface Applicant {
   id: string;
