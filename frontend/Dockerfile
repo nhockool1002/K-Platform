@@ -8,7 +8,7 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS build
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json .npmrc ./
 COPY frontend ./frontend
 COPY backend/package.json ./backend/package.json
 RUN pnpm install --frozen-lockfile
