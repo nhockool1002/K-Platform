@@ -38,9 +38,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version lấy từ "packageManager" trong package.json — không pin ở đây
+      # (pin 2 nơi khác nhau gây lỗi "Multiple versions of pnpm specified").
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
