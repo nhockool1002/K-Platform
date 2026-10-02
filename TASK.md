@@ -64,7 +64,7 @@
 - [x] **P0-07** Dựng Docker Compose cho Dev (FE + BE + Postgres + Redis)
 - [x] **P0-08** Tạo file `.env.example` liệt kê đầy đủ biến môi trường cần thiết
 - [x] **P0-09** Thiết lập CI (GitHub Actions): lint + build + test chạy trên mỗi PR
-- [~] **P0-10** Dựng môi trường Staging — _code sẵn sàng (compose/Dockerfile/workflow deploy), còn thiếu server thật + secrets; xem `infra/README.md`_
+- [~] **P0-10** Dựng môi trường Staging — _kiến trúc đã chốt (Backend: Docker trên VPS aaPanel; Frontend: Vercel), workflow deploy + hướng dẫn từng bước đầy đủ tại `DEPLOY.md`; còn chờ thực hiện trên VPS/Vercel/GitHub Secrets thật (việc của bạn, ngoài phạm vi code)_
 - [x] **P0-11** Thiết lập Design Token/UI Kit theo Branding (màu `#1d4e89`/`#e8a93a`, logo, typography)
 - [x] **P0-12** Viết `CONTRIBUTING.md`/quy ước nhánh Git (tham chiếu PLAN.md § 9)
 

@@ -1,4 +1,4 @@
-# K-Point Platform — backend (NestJS) image.
+# K-Platform — backend (NestJS) image.
 # Build context PHẢI là thư mục gốc repo: `docker build -f backend/Dockerfile .`
 # (xem docker-compose.yml ở root — đã cấu hình sẵn context đúng).
 # Dùng `pnpm deploy` để tạo thư mục self-contained, tránh lỗi symlink của pnpm store khi copy giữa stage.

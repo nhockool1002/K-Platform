@@ -1,9 +1,10 @@
 name: Deploy Staging
 
-# Chạy khi CI (ci.yml) pass trên nhánh staging. Cần cấu hình GitHub Environment
-# "staging" với các secret: STAGING_SSH_HOST, STAGING_SSH_USER, STAGING_SSH_KEY,
-# STAGING_DEPLOY_PATH — xem infra/README.md. Chưa có secrets thì job sẽ fail rõ
-# ràng ở bước "Guard", không âm thầm no-op.
+# Chạy khi CI (ci.yml) pass trên nhánh staging. Deploy BACKEND lên VPS (aaPanel)
+# qua SSH + Docker Compose — xem DEPLOY.md để setup đầy đủ (VPS, aaPanel reverse
+# proxy, GitHub Environment "staging" + secrets).
+# Frontend (Next.js) KHÔNG deploy ở đây — Vercel tự deploy khi push nhánh
+# `staging` (Git integration riêng, xem DEPLOY.md § Frontend).
 on:
   workflow_run:
     workflows: ['CI']
@@ -21,7 +22,7 @@ jobs:
           missing=0
           for v in STAGING_SSH_HOST STAGING_SSH_USER STAGING_SSH_KEY STAGING_DEPLOY_PATH; do
             if [ -z "${!v}" ]; then
-              echo "::error::Missing secret $v — xem infra/README.md để cấu hình GitHub Environment 'staging'."
+              echo "::error::Missing secret $v — xem DEPLOY.md để cấu hình GitHub Environment 'staging'."
               missing=1
             fi
           done
@@ -32,10 +33,11 @@ jobs:
           STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
           STAGING_DEPLOY_PATH: ${{ secrets.STAGING_DEPLOY_PATH }}
 
-      - name: Deploy via SSH (git pull + docker compose up)
+      - name: Deploy via SSH (git pull + docker compose up + migrate)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
@@ -44,6 +46,18 @@ jobs:
             git fetch origin staging
             git checkout staging
             git reset --hard origin/staging
-            docker compose pull || true
-            docker compose up -d --build
-            docker compose exec -T backend pnpm prisma:deploy
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend pnpm prisma:deploy
+
+      - name: Verify — health check qua domain công khai
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS "https://staging.kp.nhutnm.id.vn/api/v1/health"; then
+              echo "OK"
+              exit 0
+            fi
+            echo "Chưa sẵn sàng, thử lại ($i/10)..."
+            sleep 6
+          done
+          echo "::error::Health check thất bại sau khi deploy — kiểm tra log container trên VPS và cấu hình reverse proxy aaPanel."
+          exit 1
