@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   BarChart3,
+  Banknote,
   ChevronDown,
   Coffee,
   ExternalLink,
@@ -61,10 +62,19 @@ const NAV: (NavLeaf | NavGroup)[] = [
     iconClassName: 'text-slate-500',
   },
   {
+    href: '/cms/withdrawals',
+    label: 'Yêu Cầu Rút Tiền',
+    icon: Banknote,
+    iconClassName: 'text-emerald-600',
+  },
+  {
     label: 'Cài Đặt',
     icon: Settings,
     iconClassName: 'text-slate-500',
-    children: [{ href: '/cms/settings/sepay', label: 'Cài đặt SePay' }],
+    children: [
+      { href: '/cms/settings/sepay', label: 'Cài đặt SePay' },
+      { href: '/cms/settings/activation-fee', label: 'Cài đặt phí kích hoạt' },
+    ],
   },
 ];
 

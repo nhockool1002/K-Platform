@@ -17,6 +17,7 @@ export interface CurrentUser {
   role: UserRole;
   activeMode: ActiveMode;
   trustScore: number;
+  serviceActivated: boolean;
 }
 
 export function getAccessToken(): string | null {

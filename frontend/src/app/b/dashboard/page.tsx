@@ -39,7 +39,7 @@ export default function PublisherDashboard() {
     <AppShell role="publisher" active="/b/dashboard">
       <div className="space-y-6">
         <PageHeader
-          title="Dashboard Bên B (Publisher)"
+          title="Dashboard Tài Khoản Người Dùng"
           description="Quản lý nhiệm vụ trải nghiệm, nộp bằng chứng review và theo dõi tiền thưởng KPoint."
           actions={
             <>
@@ -104,7 +104,7 @@ export default function PublisherDashboard() {
           ) : needsProof.length === 0 ? (
             <EmptyState
               title="Không có nhiệm vụ nào cần nộp bài"
-              body="Khi được Bên A Invite vào một Campaign, nhiệm vụ nộp Proof sẽ hiện ở đây."
+              body="Khi được Tài khoản Dịch vụ Invite vào một Campaign, nhiệm vụ nộp Proof sẽ hiện ở đây."
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

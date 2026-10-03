@@ -39,14 +39,26 @@ describe('Campaigns & Survey (e2e)', () => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const richAdvertiser = await prisma.user.create({
-      data: { email: richAdvertiserEmail, passwordHash, activeMode: 'A', role: 'USER' },
+      data: {
+        email: richAdvertiserEmail,
+        passwordHash,
+        activeMode: 'A',
+        role: 'USER',
+        serviceActivatedAt: new Date(),
+      },
     });
     await prisma.wallet.create({
       data: { userId: richAdvertiser.id, balanceKpoint: 1_000_000n, reservedKpoint: 0n },
     });
 
     const poorAdvertiser = await prisma.user.create({
-      data: { email: poorAdvertiserEmail, passwordHash, activeMode: 'A', role: 'USER' },
+      data: {
+        email: poorAdvertiserEmail,
+        passwordHash,
+        activeMode: 'A',
+        role: 'USER',
+        serviceActivatedAt: new Date(),
+      },
     });
     await prisma.wallet.create({
       data: { userId: poorAdvertiser.id, balanceKpoint: 1_000n, reservedKpoint: 0n },

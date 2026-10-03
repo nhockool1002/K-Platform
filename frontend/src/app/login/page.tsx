@@ -20,12 +20,12 @@ type Mode = 'login' | 'register' | 'forgot';
 
 const QUICK_FILL = [
   {
-    label: 'Bên A (Advertiser)',
+    label: 'Tài khoản Dịch vụ',
     email: 'advertiser@kplatform.dev',
     accent: 'hover:border-brand-gold',
   },
   {
-    label: 'Bên B (Publisher)',
+    label: 'Tài khoản Người dùng',
     email: 'publisher@kplatform.dev',
     accent: 'hover:border-brand-blue',
   },
@@ -97,7 +97,8 @@ export default function LoginPage() {
             </h1>
           </div>
           <p className="text-xs text-slate-500">
-            {mode === 'login' && 'Một tài khoản duy nhất - Sử dụng cả 2 chế độ Bên A và Bên B.'}
+            {mode === 'login' &&
+              'Một tài khoản duy nhất - Sử dụng cả Tài khoản Dịch vụ và Tài khoản Người dùng.'}
             {mode === 'register' && 'Tạo tài khoản để bắt đầu tạo Campaign hoặc nhận KPoint.'}
             {mode === 'forgot' && 'Nhập email để nhận liên kết đặt lại mật khẩu.'}
           </p>
@@ -208,7 +209,7 @@ export default function LoginPage() {
                       : 'border-slate-200 bg-white hover:border-brand-gold'
                   }`}
                 >
-                  <strong className="block text-slate-800">Bên A (Advertiser)</strong>
+                  <strong className="block text-slate-800">Tài khoản Dịch vụ</strong>
                   <span className="text-[10px] text-slate-500">Tôi muốn tạo chiến dịch</span>
                 </button>
                 <button
@@ -220,7 +221,7 @@ export default function LoginPage() {
                       : 'border-slate-200 bg-white hover:border-brand-blue'
                   }`}
                 >
-                  <strong className="block text-slate-800">Bên B (Publisher)</strong>
+                  <strong className="block text-slate-800">Tài khoản Người dùng</strong>
                   <span className="text-[10px] text-slate-500">
                     Tôi muốn làm review nhận thưởng
                   </span>

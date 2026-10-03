@@ -27,13 +27,14 @@ export default function DisputeCenterPage() {
           <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
             <div className="space-y-1 rounded-xl border border-slate-200 bg-white p-3">
               <strong className="block text-amber-700">
-                Lý do Bên A từ chối — {current.partyA.name} ({current.partyA.uid})
+                Lý do Tài khoản Dịch vụ từ chối — {current.partyA.name} ({current.partyA.uid})
               </strong>
               <p className="text-slate-600">&ldquo;{current.partyA.reason}&rdquo;</p>
             </div>
             <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
               <strong className="block text-brand-blue">
-                Bên B khiếu nại — {current.partyB.name} (Trust: {current.partyB.trustScore})
+                Tài khoản Người dùng khiếu nại — {current.partyB.name} (Trust:{' '}
+                {current.partyB.trustScore})
               </strong>
               <p className="text-slate-600">&ldquo;{current.partyB.appeal}&rdquo;</p>
               <div className="watermark-overlay rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-center">
@@ -57,10 +58,10 @@ export default function DisputeCenterPage() {
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-slate-600">Admin Phán Quyết:</span>
               <button className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700">
-                Thắng Bên B
+                Thắng Tài Khoản Người Dùng
               </button>
               <Button variant="dark" size="sm">
-                Hoàn Bên A
+                Hoàn Tài Khoản Dịch Vụ
               </Button>
             </div>
           </div>

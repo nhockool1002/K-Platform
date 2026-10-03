@@ -94,6 +94,7 @@ export function AppShell({
             >
               <button
                 onClick={() => handleSwitchMode('A')}
+                title="Tài khoản Dịch vụ"
                 className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-bold transition ${
                   activeMode === 'A'
                     ? 'bg-brand-gold text-slate-950 shadow-sm'
@@ -101,10 +102,11 @@ export function AppShell({
                 }`}
               >
                 <Briefcase className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Bên A</span>
+                <span className="hidden sm:inline">Dịch Vụ</span>
               </button>
               <button
                 onClick={() => handleSwitchMode('B')}
+                title="Tài khoản Người dùng"
                 className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-bold transition ${
                   activeMode === 'B'
                     ? 'bg-brand-blue text-white shadow-sm'
@@ -112,7 +114,7 @@ export function AppShell({
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Bên B</span>
+                <span className="hidden sm:inline">Người Dùng</span>
               </button>
             </div>
 

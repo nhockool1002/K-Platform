@@ -55,6 +55,16 @@ export class CampaignsService {
   // transaction ACID (row lock SELECT ... FOR UPDATE) để tránh 2 request tạo
   // Campaign đồng thời cùng đọc một số dư "đủ" rồi cùng trừ, gây lệch ví.
   async create(ownerId: string, dto: CreateCampaignDto) {
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { serviceActivatedAt: true },
+    });
+    if (!owner?.serviceActivatedAt) {
+      throw new ForbiddenException(
+        'Tài khoản Dịch vụ của bạn chưa được kích hoạt. Vui lòng kích hoạt để tạo Campaign.',
+      );
+    }
+
     const totalCost = CREATION_FEE_KPOINT + BigInt(dto.totalSlots) * BigInt(dto.rewardPerSlot);
 
     return this.prisma.$transaction(async (tx) => {

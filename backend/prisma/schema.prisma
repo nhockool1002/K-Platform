@@ -50,6 +50,15 @@ enum WalletTxType {
   // P4-10 — Approve Proof (thủ công hoặc Auto-Approve 48h): tiền thưởng rời
   // escrow của Campaign (Bên A) sang ví Bên B.
   TASK_REWARD
+  // Phí 1 lần kích hoạt Tài khoản Dịch vụ (mở khoá tạo Campaign) — số tiền
+  // cấu hình được qua CMS Cài Đặt > Cài đặt phí kích hoạt.
+  ACCOUNT_ACTIVATION
+  // Admin duyệt lệnh rút tiền — tiền rời khỏi hệ thống thật (khác
+  // WITHDRAWAL_REQUEST chỉ mới khoá/reserve lúc user bấm gửi lệnh).
+  WITHDRAWAL_COMPLETED
+  // Admin từ chối lệnh rút — hoàn trả (giải phóng) phần reserved_kpoint đã
+  // khoá lúc user lập lệnh, không đổi balance_kpoint.
+  WITHDRAWAL_REJECTED
 }
 
 // Bên nào trong SRS Section II mà giao dịch này thuộc về — dùng để lọc Lịch
@@ -130,6 +139,10 @@ model User {
   // P2-04) — sinh lười lúc user xin QR lần đầu, không phải lúc đăng ký, nên
   // user cũ (trước migration này) vẫn luôn null cho tới khi họ vào ví.
   topupCode       String?    @unique @map("topup_code")
+  // null = Tài khoản Dịch vụ chưa kích hoạt (không được tạo Campaign). Mở
+  // chế độ Dịch vụ (activeMode=A) luôn miễn phí — chỉ cần trả phí 1 lần ở
+  // đây mới mở khoá được chức năng tạo Campaign (AccountActivationService).
+  serviceActivatedAt DateTime? @map("service_activated_at")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 

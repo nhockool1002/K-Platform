@@ -80,6 +80,50 @@ body {
   outline-offset: 2px;
 }
 
+/* Dấu tick xanh "thành công" (vd. Nạp KPoint, Nộp Proof) — pop-in nảy nhẹ +
+   1 vòng sóng lan toả phía sau, dừng lại ở trạng thái tĩnh. */
+@keyframes success-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes success-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.success-check-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.success-check-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-emerald-500, #10b981) 35%, transparent);
+  animation: success-ring 0.7s ease-out 0.15s both;
+}
+.success-check-icon {
+  animation: success-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

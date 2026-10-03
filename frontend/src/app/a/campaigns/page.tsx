@@ -51,7 +51,7 @@ export default function CampaignListPage() {
         ) : campaigns.length === 0 ? (
           <EmptyState
             title="Chưa có Campaign nào"
-            body="Tạo Campaign đầu tiên để bắt đầu nhận review thực từ Bên B."
+            body="Tạo Campaign đầu tiên để bắt đầu nhận review thực từ Tài khoản Người dùng."
           />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

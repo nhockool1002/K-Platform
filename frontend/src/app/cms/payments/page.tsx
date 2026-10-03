@@ -25,7 +25,7 @@ export default function CmsPaymentsPage() {
         <Table>
           <Thead>
             <Th>Transaction ID</Th>
-            <Th>User (Bên A)</Th>
+            <Th>User (Tài khoản Dịch vụ)</Th>
             <Th>Số tiền (USD)</Th>
             <Th>KPoint quy đổi</Th>
             <Th>Receipt</Th>

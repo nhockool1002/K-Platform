@@ -55,12 +55,20 @@ const TX_TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   TOPUP_SEPAY: 'Nạp KPoint qua SePay (VietQR)',
   WITHDRAWAL_REQUEST: 'Yêu cầu rút tiền về ngân hàng',
   CAMPAIGN_RESERVE: 'Ký quỹ tạo Campaign',
+  TASK_REWARD: 'Nhận thưởng hoàn thành review',
+  ACCOUNT_ACTIVATION: 'Kích hoạt Tài khoản Dịch vụ',
+  WITHDRAWAL_COMPLETED: 'Rút tiền đã được duyệt',
+  WITHDRAWAL_REJECTED: 'Yêu cầu rút tiền bị từ chối',
 };
 
 const TX_TYPE_TONE: Record<WalletTransaction['type'], BadgeTone> = {
   TOPUP_SEPAY: 'positive',
   WITHDRAWAL_REQUEST: 'warning',
   CAMPAIGN_RESERVE: 'warning',
+  TASK_REWARD: 'positive',
+  ACCOUNT_ACTIVATION: 'info',
+  WITHDRAWAL_COMPLETED: 'positive',
+  WITHDRAWAL_REJECTED: 'critical',
 };
 
 export default function WalletPage() {
@@ -369,7 +377,9 @@ export default function WalletPage() {
           {gateway === 'SEPAY' ? (
             topupSuccessAmount !== null ? (
               <div className="space-y-3 py-6 text-center">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+                <span className="success-check-wrap mx-auto">
+                  <CheckCircle2 className="success-check-icon h-12 w-12 text-emerald-500" />
+                </span>
                 <p className="text-base font-extrabold text-emerald-600">Nạp KPoint thành công!</p>
                 <p className="text-sm text-slate-600">
                   +{formatKpoint(topupSuccessAmount)} đã được cộng vào ví.

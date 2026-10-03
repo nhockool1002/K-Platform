@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { SepayConfigService } from './sepay-config.service.js';
+import { ActivationFeeConfigService } from './activation-fee-config.service.js';
 import type { UpdateSepaySettingsDto } from './dto/update-sepay-settings.dto.js';
+import type { UpdateActivationFeeDto } from './dto/update-activation-fee.dto.js';
 
 @Injectable()
 export class SettingsService {
-  constructor(private readonly sepayConfig: SepayConfigService) {}
+  constructor(
+    private readonly sepayConfig: SepayConfigService,
+    private readonly activationFeeConfig: ActivationFeeConfigService,
+  ) {}
 
   // Không bao giờ trả lại webhookApiKey thô qua API — chỉ báo đã cấu hình hay
   // chưa (`hasWebhookApiKey`), khớp UX "•••••••• (đã cấu hình)" của CMS.
@@ -32,5 +37,15 @@ export class SettingsService {
     });
 
     return this.getSepaySettings();
+  }
+
+  async getActivationFee() {
+    const feeKpoint = await this.activationFeeConfig.getFeeKpoint();
+    return { amountKpoint: feeKpoint.toString() };
+  }
+
+  async updateActivationFee(userId: string, dto: UpdateActivationFeeDto) {
+    await this.activationFeeConfig.setFeeKpoint(userId, dto.amountKpoint);
+    return this.getActivationFee();
   }
 }
