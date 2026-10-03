@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Check, Copy, PlusCircle, UploadCloud } from 'lucide-react';
+import { ArrowUpRight, Check, CheckCircle2, Copy, PlusCircle, UploadCloud } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
@@ -19,10 +19,15 @@ import {
   VIETQR_BANKS,
   createWithdrawal,
   getSepayQr,
+  getWallet,
   listTransactions,
   type SepayQrInfo,
   type WalletTransaction,
 } from '@/lib/wallet-client';
+
+// Khoảng poll trong lúc modal "Nạp KPoint" mở — phát hiện webhook SePay vừa
+// cộng ví để tự chuyển sang màn "Thành công" thay vì đứng yên ở QR mãi.
+const TOPUP_POLL_INTERVAL_MS = 3000;
 
 const TX_TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   TOPUP_SEPAY: 'Nạp KPoint qua SePay (VietQR)',
@@ -47,6 +52,8 @@ export default function WalletPage() {
   const [qr, setQr] = useState<SepayQrInfo | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [topupBaseline, setTopupBaseline] = useState<string | null>(null);
+  const [topupSuccessAmount, setTopupSuccessAmount] = useState<number | null>(null);
 
   const [transactions, setTransactions] = useState<WalletTransaction[] | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
@@ -71,6 +78,13 @@ export default function WalletPage() {
 
   function openTopup() {
     setTopupOpen(true);
+    setTopupSuccessAmount(null);
+    // Lấy baseline số dư MỚI mỗi lần mở modal (không dùng `wallet` từ
+    // useWallet() vì có thể đã cũ) — poll bên dưới so sánh với mốc này để
+    // biết lúc nào webhook SePay vừa cộng tiền.
+    getWallet()
+      .then((w) => setTopupBaseline(w.balanceKpoint))
+      .catch(() => setTopupBaseline(null));
     if (!qr) {
       getSepayQr()
         .then(setQr)
@@ -79,6 +93,42 @@ export default function WalletPage() {
         });
     }
   }
+
+  function closeTopup() {
+    setTopupOpen(false);
+    setTopupSuccessAmount(null);
+    setTopupBaseline(null);
+  }
+
+  // Poll trong lúc modal mở ở tab SePay, chưa phát hiện thành công — dừng
+  // ngay khi đóng modal hoặc đã thấy số dư tăng.
+  useEffect(() => {
+    if (
+      !topupOpen ||
+      gateway !== 'SEPAY' ||
+      topupSuccessAmount !== null ||
+      topupBaseline === null
+    ) {
+      return;
+    }
+    const timer = setInterval(() => {
+      getWallet()
+        .then((w) => {
+          const delta = Number(w.balanceKpoint) - Number(topupBaseline);
+          if (delta > 0) {
+            setTopupSuccessAmount(delta);
+            refreshWallet();
+            listTransactions(user?.activeMode)
+              .then(setTransactions)
+              .catch(() => {});
+          }
+        })
+        .catch(() => {
+          // Bỏ qua lỗi 1 tick — thử lại ở lần poll sau, không chặn UI.
+        });
+    }, TOPUP_POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [topupOpen, gateway, topupSuccessAmount, topupBaseline, user?.activeMode, refreshWallet]);
 
   function copyContent() {
     if (!qr) return;
@@ -257,7 +307,7 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <Modal open={topupOpen} onClose={() => setTopupOpen(false)} title="Nạp KPoint Vào Ví">
+      <Modal open={topupOpen} onClose={closeTopup} title="Nạp KPoint Vào Ví">
         <div className="space-y-4">
           <p className="text-xs text-slate-500">1 KPoint = 1 VNĐ</p>
           <div className="flex border-b border-slate-200 text-xs font-bold">
@@ -276,7 +326,18 @@ export default function WalletPage() {
           </div>
 
           {gateway === 'SEPAY' ? (
-            qrError ? (
+            topupSuccessAmount !== null ? (
+              <div className="space-y-3 py-6 text-center">
+                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+                <p className="text-base font-extrabold text-emerald-600">Nạp KPoint thành công!</p>
+                <p className="text-sm text-slate-600">
+                  +{formatKpoint(topupSuccessAmount)} đã được cộng vào ví.
+                </p>
+                <Button variant="gold" onClick={closeTopup}>
+                  Đóng
+                </Button>
+              </div>
+            ) : qrError ? (
               <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
                 {qrError}
               </p>

@@ -1,10 +1,9 @@
 import { randomBytes } from 'node:crypto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletTxSide, WalletTxType } from '../prisma/client.js';
 import { SepayConfigService } from '../settings/sepay-config.service.js';
 import type { CreateWithdrawalDto } from './dto/create-withdrawal.dto.js';
-import type { SepayWebhookDto } from './dto/sepay-webhook.dto.js';
 
 const MIN_WITHDRAWAL_KPOINT = 50_000n;
 
@@ -37,6 +36,8 @@ function isUniqueConstraintError(err: unknown): boolean {
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly sepayConfig: SepayConfigService,
@@ -91,27 +92,54 @@ export class PaymentsService {
   // P2-05/P2-06/P2-07 (FN-PAY-01) — webhook SePay: parse nội dung CK để tìm
   // topupCode, cộng KPoint = transferAmount (1 KPoint = 1 VNĐ), ACID + khoá
   // row ví, idempotent theo txnId (unique constraint trên WalletTransaction).
-  async handleSepayWebhook(payload: SepayWebhookDto) {
+  // Nhận payload thô (Record<string, unknown>, không qua class-validator DTO
+  // — xem payments.controller.ts) và tự kiểm tra từng field ở đây: payload
+  // bên thứ 3 có thể thêm/đổi field bất cứ lúc nào, validate chặt bằng DTO
+  // từng khiến cả request bị 400 chỉ vì 1 field lạ, SePay không retry và phía
+  // mình không log được gì để debug.
+  async handleSepayWebhook(payload: Record<string, unknown>) {
+    this.logger.log(`SePay webhook received: ${JSON.stringify(payload)}`);
+
     if (payload.transferType && payload.transferType !== 'in') {
       return { status: 200, credited: false, reason: 'not_inbound' };
     }
 
-    const normalizedContent = (payload.content ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const content = typeof payload.content === 'string' ? payload.content : '';
+    const normalizedContent = content.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const match = normalizedContent.match(
       new RegExp(`${SEPAY_CONTENT_PREFIX}([A-Z0-9]{${TOPUP_CODE_LENGTH}})`),
     );
     if (!match) {
+      this.logger.warn(`SePay webhook: không tìm thấy topupCode trong content="${content}"`);
       return { status: 200, credited: false, reason: 'no_topup_code_found' };
     }
     const topupCode = match[1]!;
 
-    const txnId = String(payload.id);
-    const amount = BigInt(payload.transferAmount);
+    const rawId = payload.id;
+    const txnId =
+      rawId !== undefined && rawId !== null && rawId !== ''
+        ? String(rawId)
+        : typeof payload.referenceCode === 'string'
+          ? payload.referenceCode
+          : '';
+    if (!txnId) {
+      this.logger.warn('SePay webhook: thiếu id/referenceCode — không có khoá idempotency');
+      return { status: 200, credited: false, reason: 'missing_txn_id' };
+    }
+
+    const rawAmount = payload.transferAmount;
+    const amountNum = typeof rawAmount === 'number' ? rawAmount : Number(rawAmount);
+    if (!Number.isFinite(amountNum) || amountNum <= 0) {
+      this.logger.warn(`SePay webhook: transferAmount không hợp lệ (${String(rawAmount)})`);
+      return { status: 200, credited: false, reason: 'invalid_amount' };
+    }
+    const amount = BigInt(Math.trunc(amountNum));
 
     try {
       return await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({ where: { topupCode }, select: { id: true } });
         if (!user) {
+          this.logger.warn(`SePay webhook: topupCode="${topupCode}" không khớp user nào`);
           return { status: 200, credited: false, reason: 'topup_code_not_found' };
         }
 
@@ -129,15 +157,19 @@ export class PaymentsService {
             side: WalletTxSide.SHARED,
             balanceDeltaKpoint: amount,
             txnId,
-            note: payload.content,
+            note: content,
           },
         });
 
+        this.logger.log(
+          `SePay webhook: đã cộng ${amount} KPoint cho user=${user.id} (txnId=${txnId})`,
+        );
         return { status: 200, credited: true };
       });
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         // txnId đã xử lý trước đó — SePay retry webhook, ack 200 không cộng lại.
+        this.logger.warn(`SePay webhook: txnId="${txnId}" đã xử lý trước đó, bỏ qua`);
         return { status: 200, credited: false, reason: 'duplicate_txn' };
       }
       throw err;
