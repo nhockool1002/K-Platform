@@ -1,59 +1,44 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  ForbiddenException,
-  Get,
-  Param,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { UserRole } from '../prisma/client.js';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { UsersService } from './users.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { RootAdminTargetGuard } from '../common/guards/root-admin-target.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
-import { ROOT_ADMIN_ID } from '../common/constants.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import type { AccessTokenPayload } from '../auth/token.types.js';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto.js';
 
-// P1-08/P1-09 — demo cụ thể cho RBAC guard + bảo vệ Root Administrator.
-// CMS RBAC đầy đủ (SCR-12) thuộc Phase 7; ở đây chỉ dựng API nền tảng.
+// P1-08/P1-09 — API nền tảng cho RBAC guard + bảo vệ Root Administrator.
+// P7-05/P7-06/P7-07/P7-10/P7-11 — CMS RBAC đầy đủ (SCR-12) dùng các route này.
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly users: UsersService) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
-  async list() {
-    const users = await this.prisma.user.findMany({
-      select: { id: true, email: true, role: true, activeMode: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
-    });
-    return users.map((u) => ({ ...u, isRootAdmin: u.id === ROOT_ADMIN_ID }));
+  list() {
+    return this.users.list();
   }
 
   @Patch(':id/role')
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
   @UseGuards(RootAdminTargetGuard)
-  async updateRole(@Param('id') id: string, @Body() dto: UpdateUserRoleDto) {
-    if (dto.role === UserRole.ROOT_ADMIN) {
-      throw new ForbiddenException('Không thể gán role ROOT_ADMIN qua API');
-    }
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: { role: dto.role },
-      select: { id: true, email: true, role: true },
-    });
-    return user;
+  updateRole(
+    @CurrentUser() actor: AccessTokenPayload,
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto,
+    @Req() req: Request,
+  ) {
+    return this.users.updateRole(actor.sub, actor.role, id, dto.role, req.ip ?? null);
   }
 
   @Delete(':id')
   @Roles(UserRole.ROOT_ADMIN)
   @UseGuards(RootAdminTargetGuard)
-  async remove(@Param('id') id: string) {
-    await this.prisma.user.delete({ where: { id } });
-    return { success: true };
+  remove(@CurrentUser() actor: AccessTokenPayload, @Param('id') id: string, @Req() req: Request) {
+    return this.users.remove(actor.sub, id, req.ip ?? null);
   }
 }
