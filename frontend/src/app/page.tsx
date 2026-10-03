@@ -59,8 +59,9 @@ export default async function Home({
 
             <p className="max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
               Cầu nối minh bạch giữa{' '}
-              <strong className="text-slate-900">Doanh nghiệp (Bên A)</strong> cần review trải
-              nghiệm thực và <strong className="text-slate-900">Người tiêu dùng (Bên B)</strong>{' '}
+              <strong className="text-slate-900">Doanh nghiệp (Tài khoản Dịch vụ)</strong> cần
+              review trải nghiệm thực và{' '}
+              <strong className="text-slate-900">Người tiêu dùng (Tài khoản Người dùng)</strong>{' '}
               nhận KPoint (1 KP = 1 VNĐ). Tự động đóng dấu Watermark và Auto-Approve sau 48 giờ.
             </p>
 
@@ -116,7 +117,9 @@ export default async function Home({
                   1
                 </div>
                 <div>
-                  <strong className="block text-slate-800">Bên A: Tạo Campaign &amp; Ký Quỹ</strong>
+                  <strong className="block text-slate-800">
+                    Tài khoản Dịch vụ: Tạo Campaign &amp; Ký Quỹ
+                  </strong>
                   <span className="text-slate-500">
                     Phí khởi tạo 50k + Khóa tạm KPoint theo số slot.
                   </span>
@@ -129,7 +132,7 @@ export default async function Home({
                 </div>
                 <div>
                   <strong className="block text-slate-800">
-                    Bên B: Trả Lời Survey &amp; Nộp Review
+                    Tài khoản Người dùng: Trả Lời Survey &amp; Nộp Review
                   </strong>
                   <span className="text-slate-500">
                     Hệ thống tự động chèn Watermark ID chống clone.
@@ -144,7 +147,7 @@ export default async function Home({
                 <div>
                   <strong className="block text-slate-800">Duyệt Thưởng Hoặc Auto 48h</strong>
                   <span className="text-slate-500">
-                    KPoint giải ngân về ví Bên B hoặc chuyển sang Dispute.
+                    KPoint giải ngân về ví Tài khoản Người dùng hoặc chuyển sang Dispute.
                   </span>
                 </div>
               </div>
@@ -173,7 +176,7 @@ export default async function Home({
           <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
             <p className="font-bold text-slate-800">Chưa có chiến dịch phù hợp</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-              Thử bỏ bộ lọc hoặc quay lại sau — Campaign mới được Bên A tạo liên tục.
+              Thử bỏ bộ lọc hoặc quay lại sau — Campaign mới được Tài khoản Dịch vụ tạo liên tục.
             </p>
           </div>
         ) : (

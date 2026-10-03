@@ -69,13 +69,25 @@ describe('Submissions & Proof (e2e)', () => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const advertiser = await prisma.user.create({
-      data: { email: advertiserEmail, passwordHash, activeMode: 'A', role: 'USER' },
+      data: {
+        email: advertiserEmail,
+        passwordHash,
+        activeMode: 'A',
+        role: 'USER',
+        serviceActivatedAt: new Date(),
+      },
     });
     await prisma.wallet.create({
       data: { userId: advertiser.id, balanceKpoint: 1_000_000n, reservedKpoint: 0n },
     });
     const otherAdvertiser = await prisma.user.create({
-      data: { email: otherAdvertiserEmail, passwordHash, activeMode: 'A', role: 'USER' },
+      data: {
+        email: otherAdvertiserEmail,
+        passwordHash,
+        activeMode: 'A',
+        role: 'USER',
+        serviceActivatedAt: new Date(),
+      },
     });
     await prisma.wallet.create({
       data: { userId: otherAdvertiser.id, balanceKpoint: 1_000_000n, reservedKpoint: 0n },

@@ -20,7 +20,8 @@ export default function RbacPage() {
               SCR-12: Quản Lý Phân Quyền RBAC &amp; Root Administrator
             </h3>
             <p className="text-xs text-slate-500">
-              Mô hình phân cấp: Root Admin → Admin → Super/Moderator → Bên A / Bên B
+              Mô hình phân cấp: Root Admin → Admin → Super/Moderator → Tài khoản Dịch vụ / Tài khoản
+              Người dùng
             </p>
           </div>
         </div>

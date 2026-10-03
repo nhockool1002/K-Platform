@@ -13,6 +13,7 @@ import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { SubmissionsModule } from './submissions/submissions.module.js';
+import { AccountActivationModule } from './account/account-activation.module.js';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SubmissionsModule } from './submissions/submissions.module.js';
     PaymentsModule,
     SettingsModule,
     SubmissionsModule,
+    AccountActivationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -19,7 +19,7 @@ export function PublicNav() {
             className="flex items-center gap-1.5 rounded-xl bg-brand-gold px-3 py-1.5 font-bold text-slate-950 shadow-sm transition hover:bg-brand-gold-hover"
           >
             <PlusCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Tạo Campaign (Bên A)</span>
+            <span className="hidden sm:inline">Tạo Campaign (Tài khoản Dịch vụ)</span>
             <span className="sm:hidden">Tạo Camp</span>
           </Link>
           <Link

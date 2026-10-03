@@ -184,6 +184,7 @@ export class AuthService {
     role: string;
     activeMode: string;
     trustScore: number;
+    serviceActivatedAt: Date | null;
   }) {
     return {
       id: user.id,
@@ -191,6 +192,7 @@ export class AuthService {
       role: user.role,
       activeMode: user.activeMode,
       trustScore: user.trustScore,
+      serviceActivated: user.serviceActivatedAt !== null,
     };
   }
 }

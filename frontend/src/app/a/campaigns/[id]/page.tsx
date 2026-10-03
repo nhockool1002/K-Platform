@@ -81,7 +81,7 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
       <div className="space-y-6">
         <PageHeader
           title={`Quản Lý Campaign & Ứng Viên${campaign ? ` — ${campaign.title}` : ''}`}
-          description="Xem danh sách Bên B nộp Survey ứng tuyển, Invite những ứng viên phù hợp hoặc Từ chối."
+          description="Xem danh sách Tài khoản Người dùng nộp Survey ứng tuyển, Invite những ứng viên phù hợp hoặc Từ chối."
         />
 
         {error && (
@@ -95,7 +95,7 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
         ) : applicants.length === 0 ? (
           <EmptyState
             title="Chưa có ứng viên nào"
-            body="Khi Bên B ứng tuyển Campaign này, đơn của họ sẽ hiện ở đây để bạn Invite hoặc Từ chối."
+            body="Khi Tài khoản Người dùng ứng tuyển Campaign này, đơn của họ sẽ hiện ở đây để bạn Invite hoặc Từ chối."
           />
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

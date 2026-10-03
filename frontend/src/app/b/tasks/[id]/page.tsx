@@ -277,9 +277,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-start gap-2 rounded-xl border border-purple-200 bg-purple-50 p-3 text-purple-900">
                 <Scale className="mt-0.5 h-4 w-4 shrink-0 text-purple-700" />
                 <div className="text-[11px]">
-                  <strong>Bảo vệ quyền lợi Bên B:</strong> Nếu Bên A từ chối duyệt bài nộp của bạn
-                  một cách không thỏa đáng, bạn có quyền tạo Dispute Khiếu Nại để Moderator và Admin
-                  K-Platform đứng ra phân xử công bằng (Phase 5).
+                  <strong>Bảo vệ quyền lợi của bạn:</strong> Nếu Tài khoản Dịch vụ từ chối duyệt bài
+                  nộp của bạn một cách không thỏa đáng, bạn có quyền tạo Dispute Khiếu Nại để
+                  Moderator và Admin K-Platform đứng ra phân xử công bằng (Phase 5).
                 </div>
               </div>
 
