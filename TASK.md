@@ -23,13 +23,13 @@
 | 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
 | 2        | Ví KPoint & SePay                | 13        | 12         | 92%     | 🔄 Gần xong (P2-12 cần chạy thật trên VPS + SePay dashboard) |
 | 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
-| 4        | Submission, Proof & Auto-Approve | 13        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
 | 5        | Dispute Center                   | 12        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **52**     | **40%** |                                                              |
+| **Tổng** |                                  | **129**   | **65**     | **50%** |                                                              |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -137,19 +137,19 @@
 
 **Mục tiêu:** Vòng đời ứng tuyển → review → nộp proof có watermark → duyệt (người hoặc tự động 48h).
 
-- [ ] **P4-01** Bảng `submissions` (migration + model, có `auto_approve_at`)
-- [ ] **P4-02** Form Làm Survey & Submit Proof — upload ảnh/video _(SCR-07)_
-- [ ] **P4-03** API `POST /api/v1/submissions/:id/proof` (multipart) _(FN-TASK-01)_
-- [ ] **P4-04** Thiết lập Queue (BullMQ/Redis) xử lý watermark bất đồng bộ
-- [ ] **P4-05** Worker chèn Watermark UserID + CampaignID lên ảnh
-- [ ] **P4-06** Worker chèn Watermark UserID + CampaignID lên video
-- [ ] **P4-07** UI trạng thái "đang xử lý" trong lúc chờ watermark hoàn tất
-- [ ] **P4-08** Giới hạn: Bên B chỉ nhận tối đa 1 slot/campaign
-- [ ] **P4-09** Cronjob Auto-Approve 48h — quét `submissions` quá hạn _(FN-TASK-02)_
-- [ ] **P4-10** Luồng Bên A duyệt/từ chối Proof (nối từ SCR-05)
-- [ ] **P4-11** Hoàn thiện Dashboard Bên B với dữ liệu thật (KPoint kiếm được, nhiệm vụ đang làm) _(SCR-06)_
-- [ ] **P4-12** Test watermark xuất hiện đúng trên ảnh + video mẫu
-- [ ] **P4-13** Test cronjob chạy đúng giờ trên staging + không trả thưởng trùng khi chạy nhiều lần
+- [x] **P4-01** Bảng `submissions` (migration + model, có `auto_approve_at`) — _đã có sẵn từ Phase 3 (apply/invite dùng chung bảng này); Phase 4 chỉ thêm 2 cột `review_url`/`review_note`_
+- [x] **P4-02** Form Làm Survey & Submit Proof — upload ảnh/video _(SCR-07)_
+- [x] **P4-03** API `POST /api/v1/submissions/:id/proof` (multipart) _(FN-TASK-01)_
+- [x] **P4-04** Thiết lập Queue (BullMQ/Redis) xử lý watermark bất đồng bộ
+- [x] **P4-05** Worker chèn Watermark UserID + CampaignID lên ảnh (sharp)
+- [x] **P4-06** Worker chèn Watermark UserID + CampaignID lên video (ffmpeg drawtext)
+- [x] **P4-07** UI trạng thái "đang xử lý" trong lúc chờ watermark hoàn tất (poll watermarkUrl)
+- [x] **P4-08** Giới hạn: Bên B chỉ nhận tối đa 1 slot/campaign — _đã chặn từ Phase 3 (`@@unique([campaignId, publisherId])` + apply())_
+- [x] **P4-09** Cronjob Auto-Approve 48h — quét `submissions` quá hạn _(FN-TASK-02)_
+- [x] **P4-10** Luồng Bên A duyệt/từ chối Proof (nối từ SCR-05) — Approve trả thưởng ACID (ví Bên A → Bên B), Reject không đổi ví
+- [x] **P4-11** Hoàn thiện Dashboard Bên B với dữ liệu thật (KPoint kiếm được, nhiệm vụ đang làm) _(SCR-06)_
+- [x] **P4-12** Test watermark xuất hiện đúng trên ảnh + video mẫu — ảnh: `backend/test/submissions.e2e-spec.ts` (sharp thật, không mock); video: build Docker image thật + chạy ffmpeg drawtext trực tiếp trong container Alpine, xác nhận bằng mắt qua frame xuất ra (không có trong CI tự động vì phụ thuộc đường dẫn font của container)
+- [x] **P4-13** Test cronjob chạy đúng giờ trên staging + không trả thưởng trùng khi chạy nhiều lần — `approve()` tự khoá row + re-check status trong transaction, test gọi lặp xác nhận lần 2 trả về `null` và ví không bị cộng 2 lần
 
 ---
 

@@ -26,6 +26,10 @@ coverage/
 # Prisma generated client cache (kept: migrations/*, schema.prisma)
 backend/generated/
 
+# File Proof (ảnh/video) nộp cục bộ lúc dev — môi trường thật dùng Docker
+# volume (xem infra/docker-compose.deploy.yml), không commit vào git.
+backend/uploads/
+
 # OS / editor
 .DS_Store
 .vscode/*

@@ -17,43 +17,11 @@ export const PLATFORM_BADGE: Record<PlatformKey, string> = {
   TIKTOK: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
-// Campaign/Applicant/Submission (Phase 3) và Wallet/SePay (Phase 2) đã nối
-// API thật — xem src/lib/campaigns-client.ts / src/lib/wallet-client.ts. Mock
-// bên dưới chỉ còn phục vụ các màn hình thuộc Phase 4/5/6/7 (Proof, Dispute,
-// BMC, Audit, RBAC) chưa có API thật.
-
-export const mockMyTasks = [
-  {
-    id: 'PR-55',
-    campaignId: 'CP-101',
-    campaign: 'The Artisan Roastery',
-    platform: 'GOOGLE_MAPS' as PlatformKey,
-    requirement: 'Viết review tối thiểu 50 chữ kèm 2 ảnh thực tế (1 ảnh hóa đơn, 1 ảnh đồ uống).',
-    reward: 60_000,
-    status: 'awaiting_proof' as const,
-    deadline: 'Còn 24 giờ',
-  },
-  {
-    id: 'PR-49',
-    campaignId: 'CP-105',
-    campaign: 'Spa & Thẩm Mỹ Viện',
-    platform: 'FACEBOOK' as PlatformKey,
-    requirement: 'Check-in công khai tại fanpage kèm ảnh phiếu dịch vụ được xác nhận.',
-    reward: 70_000,
-    status: 'awaiting_proof' as const,
-    deadline: 'Còn 18 giờ',
-  },
-  {
-    id: 'PR-41',
-    campaignId: 'CP-087',
-    campaign: 'App giao đồ ăn NhanhNhanh',
-    platform: 'GOOGLE_MAPS' as PlatformKey,
-    requirement: 'Đã nộp — chờ Bên A duyệt.',
-    reward: 15_000,
-    status: 'approved' as const,
-    deadline: 'Đã cộng KPoint',
-  },
-];
+// Campaign/Applicant/Submission (Phase 3 + Phase 4 Proof) và Wallet/SePay
+// (Phase 2) đã nối API thật — xem src/lib/campaigns-client.ts /
+// src/lib/wallet-client.ts / src/lib/submissions-client.ts. Mock bên dưới
+// chỉ còn phục vụ các màn hình thuộc Phase 5/6/7 (Dispute, BMC, Audit, RBAC)
+// chưa có API thật.
 
 export const mockDisputes = [
   {

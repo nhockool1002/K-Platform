@@ -36,6 +36,11 @@ const APPLICANT_VISIBLE_STATUSES: SubmissionStatus[] = [
   SubmissionStatus.APPLIED,
   SubmissionStatus.INVITED,
   SubmissionStatus.REJECTED_APPLICATION,
+  // P4-10 — "Quản lý Campaign & Ứng Viên" (SCR-05) tiếp tục hiển thị các đơn
+  // đã bước sang giai đoạn nộp Proof, để Bên A duyệt/từ chối trên cùng 1 màn.
+  SubmissionStatus.PENDING,
+  SubmissionStatus.APPROVED,
+  SubmissionStatus.REJECTED,
 ];
 
 function hashFingerprint(raw: string): string {
