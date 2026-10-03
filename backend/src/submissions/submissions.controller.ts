@@ -85,7 +85,7 @@ export class SubmissionsController {
     @Body() dto: DecideProofDto,
   ) {
     assertActiveMode(user, 'A', 'duyệt/từ chối Proof');
-    return this.submissions.decideProof(id, user.sub, dto.action);
+    return this.submissions.decideProof(id, user.sub, dto.action, dto.reason);
   }
 }
 

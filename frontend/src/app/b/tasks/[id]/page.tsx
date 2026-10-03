@@ -16,16 +16,25 @@ import {
   submitProof,
   type Submission,
 } from '@/lib/submissions-client';
+import { createDispute } from '@/lib/disputes-client';
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: 'warning',
   APPROVED: 'positive',
   REJECTED: 'critical',
+  DISPUTED: 'purple',
 };
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'Chờ duyệt (đồng hồ 48h)',
   APPROVED: 'Đã duyệt — Đã cộng KPoint',
   REJECTED: 'Bị từ chối',
+  DISPUTED: 'Đang khiếu nại (Dispute)',
+};
+
+const DISPUTE_STATUS_LABEL: Record<string, string> = {
+  OPEN: 'Đã gửi — Chờ Moderator thẩm định',
+  RECOMMENDED: 'Moderator đã đề xuất — Chờ Admin phán quyết',
+  RESOLVED: 'Đã có phán quyết cuối cùng',
 };
 
 // P4-07 — poll trong lúc chờ Watermark xử lý xong (watermarkUrl còn null).
@@ -43,6 +52,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputing, setDisputing] = useState(false);
+  const [disputeError, setDisputeError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +116,26 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  async function handleCreateDispute() {
+    setDisputeError(null);
+    if (disputeReason.trim().length < 5) {
+      setDisputeError('Vui lòng nhập lý do khiếu nại (ít nhất 5 ký tự)');
+      return;
+    }
+
+    setDisputing(true);
+    try {
+      await createDispute(id, disputeReason.trim());
+      const updated = await getSubmission(id);
+      setSubmission(updated);
+      setDisputeOpen(false);
+    } catch (err) {
+      setDisputeError(err instanceof ApiError ? err.message : 'Không tạo được Dispute');
+    } finally {
+      setDisputing(false);
+    }
+  }
+
   if (loadError) {
     return (
       <AppShell role="publisher" active="/b/dashboard">
@@ -126,7 +160,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const isDone =
     submission.status === 'PENDING' ||
     submission.status === 'APPROVED' ||
-    submission.status === 'REJECTED';
+    submission.status === 'REJECTED' ||
+    submission.status === 'DISPUTED';
 
   return (
     <AppShell role="publisher" active="/b/dashboard">
@@ -210,6 +245,83 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   {submission.reviewNote}
                 </p>
               )}
+
+              {submission.status === 'REJECTED' && submission.rejectReason && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                  <strong className="block">Lý do Tài khoản Dịch vụ từ chối:</strong>
+                  <p className="mt-0.5">{submission.rejectReason}</p>
+                </div>
+              )}
+
+              {submission.status === 'REJECTED' && !submission.dispute && (
+                <div className="space-y-2 rounded-xl border border-purple-200 bg-purple-50 p-3">
+                  <div className="flex items-start gap-2 text-purple-900">
+                    <Scale className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p className="text-[11px] leading-relaxed">
+                      Bạn không đồng ý với quyết định từ chối này? Tạo Dispute để Moderator và Admin
+                      K-Platform phân xử lại.
+                    </p>
+                  </div>
+                  {disputeError && (
+                    <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] text-rose-700">
+                      {disputeError}
+                    </p>
+                  )}
+                  {disputeOpen ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        rows={3}
+                        value={disputeReason}
+                        onChange={(e) => setDisputeReason(e.target.value)}
+                        placeholder="Giải thích vì sao bạn cho rằng quyết định từ chối là không thỏa đáng..."
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="dark"
+                          size="sm"
+                          onClick={handleCreateDispute}
+                          disabled={disputing}
+                        >
+                          {disputing ? 'Đang gửi...' : 'Gửi Khiếu Nại'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDisputeOpen(false)}
+                          disabled={disputing}
+                        >
+                          Hủy
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => setDisputeOpen(true)}>
+                      <Scale className="h-4 w-4" />
+                      Tạo Dispute Khiếu Nại
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {submission.dispute && (
+                <div className="space-y-1 rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-900">
+                  <strong className="flex items-center gap-1.5">
+                    <Scale className="h-4 w-4" />
+                    Dispute: {DISPUTE_STATUS_LABEL[submission.dispute.status]}
+                  </strong>
+                  <p className="text-[11px] text-purple-800">
+                    Lý do bạn khiếu nại: &ldquo;{submission.dispute.reason}&rdquo;
+                  </p>
+                  {submission.dispute.finalDecision && (
+                    <p className="font-bold">
+                      Phán quyết cuối:{' '}
+                      {submission.dispute.finalDecision === 'APPROVE'
+                        ? 'Bạn thắng — Proof đã được duyệt, KPoint đã cộng vào Ví'
+                        : 'Tài khoản Dịch vụ thắng — giữ nguyên quyết định từ chối'}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <form className="space-y-4 text-xs" onSubmit={handleSubmit}>
@@ -279,7 +391,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 <div className="text-[11px]">
                   <strong>Bảo vệ quyền lợi của bạn:</strong> Nếu Tài khoản Dịch vụ từ chối duyệt bài
                   nộp của bạn một cách không thỏa đáng, bạn có quyền tạo Dispute Khiếu Nại để
-                  Moderator và Admin K-Platform đứng ra phân xử công bằng (Phase 5).
+                  Moderator và Admin K-Platform đứng ra phân xử công bằng.
                 </div>
               </div>
 

@@ -8,6 +8,7 @@ import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Textarea } from '@/components/ui/Input';
 import { ApiError } from '@/lib/auth-client';
 import {
   decideApplicant,
@@ -25,6 +26,7 @@ const STATUS_TONE: Record<string, BadgeTone> = {
   PENDING: 'warning',
   APPROVED: 'positive',
   REJECTED: 'critical',
+  DISPUTED: 'purple',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -34,6 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: 'Đã nộp Proof — Chờ duyệt',
   APPROVED: 'Đã duyệt — Đã trả thưởng',
   REJECTED: 'Proof bị từ chối',
+  DISPUTED: 'Đang bị khiếu nại (Dispute)',
 };
 
 export default function ManageCampaignPage({ params }: { params: Promise<{ id: string }> }) {
@@ -42,6 +45,8 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [applicants, setApplicants] = useState<Applicant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReasonDraft, setRejectReasonDraft] = useState('');
 
   useEffect(() => {
     Promise.all([getCampaign(id), listApplicants(id)])
@@ -64,13 +69,23 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
     }
   }
 
-  async function handleDecideProof(submissionId: string, action: 'APPROVE' | 'REJECT') {
+  async function handleDecideProof(
+    submissionId: string,
+    action: 'APPROVE' | 'REJECT',
+    reason?: string,
+  ) {
     try {
-      const updated = await decideProof(submissionId, action);
+      const updated = await decideProof(submissionId, action, reason);
       setApplicants(
         (prev) =>
-          prev?.map((a) => (a.id === submissionId ? { ...a, status: updated.status } : a)) ?? null,
+          prev?.map((a) =>
+            a.id === submissionId
+              ? { ...a, status: updated.status, rejectReason: updated.rejectReason }
+              : a,
+          ) ?? null,
       );
+      setRejectingId(null);
+      setRejectReasonDraft('');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không thể xử lý Proof');
     }
@@ -146,7 +161,10 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
                   </div>
                 )}
 
-                {(a.status === 'PENDING' || a.status === 'APPROVED' || a.status === 'REJECTED') && (
+                {(a.status === 'PENDING' ||
+                  a.status === 'APPROVED' ||
+                  a.status === 'REJECTED' ||
+                  a.status === 'DISPUTED') && (
                   <div className="space-y-3 border-t border-slate-100 pt-3">
                     {a.watermarkUrl ? (
                       /\.(mp4|webm|mov)$/i.test(a.watermarkUrl) ? (
@@ -187,22 +205,65 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
                       </p>
                     )}
 
-                    {a.status === 'PENDING' && (
-                      <div className="flex items-center justify-between gap-3">
-                        <Button
-                          variant="gold"
-                          className="flex-1"
-                          onClick={() => handleDecideProof(a.id, 'APPROVE')}
-                        >
-                          <Check className="h-4 w-4" />
-                          Duyệt & Trả Thưởng
-                        </Button>
-                        <Button variant="outline" onClick={() => handleDecideProof(a.id, 'REJECT')}>
-                          <X className="h-4 w-4" />
-                          Từ chối
-                        </Button>
-                      </div>
+                    {(a.status === 'REJECTED' || a.status === 'DISPUTED') && a.rejectReason && (
+                      <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                        <strong className="block">Lý do bạn đã từ chối:</strong>
+                        {a.rejectReason}
+                      </p>
                     )}
+                    {a.status === 'DISPUTED' && (
+                      <p className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800">
+                        Tài khoản Người dùng đã tạo Dispute khiếu nại quyết định từ chối này —
+                        Moderator/Admin đang xử lý. Slot này tạm khóa, không mở lại cho ứng viên
+                        khác tới khi có phán quyết cuối cùng.
+                      </p>
+                    )}
+
+                    {a.status === 'PENDING' &&
+                      (rejectingId === a.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            rows={2}
+                            value={rejectReasonDraft}
+                            onChange={(e) => setRejectReasonDraft(e.target.value)}
+                            placeholder="Lý do từ chối (Tài khoản Người dùng sẽ thấy lý do này)..."
+                          />
+                          <div className="flex items-center justify-between gap-3">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleDecideProof(a.id, 'REJECT', rejectReasonDraft)}
+                            >
+                              <X className="h-4 w-4" />
+                              Xác Nhận Từ Chối
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setRejectingId(null);
+                                setRejectReasonDraft('');
+                              }}
+                            >
+                              Hủy
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <Button
+                            variant="gold"
+                            className="flex-1"
+                            onClick={() => handleDecideProof(a.id, 'APPROVE')}
+                          >
+                            <Check className="h-4 w-4" />
+                            Duyệt & Trả Thưởng
+                          </Button>
+                          <Button variant="outline" onClick={() => setRejectingId(a.id)}>
+                            <X className="h-4 w-4" />
+                            Từ chối
+                          </Button>
+                        </div>
+                      ))}
                   </div>
                 )}
               </Card>

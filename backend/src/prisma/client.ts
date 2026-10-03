@@ -9,6 +9,9 @@
 import type {
   ActiveMode as ActiveModeEnum,
   CampaignStatus as CampaignStatusEnum,
+  DisputeDecision as DisputeDecisionEnum,
+  DisputeStatus as DisputeStatusEnum,
+  ModRecommendation as ModRecommendationEnum,
   PrismaClient as PrismaClientClass,
   SubmissionStatus as SubmissionStatusEnum,
   UserRole as UserRoleEnum,
@@ -28,6 +31,9 @@ export const SubmissionStatus = pkg.SubmissionStatus;
 export const WalletTxType = pkg.WalletTxType;
 export const WalletTxSide = pkg.WalletTxSide;
 export const WithdrawalStatus = pkg.WithdrawalStatus;
+export const DisputeStatus = pkg.DisputeStatus;
+export const ModRecommendation = pkg.ModRecommendation;
+export const DisputeDecision = pkg.DisputeDecision;
 
 export type PrismaClient = PrismaClientClass;
 export type UserRole = UserRoleEnum;
@@ -37,3 +43,6 @@ export type SubmissionStatus = SubmissionStatusEnum;
 export type WalletTxType = WalletTxTypeEnum;
 export type WalletTxSide = WalletTxSideEnum;
 export type WithdrawalStatus = WithdrawalStatusEnum;
+export type DisputeStatus = DisputeStatusEnum;
+export type ModRecommendation = ModRecommendationEnum;
+export type DisputeDecision = DisputeDecisionEnum;

@@ -19,6 +19,17 @@ export interface SubmissionCampaign {
   dripFeedLimit: number;
 }
 
+export type DisputeStatus = 'OPEN' | 'RECOMMENDED' | 'RESOLVED';
+
+export interface SubmissionDispute {
+  id: string;
+  status: DisputeStatus;
+  reason: string;
+  modRecommendation: 'PEND_APP' | 'PEND_REJ' | null;
+  finalDecision: 'APPROVE' | 'REJECT' | null;
+  createdAt: string;
+}
+
 export interface Submission {
   id: string;
   campaignId: string;
@@ -28,9 +39,11 @@ export interface Submission {
   watermarkUrl: string | null;
   reviewUrl: string | null;
   reviewNote: string | null;
+  rejectReason: string | null;
   autoApproveAt: string | null;
   createdAt: string;
   campaign?: SubmissionCampaign;
+  dispute?: SubmissionDispute | null;
 }
 
 // FormData — không dùng apiFetch() vì nó luôn set Content-Type: application/
@@ -66,11 +79,15 @@ export async function listMySubmissions(): Promise<Submission[]> {
   return apiFetch<Submission[]>('/submissions/mine', { auth: true });
 }
 
-export async function decideProof(id: string, action: 'APPROVE' | 'REJECT'): Promise<Submission> {
+export async function decideProof(
+  id: string,
+  action: 'APPROVE' | 'REJECT',
+  reason?: string,
+): Promise<Submission> {
   return apiFetch<Submission>(`/submissions/${id}/decision`, {
     method: 'PATCH',
     auth: true,
-    body: JSON.stringify({ action }),
+    body: JSON.stringify({ action, reason }),
   });
 }
 

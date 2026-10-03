@@ -295,6 +295,9 @@ model Submission {
   // file mới bắt buộc) nhưng UI cần để Bên A đối chiếu.
   reviewUrl       String?          @map("review_url")
   reviewNote      String?          @map("review_note")
+  // Lý do Bên A từ chối Proof (P4-10 mở rộng cho Phase 5) — hiển thị cho Bên B
+  // + Moderator/Admin ở CMS Dispute Center khi Bên B khiếu nại (FN-DISP-01/02).
+  rejectReason    String?          @map("reject_reason")
   status          SubmissionStatus @default(APPLIED)
   autoApproveAt   DateTime?        @map("auto_approve_at")
   createdAt       DateTime         @default(now()) @map("created_at")
@@ -314,6 +317,8 @@ model Submission {
 model DisputeTicket {
   id                String             @id @default(uuid())
   submissionId      String             @unique @map("submission_id")
+  // Lý do Bên B khiếu nại, nhập lúc tạo Dispute (FN-DISP-01, SRS README § 9.5 API).
+  reason            String
   modId             String?            @map("mod_id")
   modRecommendation ModRecommendation? @map("mod_recommendation")
   adminId           String?            @map("admin_id")
