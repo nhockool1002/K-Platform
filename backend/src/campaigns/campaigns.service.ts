@@ -19,8 +19,10 @@ import type { ApplyCampaignDto } from './dto/apply-campaign.dto.js';
 import type { ApplicantActionDto } from './dto/applicant-action.dto.js';
 import type { ListCampaignsQueryDto } from './dto/list-campaigns-query.dto.js';
 
-// Phí khởi tạo cố định (FN-CAMP-01 / README.md § 9.4).
-const CREATION_FEE_KPOINT = 50_000n;
+// Phí khởi tạo cố định (FN-CAMP-01 / README.md § 9.4). Export để
+// ReportsService dùng chung khi tính doanh thu phí tạo Campaign (issue #55)
+// — tránh định nghĩa trùng, lệch giá trị giữa 2 nơi.
+export const CREATION_FEE_KPOINT = 50_000n;
 
 // Slot coi như "đã chiếm" (không còn mở cho người khác ứng tuyển) kể từ lúc
 // được Invite trở đi — APPLIED/REJECTED_APPLICATION không tính vào đây.

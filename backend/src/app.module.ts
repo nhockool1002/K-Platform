@@ -15,6 +15,7 @@ import { SettingsModule } from './settings/settings.module.js';
 import { SubmissionsModule } from './submissions/submissions.module.js';
 import { AccountActivationModule } from './account/account-activation.module.js';
 import { DisputesModule } from './disputes/disputes.module.js';
+import { ReportsModule } from './reports/reports.module.js';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { DisputesModule } from './disputes/disputes.module.js';
     SubmissionsModule,
     AccountActivationModule,
     DisputesModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

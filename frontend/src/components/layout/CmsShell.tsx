@@ -13,6 +13,7 @@ import {
   Scale,
   Settings,
   ShieldAlert,
+  TrendingUp,
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { logout } from '@/lib/auth-client';
@@ -35,6 +36,12 @@ interface NavGroup {
 
 const NAV: (NavLeaf | NavGroup)[] = [
   { href: '/cms/overview', label: 'SCR-09: Tổng Quan KPI', icon: BarChart3 },
+  {
+    href: '/cms/reports',
+    label: 'Thống Kê Doanh Thu',
+    icon: TrendingUp,
+    iconClassName: 'text-emerald-600',
+  },
   {
     href: '/cms/payments',
     label: 'SCR-10: Duyệt BMC',
