@@ -1,14 +1,38 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BarChart3, Coffee, ExternalLink, History, Scale, ShieldAlert } from 'lucide-react';
+import {
+  BarChart3,
+  ChevronDown,
+  Coffee,
+  ExternalLink,
+  History,
+  Scale,
+  Settings,
+  ShieldAlert,
+} from 'lucide-react';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { logout } from '@/lib/auth-client';
 import { mockBmcTopups, mockDisputes } from '@/lib/mock-data';
 
-const NAV = [
+interface NavLeaf {
+  href: string;
+  label: string;
+  icon: typeof BarChart3;
+  iconClassName?: string;
+  badge?: number;
+}
+
+interface NavGroup {
+  label: string;
+  icon: typeof BarChart3;
+  iconClassName?: string;
+  children: Omit<NavLeaf, 'icon' | 'iconClassName'>[];
+}
+
+const NAV: (NavLeaf | NavGroup)[] = [
   { href: '/cms/overview', label: 'SCR-09: Tổng Quan KPI', icon: BarChart3 },
   {
     href: '/cms/payments',
@@ -36,11 +60,26 @@ const NAV = [
     icon: History,
     iconClassName: 'text-slate-500',
   },
+  {
+    label: 'Cài Đặt',
+    icon: Settings,
+    iconClassName: 'text-slate-500',
+    children: [{ href: '/cms/settings/sepay', label: 'Cài đặt SePay' }],
+  },
 ];
+
+function isGroup(item: NavLeaf | NavGroup): item is NavGroup {
+  return 'children' in item;
+}
 
 export function CmsShell({ active, children }: { active: string; children: ReactNode }) {
   const router = useRouter();
   const { user } = useCurrentUser();
+  const [openGroup, setOpenGroup] = useState<string | null>(
+    () =>
+      NAV.find((item) => isGroup(item) && item.children.some((c) => c.href === active))?.label ??
+      null,
+  );
 
   function handleExit() {
     logout();
@@ -89,6 +128,52 @@ export function CmsShell({ active, children }: { active: string; children: React
             Phân Hệ Nghiệp Vụ CMS
           </div>
           {NAV.map((item) => {
+            if (isGroup(item)) {
+              const Icon = item.icon;
+              const isOpen = openGroup === item.label;
+              const hasActiveChild = item.children.some((c) => c.href === active);
+              return (
+                <div key={item.label}>
+                  <button
+                    onClick={() => setOpenGroup(isOpen ? null : item.label)}
+                    className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
+                      hasActiveChild && !isOpen
+                        ? 'bg-blue-50 text-brand-blue'
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon className={`h-4 w-4 ${item.iconClassName ?? ''}`} />
+                      <span>{item.label}</span>
+                    </span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="mt-1 ml-3 space-y-1 border-l border-slate-200 pl-3">
+                      {item.children.map((child) => {
+                        const isActive = child.href === active;
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={`block rounded-xl px-3 py-2 text-xs font-bold transition ${
+                              isActive
+                                ? 'bg-brand-blue text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             const isActive = item.href === active;
             const Icon = item.icon;
             return (

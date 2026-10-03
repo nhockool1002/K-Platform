@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module.js';
 import { CommonModule } from './common/common.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { SettingsModule } from './settings/settings.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentsModule } from './payments/payments.module.js';
     UsersModule,
     CampaignsModule,
     PaymentsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
