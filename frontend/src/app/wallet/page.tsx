@@ -29,6 +29,28 @@ import {
 // cộng ví để tự chuyển sang màn "Thành công" thay vì đứng yên ở QR mãi.
 const TOPUP_POLL_INTERVAL_MS = 3000;
 
+// Các gói nạp KPoint dựng sẵn — bấm chọn thay vì phải tự gõ số tiền mỗi lần.
+// 1 KPoint = 1 VNĐ nên giá trị cũng chính là số KPoint nhận được.
+const PRESET_TOPUP_AMOUNTS = [
+  10_000, 20_000, 50_000, 100_000, 200_000, 500_000, 1_000_000,
+] as const;
+const MIN_TOPUP_AMOUNT = 10_000;
+
+// VietQR hỗ trợ bake sẵn số tiền vào ảnh QR (?amount=) — dựng lại URL từ
+// thông tin ngân hàng/nội dung đã có từ getSepayQr() thay vì gọi lại API mỗi
+// lần đổi số tiền.
+function buildTopupQrUrl(qr: SepayQrInfo, amount: number): string {
+  const params = new URLSearchParams({
+    amount: String(amount),
+    addInfo: qr.content,
+    accountName: qr.accountName,
+  });
+  return (
+    `https://img.vietqr.io/image/${encodeURIComponent(qr.bankId)}-${encodeURIComponent(qr.accountNumber)}-compact2.png` +
+    `?${params.toString()}`
+  );
+}
+
 const TX_TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   TOPUP_SEPAY: 'Nạp KPoint qua SePay (VietQR)',
   WITHDRAWAL_REQUEST: 'Yêu cầu rút tiền về ngân hàng',
@@ -54,6 +76,9 @@ export default function WalletPage() {
   const [copied, setCopied] = useState(false);
   const [topupBaseline, setTopupBaseline] = useState<string | null>(null);
   const [topupSuccessAmount, setTopupSuccessAmount] = useState<number | null>(null);
+  const [topupAmount, setTopupAmount] = useState<number | null>(null);
+  const [customAmountInput, setCustomAmountInput] = useState('');
+  const [customAmountError, setCustomAmountError] = useState<string | null>(null);
 
   const [transactions, setTransactions] = useState<WalletTransaction[] | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
@@ -79,6 +104,9 @@ export default function WalletPage() {
   function openTopup() {
     setTopupOpen(true);
     setTopupSuccessAmount(null);
+    setTopupAmount(null);
+    setCustomAmountInput('');
+    setCustomAmountError(null);
     // Lấy baseline số dư MỚI mỗi lần mở modal (không dùng `wallet` từ
     // useWallet() vì có thể đã cũ) — poll bên dưới so sánh với mốc này để
     // biết lúc nào webhook SePay vừa cộng tiền.
@@ -98,6 +126,19 @@ export default function WalletPage() {
     setTopupOpen(false);
     setTopupSuccessAmount(null);
     setTopupBaseline(null);
+    setTopupAmount(null);
+    setCustomAmountInput('');
+    setCustomAmountError(null);
+  }
+
+  function confirmCustomAmount() {
+    const amount = Number(customAmountInput);
+    if (!Number.isInteger(amount) || amount < MIN_TOPUP_AMOUNT) {
+      setCustomAmountError(`Số tiền thấp nhất là ${formatKpoint(MIN_TOPUP_AMOUNT)}`);
+      return;
+    }
+    setCustomAmountError(null);
+    setTopupAmount(amount);
   }
 
   // Poll trong lúc modal mở ở tab SePay, chưa phát hiện thành công — dừng
@@ -343,12 +384,63 @@ export default function WalletPage() {
               </p>
             ) : !qr ? (
               <p className="py-6 text-center text-xs text-slate-500">Đang tạo mã QR...</p>
+            ) : topupAmount === null ? (
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-700">Chọn số tiền muốn nạp:</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {PRESET_TOPUP_AMOUNTS.map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setTopupAmount(amount)}
+                      className="rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-bold text-slate-700 transition hover:border-brand-blue hover:bg-blue-50 hover:text-brand-blue"
+                    >
+                      {formatKpoint(amount)}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <p className="mb-1.5 text-xs font-bold text-slate-700">
+                    Hoặc tự nhập số tiền (tối thiểu {formatKpoint(MIN_TOPUP_AMOUNT)}):
+                  </p>
+                  {customAmountError && (
+                    <p className="mb-1.5 text-[11px] text-rose-600">{customAmountError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={MIN_TOPUP_AMOUNT}
+                      step={1000}
+                      value={customAmountInput}
+                      onChange={(e) => {
+                        setCustomAmountInput(e.target.value);
+                        setCustomAmountError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') confirmCustomAmount();
+                      }}
+                      placeholder="VD: 150000"
+                      className="flex-1"
+                    />
+                    <Button variant="blue" onClick={confirmCustomAmount}>
+                      Tạo QR
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="space-y-3 text-center">
                 <div className="inline-block rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   {/* eslint-disable-next-line @next/next/no-img-element -- ảnh QR động từ img.vietqr.io, không qua Next/Image optimize */}
-                  <img src={qr.qrImageUrl} alt="Mã QR VietQR nạp KPoint" className="h-48 w-48" />
+                  <img
+                    src={buildTopupQrUrl(qr, topupAmount)}
+                    alt="Mã QR VietQR nạp KPoint"
+                    className="h-48 w-48"
+                  />
                 </div>
+                <p className="text-sm font-extrabold text-brand-blue">
+                  {formatKpoint(topupAmount)}
+                </p>
                 <div className="text-xs">
                   <span className="block text-slate-500">
                     Chuyển khoản tới {qr.accountName} — {qr.bankId} — {qr.accountNumber}
@@ -364,6 +456,12 @@ export default function WalletPage() {
                   <p className="mt-2 text-[11px] text-slate-400">
                     KPoint được cộng tự động trong vài giây sau khi chuyển khoản thành công.
                   </p>
+                  <button
+                    onClick={() => setTopupAmount(null)}
+                    className="mt-2 block w-full text-center text-[11px] font-bold text-slate-400 hover:text-brand-blue"
+                  >
+                    Đổi số tiền khác
+                  </button>
                 </div>
               </div>
             )
