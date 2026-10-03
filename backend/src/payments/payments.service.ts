@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { WalletTxSide, WalletTxType } from '../prisma/client.js';
+import { WalletTxSide, WalletTxType, WithdrawalStatus } from '../prisma/client.js';
 import { SepayConfigService } from '../settings/sepay-config.service.js';
 import type { CreateWithdrawalDto } from './dto/create-withdrawal.dto.js';
+import type { DecideWithdrawalDto } from './dto/decide-withdrawal.dto.js';
 
 const MIN_WITHDRAWAL_KPOINT = 50_000n;
 
@@ -233,6 +234,86 @@ export class PaymentsService {
       orderBy: { createdAt: 'desc' },
     });
     return withdrawals.map((w) => this.toPublicWithdrawal(w));
+  }
+
+  // CMS "Yêu cầu rút tiền" — danh sách để Admin/Root Admin duyệt. Mặc định
+  // (không truyền status) hiện PENDING trước — đây là hàng chờ xử lý, không
+  // phải lịch sử.
+  async listAllWithdrawals(status?: WithdrawalStatus) {
+    const withdrawals = await this.prisma.withdrawal.findMany({
+      where: status ? { status } : undefined,
+      orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+      include: { user: { select: { id: true, email: true } } },
+    });
+    return withdrawals.map((w) => ({ ...this.toPublicWithdrawal(w), user: w.user }));
+  }
+
+  // Duyệt/Từ chối lệnh rút (P7-09). APPROVE: trừ thật balance_kpoint +
+  // reserved_kpoint, ghi WITHDRAWAL_COMPLETED. REJECT: chỉ giải phóng
+  // reserved_kpoint (hoàn lại khả dụng cho user), ghi WITHDRAWAL_REJECTED.
+  // Lock cả ví + row Withdrawal trong 1 transaction, re-check status PENDING
+  // để chặn duyệt trùng (2 admin cùng bấm) hoặc duyệt lệnh đã xử lý.
+  async decideWithdrawal(adminId: string, withdrawalId: string, dto: DecideWithdrawalDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<
+        { id: string; user_id: string; amount_kpoint: bigint; status: WithdrawalStatus }[]
+      >`SELECT id, user_id, amount_kpoint, status FROM withdrawals WHERE id = ${withdrawalId} FOR UPDATE`;
+      const withdrawal = rows[0];
+      if (!withdrawal) throw new NotFoundException('Không tìm thấy lệnh rút');
+      if (withdrawal.status !== WithdrawalStatus.PENDING) {
+        throw new BadRequestException('Lệnh rút này đã được xử lý trước đó');
+      }
+
+      await tx.$queryRaw`SELECT id FROM wallets WHERE user_id = ${withdrawal.user_id} FOR UPDATE`;
+
+      if (dto.decision === 'APPROVE') {
+        await tx.wallet.update({
+          where: { userId: withdrawal.user_id },
+          data: {
+            balanceKpoint: { decrement: withdrawal.amount_kpoint },
+            reservedKpoint: { decrement: withdrawal.amount_kpoint },
+          },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            userId: withdrawal.user_id,
+            type: WalletTxType.WITHDRAWAL_COMPLETED,
+            side: WalletTxSide.SHARED,
+            balanceDeltaKpoint: -withdrawal.amount_kpoint,
+            reservedDeltaKpoint: -withdrawal.amount_kpoint,
+            note: dto.note || 'Admin đã duyệt lệnh rút',
+          },
+        });
+      } else {
+        await tx.wallet.update({
+          where: { userId: withdrawal.user_id },
+          data: { reservedKpoint: { decrement: withdrawal.amount_kpoint } },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            userId: withdrawal.user_id,
+            type: WalletTxType.WITHDRAWAL_REJECTED,
+            side: WalletTxSide.SHARED,
+            reservedDeltaKpoint: -withdrawal.amount_kpoint,
+            note: dto.note || 'Admin đã từ chối lệnh rút',
+          },
+        });
+      }
+
+      const updated = await tx.withdrawal.update({
+        where: { id: withdrawalId },
+        data: {
+          status:
+            dto.decision === 'APPROVE' ? WithdrawalStatus.APPROVED : WithdrawalStatus.REJECTED,
+        },
+      });
+
+      this.logger.log(
+        `Admin ${adminId} ${dto.decision === 'APPROVE' ? 'đã duyệt' : 'đã từ chối'} lệnh rút ${withdrawalId}`,
+      );
+
+      return this.toPublicWithdrawal(updated);
+    });
   }
 
   // P2-09 — lịch sử giao dịch, lọc theo Bên A/Bên B khi FE truyền `side`

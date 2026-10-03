@@ -31,3 +31,21 @@ export async function updateSepaySettings(input: UpdateSepaySettingsInput): Prom
     body: JSON.stringify(input),
   });
 }
+
+export interface ActivationFeeSettings {
+  amountKpoint: string;
+}
+
+export async function getActivationFeeSettings(): Promise<ActivationFeeSettings> {
+  return apiFetch<ActivationFeeSettings>('/admin/settings/activation-fee', { auth: true });
+}
+
+export async function updateActivationFeeSettings(
+  amountKpoint: number,
+): Promise<ActivationFeeSettings> {
+  return apiFetch<ActivationFeeSettings>('/admin/settings/activation-fee', {
+    method: 'PUT',
+    auth: true,
+    body: JSON.stringify({ amountKpoint }),
+  });
+}

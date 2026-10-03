@@ -58,7 +58,7 @@ export default function ApplyCampaignPage({ params }: { params: Promise<{ id: st
       <div className="mx-auto max-w-2xl space-y-6">
         <PageHeader
           title="Ứng Tuyển Campaign"
-          description="Trả lời khảo sát sàng lọc để được Bên A xem xét Invite."
+          description="Trả lời khảo sát sàng lọc để được Tài khoản Dịch vụ xem xét Invite."
         />
 
         {loading && <p className="text-sm text-slate-500">Đang tải...</p>}
@@ -153,7 +153,7 @@ export default function ApplyCampaignPage({ params }: { params: Promise<{ id: st
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
             <h2 className="text-base font-extrabold text-slate-900">Đã gửi đơn ứng tuyển!</h2>
             <p className="text-sm text-slate-500">
-              Chờ Bên A Invite — theo dõi trạng thái tại Dashboard của bạn.
+              Chờ Tài khoản Dịch vụ Invite — theo dõi trạng thái tại Dashboard của bạn.
             </p>
             <Button variant="blue" onClick={() => router.push('/b/dashboard')}>
               Về Dashboard

@@ -36,6 +36,11 @@ const APPLICANT_VISIBLE_STATUSES: SubmissionStatus[] = [
   SubmissionStatus.APPLIED,
   SubmissionStatus.INVITED,
   SubmissionStatus.REJECTED_APPLICATION,
+  // P4-10 — "Quản lý Campaign & Ứng Viên" (SCR-05) tiếp tục hiển thị các đơn
+  // đã bước sang giai đoạn nộp Proof, để Bên A duyệt/từ chối trên cùng 1 màn.
+  SubmissionStatus.PENDING,
+  SubmissionStatus.APPROVED,
+  SubmissionStatus.REJECTED,
 ];
 
 function hashFingerprint(raw: string): string {
@@ -50,6 +55,16 @@ export class CampaignsService {
   // transaction ACID (row lock SELECT ... FOR UPDATE) để tránh 2 request tạo
   // Campaign đồng thời cùng đọc một số dư "đủ" rồi cùng trừ, gây lệch ví.
   async create(ownerId: string, dto: CreateCampaignDto) {
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { serviceActivatedAt: true },
+    });
+    if (!owner?.serviceActivatedAt) {
+      throw new ForbiddenException(
+        'Tài khoản Dịch vụ của bạn chưa được kích hoạt. Vui lòng kích hoạt để tạo Campaign.',
+      );
+    }
+
     const totalCost = CREATION_FEE_KPOINT + BigInt(dto.totalSlots) * BigInt(dto.rewardPerSlot);
 
     return this.prisma.$transaction(async (tx) => {

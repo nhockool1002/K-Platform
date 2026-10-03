@@ -69,6 +69,11 @@ services:
       # Chỉ dùng khi chạy `... exec -T backend pnpm prisma:seed` thủ công —
       # không ảnh hưởng gì khi backend chạy bình thường.
       SEED_DEV_PASSWORD: ${SEED_DEV_PASSWORD:-}
+    volumes:
+      # P4-02/03 — ảnh/video Proof gốc + Watermark (backend/src/submissions/
+      # upload-paths.ts) phải sống ngoài container, không thì mất sạch mỗi
+      # lần `--build` redeploy (image mới = filesystem container mới).
+      - uploads_data:/app/uploads
     ports:
       - '127.0.0.1:${BACKEND_PORT}:4000'
     networks: [internal]
@@ -83,3 +88,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:
