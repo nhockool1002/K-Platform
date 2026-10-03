@@ -1,13 +1,15 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Briefcase, LogOut, Sparkles, Wallet } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
+import { ActivationConfirmModal } from '@/components/ActivationConfirmModal';
 import { formatKpoint } from '@/lib/format';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useWallet } from '@/lib/use-wallet';
+import { useActivationStatus } from '@/lib/use-activation-status';
 import { switchMode, logout, type ActiveMode } from '@/lib/auth-client';
 
 export type AppRole = 'advertiser' | 'publisher';
@@ -46,6 +48,8 @@ export function AppShell({
   const router = useRouter();
   const { user } = useCurrentUser();
   const { wallet, loading: walletLoading } = useWallet();
+  const { status: activation } = useActivationStatus();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const activeMode: ActiveMode = role
     ? role === 'advertiser'
       ? 'A'
@@ -55,7 +59,19 @@ export function AppShell({
 
   async function handleSwitchMode(target: ActiveMode) {
     if (target === activeMode) return;
+    // issue #54 — chuyển sang chế độ Dịch Vụ khi Tài khoản Dịch vụ CHƯA kích
+    // hoạt phải hiện Modal yêu cầu kích hoạt trước, không cho chuyển thẳng.
+    if (target === 'A' && user && !user.serviceActivated) {
+      setConfirmOpen(true);
+      return;
+    }
     const newMode = await switchMode(target);
+    router.push(DASHBOARD_HREF[newMode]);
+  }
+
+  async function handleActivated() {
+    setConfirmOpen(false);
+    const newMode = await switchMode('A');
     router.push(DASHBOARD_HREF[newMode]);
   }
 
@@ -143,6 +159,13 @@ export function AppShell({
       <main className="flex-1 bg-slate-50 px-4 py-6 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
+
+      <ActivationConfirmModal
+        open={confirmOpen}
+        feeKpoint={activation?.feeKpoint ?? 0}
+        onClose={() => setConfirmOpen(false)}
+        onActivated={handleActivated}
+      />
     </div>
   );
 }

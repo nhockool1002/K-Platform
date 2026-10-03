@@ -15,7 +15,7 @@ import { archiveCampaign, listMyCampaigns, type Campaign } from '@/lib/campaigns
 import { ApiError } from '@/lib/auth-client';
 import { useWallet } from '@/lib/use-wallet';
 import { useActivationStatus } from '@/lib/use-activation-status';
-import { activateAccount } from '@/lib/account-client';
+import { ActivationConfirmModal } from '@/components/ActivationConfirmModal';
 
 export default function AdvertiserDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
@@ -26,24 +26,8 @@ export default function AdvertiserDashboard() {
     loading: activationLoading,
     refresh: refreshActivation,
   } = useActivationStatus();
-  const [activating, setActivating] = useState(false);
-  const [activationError, setActivationError] = useState<string | null>(null);
-
-  async function handleActivate() {
-    setActivating(true);
-    setActivationError(null);
-    try {
-      await activateAccount();
-      refreshActivation();
-      refreshWallet();
-    } catch (err) {
-      setActivationError(
-        err instanceof ApiError ? err.message : 'Không thể kích hoạt Tài khoản Dịch vụ',
-      );
-    } finally {
-      setActivating(false);
-    }
-  }
+  // issue #53 — kích hoạt phải qua Modal xác nhận, không trừ phí ngay khi bấm.
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const notActivated = !activationLoading && activation !== null && !activation.activated;
 
@@ -110,16 +94,24 @@ export default function AdvertiserDashboard() {
                   Kích hoạt 1 lần với {formatKpoint(Number(activation?.feeKpoint ?? 0))} KPoint để
                   mở chức năng tạo Campaign. Phí trừ trực tiếp từ Số Dư Ví Khả Dụng.
                 </p>
-                {activationError && (
-                  <p className="mt-1 text-xs font-bold text-rose-600">{activationError}</p>
-                )}
               </div>
             </div>
-            <Button variant="gold" onClick={handleActivate} disabled={activating}>
-              {activating ? 'Đang kích hoạt...' : 'Kích hoạt ngay'}
+            <Button variant="gold" onClick={() => setConfirmOpen(true)}>
+              Kích hoạt ngay
             </Button>
           </Card>
         )}
+
+        <ActivationConfirmModal
+          open={confirmOpen}
+          feeKpoint={activation?.feeKpoint ?? 0}
+          onClose={() => setConfirmOpen(false)}
+          onActivated={() => {
+            setConfirmOpen(false);
+            refreshActivation();
+            refreshWallet();
+          }}
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
