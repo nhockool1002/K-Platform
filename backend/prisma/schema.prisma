@@ -47,6 +47,9 @@ enum WalletTxType {
   TOPUP_SEPAY
   WITHDRAWAL_REQUEST
   CAMPAIGN_RESERVE
+  // P4-10 — Approve Proof (thủ công hoặc Auto-Approve 48h): tiền thưởng rời
+  // escrow của Campaign (Bên A) sang ví Bên B.
+  TASK_REWARD
 }
 
 // Bên nào trong SRS Section II mà giao dịch này thuộc về — dùng để lọc Lịch
@@ -274,6 +277,11 @@ model Submission {
   ip              String?
   proofUrl        String?          @map("proof_url")
   watermarkUrl    String?          @map("watermark_url")
+  // Ngữ cảnh Bên A xem khi duyệt Proof (P4-02/SCR-07) — link bài review công
+  // khai + tóm tắt nội dung, không phải field bắt buộc theo FN-TASK-01 (chỉ
+  // file mới bắt buộc) nhưng UI cần để Bên A đối chiếu.
+  reviewUrl       String?          @map("review_url")
+  reviewNote      String?          @map("review_note")
   status          SubmissionStatus @default(APPLIED)
   autoApproveAt   DateTime?        @map("auto_approve_at")
   createdAt       DateTime         @default(now()) @map("created_at")

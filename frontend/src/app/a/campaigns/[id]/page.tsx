@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
-import { Send } from 'lucide-react';
+import { Check, Send, X } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
@@ -16,17 +16,24 @@ import {
   type Applicant,
   type Campaign,
 } from '@/lib/campaigns-client';
+import { decideProof, resolveUploadUrl } from '@/lib/submissions-client';
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   APPLIED: 'warning',
   INVITED: 'positive',
   REJECTED_APPLICATION: 'critical',
+  PENDING: 'warning',
+  APPROVED: 'positive',
+  REJECTED: 'critical',
 };
 
 const STATUS_LABEL: Record<string, string> = {
   APPLIED: 'Chờ Invite',
-  INVITED: 'Đã Invite',
+  INVITED: 'Đã Invite — Chờ nộp Proof',
   REJECTED_APPLICATION: 'Đã từ chối',
+  PENDING: 'Đã nộp Proof — Chờ duyệt',
+  APPROVED: 'Đã duyệt — Đã trả thưởng',
+  REJECTED: 'Proof bị từ chối',
 };
 
 export default function ManageCampaignPage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,6 +61,18 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
       setApplicants((prev) => prev?.map((a) => (a.id === submissionId ? updated : a)) ?? null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không thể xử lý ứng viên');
+    }
+  }
+
+  async function handleDecideProof(submissionId: string, action: 'APPROVE' | 'REJECT') {
+    try {
+      const updated = await decideProof(submissionId, action);
+      setApplicants(
+        (prev) =>
+          prev?.map((a) => (a.id === submissionId ? { ...a, status: updated.status } : a)) ?? null,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không thể xử lý Proof');
     }
   }
 
@@ -124,6 +143,66 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
                     <Button variant="outline" onClick={() => handleDecide(a.id, 'REJECT')}>
                       Loại
                     </Button>
+                  </div>
+                )}
+
+                {(a.status === 'PENDING' || a.status === 'APPROVED' || a.status === 'REJECTED') && (
+                  <div className="space-y-3 border-t border-slate-100 pt-3">
+                    {a.watermarkUrl ? (
+                      /\.(mp4|webm|mov)$/i.test(a.watermarkUrl) ? (
+                        <video
+                          src={resolveUploadUrl(a.watermarkUrl)}
+                          controls
+                          className="max-h-80 w-full rounded-xl border border-slate-200 bg-black"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- ảnh proof động từ backend, không qua Next/Image optimize
+                        <img
+                          src={resolveUploadUrl(a.watermarkUrl)}
+                          alt="Bằng chứng đã chèn Watermark"
+                          className="max-h-80 w-full rounded-xl border border-slate-200 object-contain"
+                        />
+                      )
+                    ) : (
+                      <p className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+                        Đang xử lý Watermark cho bằng chứng...
+                      </p>
+                    )}
+                    {a.reviewUrl && (
+                      <p className="text-xs text-slate-600">
+                        Link review:{' '}
+                        <a
+                          href={a.reviewUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-brand-blue hover:underline"
+                        >
+                          {a.reviewUrl}
+                        </a>
+                      </p>
+                    )}
+                    {a.reviewNote && (
+                      <p className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                        {a.reviewNote}
+                      </p>
+                    )}
+
+                    {a.status === 'PENDING' && (
+                      <div className="flex items-center justify-between gap-3">
+                        <Button
+                          variant="gold"
+                          className="flex-1"
+                          onClick={() => handleDecideProof(a.id, 'APPROVE')}
+                        >
+                          <Check className="h-4 w-4" />
+                          Duyệt & Trả Thưởng
+                        </Button>
+                        <Button variant="outline" onClick={() => handleDecideProof(a.id, 'REJECT')}>
+                          <X className="h-4 w-4" />
+                          Từ chối
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>

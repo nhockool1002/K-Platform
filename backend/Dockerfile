@@ -29,6 +29,10 @@ RUN cp -r backend/generated /app/deploy/generated
 FROM base AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+# P4-06 (FN-TASK-01) — ffmpeg để chèn Watermark lên video Proof (drawtext
+# filter cần fontfile tường minh — font-dejavu cung cấp
+# /usr/share/fonts/dejavu/DejaVuSans-Bold.ttf, xem watermark.processor.ts).
+RUN apk add --no-cache ffmpeg font-dejavu
 COPY --from=build /app/deploy/dist ./dist
 COPY --from=build /app/deploy/generated ./generated
 COPY --from=build /app/deploy/prisma ./prisma
