@@ -8,7 +8,7 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { SubmissionStatus, WalletTxSide, WalletTxType } from '../prisma/client.js';
+import { Prisma, SubmissionStatus, WalletTxSide, WalletTxType } from '../prisma/client.js';
 import { WATERMARK_QUEUE } from '../watermark/watermark.constants.js';
 import type { WatermarkJobData } from '../watermark/watermark.processor.js';
 import { PROOFS_DIR, WATERMARKED_DIR } from './upload-paths.js';
@@ -82,7 +82,7 @@ export class SubmissionsService {
   async getOne(id: string, userId: string) {
     const submission = await this.prisma.submission.findUnique({
       where: { id },
-      include: { campaign: true },
+      include: { campaign: true, dispute: true },
     });
     if (!submission) throw new NotFoundException('Không tìm thấy đơn ứng tuyển');
     if (submission.publisherId !== userId && submission.campaign.ownerId !== userId) {
@@ -102,7 +102,12 @@ export class SubmissionsService {
   }
 
   // P4-10 — quyết định thủ công của Bên A (chủ Campaign).
-  async decideProof(submissionId: string, ownerId: string, action: 'APPROVE' | 'REJECT') {
+  async decideProof(
+    submissionId: string,
+    ownerId: string,
+    action: 'APPROVE' | 'REJECT',
+    reason?: string,
+  ) {
     const submission = await this.prisma.submission.findUnique({
       where: { id: submissionId },
       include: { campaign: true },
@@ -118,7 +123,7 @@ export class SubmissionsService {
     if (action === 'REJECT') {
       const updated = await this.prisma.submission.update({
         where: { id: submissionId },
-        data: { status: SubmissionStatus.REJECTED },
+        data: { status: SubmissionStatus.REJECTED, rejectReason: reason ?? null },
       });
       return this.toPublic(updated);
     }
@@ -132,17 +137,22 @@ export class SubmissionsService {
     return result;
   }
 
-  // P4-09/P4-13 — dùng chung bởi quyết định thủ công VÀ Cronjob Auto-Approve.
-  // Tự khoá row + tái kiểm tra status=PENDING BÊN TRONG transaction để không
-  // bao giờ trả thưởng 2 lần, kể cả khi 2 đường gọi vào gần như đồng thời.
-  async approve(submissionId: string) {
-    return this.prisma.$transaction(async (tx) => {
+  // P4-09/P4-13 — dùng chung bởi quyết định thủ công, Cronjob Auto-Approve,
+  // VÀ Admin phán quyết Dispute thắng Bên B (P5-07/08 — DisputesService.resolve()
+  // truyền `outerTx` để gộp chung 1 transaction với việc cập nhật DisputeTicket).
+  // Tự khoá row + tái kiểm tra status PENDING/DISPUTED BÊN TRONG transaction để
+  // không bao giờ trả thưởng 2 lần, kể cả khi 2 đường gọi vào gần như đồng thời.
+  async approve(submissionId: string, outerTx?: Prisma.TransactionClient) {
+    const run = async (tx: Prisma.TransactionClient) => {
       const rows = await tx.$queryRaw<
         { id: string; status: string; campaign_id: string; publisher_id: string }[]
       >`SELECT id, status, campaign_id, publisher_id FROM submissions WHERE id = ${submissionId} FOR UPDATE`;
       const locked = rows[0];
       if (!locked) throw new NotFoundException('Không tìm thấy đơn ứng tuyển');
-      if (locked.status !== SubmissionStatus.PENDING) {
+      if (
+        locked.status !== SubmissionStatus.PENDING &&
+        locked.status !== SubmissionStatus.DISPUTED
+      ) {
         return null;
       }
 
@@ -190,7 +200,9 @@ export class SubmissionsService {
         data: { status: SubmissionStatus.APPROVED },
       });
       return this.toPublic(updated);
-    });
+    };
+
+    return outerTx ? run(outerTx) : this.prisma.$transaction(run);
   }
 
   // `submission.update()` (không include campaign) và `findUnique({include:
