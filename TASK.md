@@ -24,12 +24,12 @@
 | 2        | Ví KPoint & SePay                | 13        | 12         | 92%     | 🔄 Gần xong (P2-12 cần chạy thật trên VPS + SePay dashboard) |
 | 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
 | 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
-| 5        | Dispute Center                   | 12        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật) |
 | 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **65**     | **50%** |                                                              |
+| **Tổng** |                                  | **129**   | **77**     | **60%** |                                                              |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -157,18 +157,18 @@
 
 **Mục tiêu:** Luồng tranh chấp 3 vai trò (Bên B tạo → Moderator đề xuất → Admin phán quyết) không rò rỉ/nhân đôi KPoint.
 
-- [ ] **P5-01** Bảng `disputes` (migration + model)
-- [ ] **P5-02** API `POST /api/v1/disputes` — Tạo Khiếu nại khi Bên A từ chối Proof _(FN-DISP-01)_
-- [ ] **P5-03** Phong tỏa KPoint của slot liên quan khi Dispute mở
-- [ ] **P5-04** Màn hình CMS Tranh chấp (Dispute Center) — xem bằng chứng 2 bên _(SCR-11)_
-- [ ] **P5-05** API `PUT /api/v1/mod/disputes/:id/recommend` _(FN-DISP-02)_
-- [ ] **P5-06** Guard: Moderator chỉ được `Pend Approval`/`Pend Reject`, không duyệt chi trực tiếp
-- [ ] **P5-07** API `POST /api/v1/admin/disputes/:id/resolve` _(FN-DISP-03)_
-- [ ] **P5-08** Giải phóng KPoint đúng bên thắng sau phán quyết Admin
-- [ ] **P5-09** Thông báo (email/app) cho Bên A & Bên B khi có cập nhật Dispute
-- [ ] **P5-10** Test nhánh "thắng Bên A" — giải phóng đúng số KPoint, không rò rỉ
-- [ ] **P5-11** Test nhánh "thắng Bên B" — giải phóng đúng số KPoint, không rò rỉ
-- [ ] **P5-12** Test RBAC: Moderator không gọi được trực tiếp API phán quyết cuối
+- [x] **P5-01** Bảng `disputes` (migration + model) — _model/enum đã có sẵn từ Phase 0 (P0-04 ERD); Phase 5 chỉ thêm cột `reason` (migration riêng) + `submissions.reject_reason`_
+- [x] **P5-02** API `POST /api/v1/disputes` — Tạo Khiếu nại khi Bên A từ chối Proof _(FN-DISP-01)_
+- [x] **P5-03** Phong tỏa KPoint của slot liên quan khi Dispute mở — `DISPUTED` thêm vào `SLOT_OCCUPYING_STATUSES` (campaigns.service.ts), slot không mở lại cho ứng viên khác tới khi có phán quyết
+- [x] **P5-04** Màn hình CMS Tranh chấp (Dispute Center) — xem bằng chứng 2 bên _(SCR-11)_
+- [x] **P5-05** API `PUT /api/v1/mod/disputes/:id/recommend` _(FN-DISP-02)_
+- [x] **P5-06** Guard: Moderator chỉ được `Pend Approval`/`Pend Reject`, không duyệt chi trực tiếp — route `/admin/disputes/:id/resolve` chỉ `@Roles(ADMIN, ROOT_ADMIN)`
+- [x] **P5-07** API `POST /api/v1/admin/disputes/:id/resolve` _(FN-DISP-03)_
+- [x] **P5-08** Giải phóng KPoint đúng bên thắng sau phán quyết Admin — tái dùng `SubmissionsService.approve()` (thắng Bên B) hoặc trả về `REJECTED` giữ nguyên ký quỹ Campaign (thắng Bên A), gộp 1 transaction ACID duy nhất với việc chốt `DisputeTicket`
+- [x] **P5-09** Thông báo (email/app) cho Bên A & Bên B khi có cập nhật Dispute — **mock**: `Logger.log` ở mỗi mốc (tạo/đề xuất/phán quyết), giống mock mailer P1-03; chưa có hạ tầng email/push thật
+- [x] **P5-10** Test nhánh "thắng Bên A" — giải phóng đúng số KPoint, không rò rỉ — `backend/test/disputes.e2e-spec.ts`
+- [x] **P5-11** Test nhánh "thắng Bên B" — giải phóng đúng số KPoint, không rò rỉ — `backend/test/disputes.e2e-spec.ts`
+- [x] **P5-12** Test RBAC: Moderator không gọi được trực tiếp API phán quyết cuối — `backend/test/disputes.e2e-spec.ts`
 
 ---
 

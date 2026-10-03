@@ -47,6 +47,8 @@ export interface Applicant {
   watermarkUrl: string | null;
   reviewUrl: string | null;
   reviewNote: string | null;
+  // Phase 5 — lý do Bên A từ chối Proof (nếu có).
+  rejectReason: string | null;
   autoApproveAt: string | null;
 }
 

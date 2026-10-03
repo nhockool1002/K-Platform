@@ -24,10 +24,16 @@ const CREATION_FEE_KPOINT = 50_000n;
 
 // Slot coi như "đã chiếm" (không còn mở cho người khác ứng tuyển) kể từ lúc
 // được Invite trở đi — APPLIED/REJECTED_APPLICATION không tính vào đây.
+// DISPUTED (P5-03/FN-DISP-01) — phong tỏa slot khi Bên B khiếu nại Proof bị
+// từ chối: slot KHÔNG được mở lại cho ứng viên khác trong lúc chờ Moderator/
+// Admin phán quyết, tránh 2 người cùng được trả thưởng từ 1 slot đã ký quỹ.
+// Chỉ khi Dispute RESOLVED thắng Bên A (submission về lại REJECTED) slot mới
+// thật sự mở lại.
 const SLOT_OCCUPYING_STATUSES: SubmissionStatus[] = [
   SubmissionStatus.INVITED,
   SubmissionStatus.PENDING,
   SubmissionStatus.APPROVED,
+  SubmissionStatus.DISPUTED,
 ];
 
 // Trạng thái hiển thị ở màn "Quản lý Campaign & Appliers" (SCR-05) — ứng viên
@@ -41,6 +47,8 @@ const APPLICANT_VISIBLE_STATUSES: SubmissionStatus[] = [
   SubmissionStatus.PENDING,
   SubmissionStatus.APPROVED,
   SubmissionStatus.REJECTED,
+  // Phase 5 — vẫn hiện trên SCR-05 khi đang tranh chấp để Bên A theo dõi.
+  SubmissionStatus.DISPUTED,
 ];
 
 function hashFingerprint(raw: string): string {
