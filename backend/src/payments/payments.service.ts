@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletTxSide, WalletTxType } from '../prisma/client.js';
+import { SepayConfigService } from '../settings/sepay-config.service.js';
 import type { CreateWithdrawalDto } from './dto/create-withdrawal.dto.js';
 import type { SepayWebhookDto } from './dto/sepay-webhook.dto.js';
 
@@ -39,7 +39,7 @@ function isUniqueConstraintError(err: unknown): boolean {
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    private readonly sepayConfig: SepayConfigService,
   ) {}
 
   async getWallet(userId: string) {
@@ -51,14 +51,13 @@ export class PaymentsService {
   // P2-04 (FN-PAY-01) — QR tĩnh theo user: nội dung `KLP_<topupCode>`, sinh
   // lười (lazy) lần đầu user vào ví thay vì lúc đăng ký.
   async getTopupQr(userId: string) {
-    const bankId = this.config.get<string>('SEPAY_BANK_ID');
-    const accountNumber = this.config.get<string>('SEPAY_BANK_ACCOUNT_NUMBER');
-    const accountName = this.config.get<string>('SEPAY_BANK_ACCOUNT_NAME');
-    if (!bankId || !accountNumber || !accountName) {
+    const config = await this.sepayConfig.getConfig();
+    if (!config) {
       throw new BadRequestException(
-        'Cổng SePay chưa được cấu hình (thiếu biến môi trường SEPAY_BANK_*)',
+        'Cổng SePay chưa được cấu hình — vào CMS "Cài Đặt > Cài đặt SePay" để thiết lập',
       );
     }
+    const { bankId, bankAccountNumber: accountNumber, bankAccountName: accountName } = config;
 
     const topupCode = await this.ensureTopupCode(userId);
     const content = `${SEPAY_CONTENT_PREFIX}_${topupCode}`;

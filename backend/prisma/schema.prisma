@@ -141,6 +141,7 @@ model User {
   disputesAsAdmin        DisputeTicket[]      @relation("DisputeAdmin")
   auditLogs              AuditLog[]           @relation("AuditActor")
   passwordResetTokens    PasswordResetToken[]
+  settingsUpdated        SystemSetting[]
 
   @@map("users")
 }
@@ -324,4 +325,20 @@ model AuditLog {
   @@index([actionType])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// Cấu hình vận hành chỉnh được từ CMS "Cài Đặt" (menu mẹ, vd. Cài đặt SePay)
+// thay vì chỉ qua biến môi trường — key-value để mở rộng thêm mục cài đặt
+// khác sau này mà không cần migration mới. `value` là JSON tự do theo từng
+// key (vd. key="sepay" → { bankId, bankAccountNumber, bankAccountName,
+// webhookApiKey }). Đọc/ghi qua SettingsService, không truy cập trực tiếp.
+model SystemSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById String?  @map("updated_by")
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  @@map("system_settings")
 }
