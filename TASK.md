@@ -19,7 +19,7 @@
 
 | Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                   |
 | -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------------------------------ |
-| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)                         |
+| 0        | Khởi tạo nền tảng                | 12        | 12         | 100%    | ✅ Xong (staging đã lên: health + DB OK)                     |
 | 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
 | 2        | Ví KPoint & SePay                | 13        | 13         | 100%    | ✅ Xong (P2-12: chủ dự án đã nạp thật qua SePay)             |
 | 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
@@ -29,7 +29,7 @@
 | 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                      |
 | 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **103**    | **80%** |
+| **Tổng** |                                  | **129**   | **104**    | **81%** |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -64,7 +64,7 @@
 - [x] **P0-07** Dựng Docker Compose cho Dev (FE + BE + Postgres + Redis)
 - [x] **P0-08** Tạo file `.env.example` liệt kê đầy đủ biến môi trường cần thiết
 - [x] **P0-09** Thiết lập CI (GitHub Actions): lint + build + test chạy trên mỗi PR
-- [~] **P0-10** Dựng môi trường Staging — _đã merge develop → staging (PR #66) để deploy lại; chờ xác minh Deploy Staging xanh + health check. Kiến trúc đã chốt (Backend: Docker trên VPS aaPanel; Frontend: Vercel), workflow deploy + hướng dẫn từng bước đầy đủ tại `DEPLOY.md`; còn chờ thực hiện trên VPS/Vercel/GitHub Secrets thật (việc của bạn, ngoài phạm vi code)_
+- [x] **P0-10** Dựng môi trường Staging — _backend deploy qua GitHub Actions lên VPS (health `api-staging` OK, DB up), frontend Vercel. Lần deploy `develop → staging` (PR #66) thành công. Kiến trúc và hướng dẫn tại `DEPLOY.md`_
 - [x] **P0-11** Thiết lập Design Token/UI Kit theo Branding (màu `#1d4e89`/`#e8a93a`, logo, typography)
 - [x] **P0-12** Viết `CONTRIBUTING.md`/quy ước nhánh Git (tham chiếu PLAN.md § 9)
 
