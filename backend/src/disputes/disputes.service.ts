@@ -9,6 +9,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DisputeStatus, SubmissionStatus, UserRole } from '../prisma/client.js';
 import { SubmissionsService } from '../submissions/submissions.service.js';
+import { DisputeSlaConfigService } from '../settings/dispute-sla-config.service.js';
+import { TrustScoreService } from '../trust-score/trust-score.service.js';
 import type { CreateDisputeDto } from './dto/create-dispute.dto.js';
 import type { RecommendDisputeDto } from './dto/recommend-dispute.dto.js';
 import type { ResolveDisputeDto } from './dto/resolve-dispute.dto.js';
@@ -40,6 +42,8 @@ export class DisputesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly submissions: SubmissionsService,
+    private readonly disputeSla: DisputeSlaConfigService,
+    private readonly trustScore: TrustScoreService,
   ) {}
 
   // FN-DISP-01 — Bên B tạo Khiếu nại khi Proof bị từ chối. Phong tỏa slot
@@ -88,21 +92,24 @@ export class DisputesService {
 
   // SCR-11 — CMS Dispute Center: danh sách cho Moderator/Admin.
   async list(status?: DisputeStatus) {
-    const disputes = await this.prisma.disputeTicket.findMany({
-      where: status ? { status } : undefined,
-      include: DISPUTE_INCLUDE,
-      orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
-    });
-    return disputes.map((d) => this.toPublicDetailed(d));
+    const [disputes, sla] = await Promise.all([
+      this.prisma.disputeTicket.findMany({
+        where: status ? { status } : undefined,
+        include: DISPUTE_INCLUDE,
+        orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+      }),
+      this.disputeSla.getConfig(),
+    ]);
+    return disputes.map((d) => this.toPublicDetailed(d, sla));
   }
 
   async getOne(id: string) {
-    const dispute = await this.prisma.disputeTicket.findUnique({
-      where: { id },
-      include: DISPUTE_INCLUDE,
-    });
+    const [dispute, sla] = await Promise.all([
+      this.prisma.disputeTicket.findUnique({ where: { id }, include: DISPUTE_INCLUDE }),
+      this.disputeSla.getConfig(),
+    ]);
     if (!dispute) throw new NotFoundException('Không tìm thấy Dispute');
-    return this.toPublicDetailed(dispute);
+    return this.toPublicDetailed(dispute, sla);
   }
 
   // FN-DISP-02 — Moderator thẩm định, chỉ chuyển trạng thái đề xuất, KHÔNG
@@ -144,16 +151,29 @@ export class DisputesService {
   // trong 1 transaction duy nhất — truyền `tx` xuống SubmissionsService.approve()
   // thay vì gọi 2 transaction tách rời, để không bao giờ rơi vào trạng thái
   // nửa vời (tiền đã trả nhưng ticket chưa chốt RESOLVED, hoặc ngược lại).
+  //
+  // B-03 "leo thang" — nếu Dispute đã quá hạn SLA Moderator (mặc định 12h)
+  // mà vẫn còn OPEN (chưa ai đề xuất), Admin được phép phán quyết THẲNG, bỏ
+  // qua bước chờ đề xuất — tránh Dispute bị kẹt vì Moderator không xử lý kịp.
   async resolve(adminId: string, disputeId: string, dto: ResolveDisputeDto) {
+    const sla = await this.disputeSla.getConfig();
+
     return this.prisma.$transaction(async (tx) => {
       const dispute = await tx.disputeTicket.findUnique({ where: { id: disputeId } });
       if (!dispute) throw new NotFoundException('Không tìm thấy Dispute');
-      if (dispute.status !== DisputeStatus.RECOMMENDED) {
+
+      const moderatorDeadline = new Date(
+        dispute.createdAt.getTime() + sla.moderatorHours * 60 * 60 * 1000,
+      );
+      const isEscalated = dispute.status === DisputeStatus.OPEN && new Date() > moderatorDeadline;
+
+      if (dispute.status !== DisputeStatus.RECOMMENDED && !isEscalated) {
         throw new BadRequestException(
           'Dispute này chưa có đề xuất từ Moderator, chưa thể phán quyết',
         );
       }
 
+      let publisherId: string;
       if (dto.decision === 'APPROVE') {
         // Thắng Bên B — chạy lại đúng luồng trả thưởng dùng chung với duyệt
         // Proof thủ công/Auto-Approve (P4-10/P4-09), chỉ khác status nguồn
@@ -164,13 +184,16 @@ export class DisputesService {
             'Đơn Proof liên quan vừa được xử lý xong, vui lòng tải lại trang',
           );
         }
+        publisherId = (result as { publisherId: string }).publisherId;
       } else {
         // Thắng Bên A — giữ nguyên quyết định từ chối ban đầu, slot được mở
         // lại cho ứng viên khác (REJECTED không còn nằm trong SLOT_OCCUPYING_STATUSES).
-        await tx.submission.update({
+        const updatedSubmission = await tx.submission.update({
           where: { id: dispute.submissionId },
           data: { status: SubmissionStatus.REJECTED },
+          select: { publisherId: true },
         });
+        publisherId = updatedSubmission.publisherId;
       }
 
       const updated = await tx.disputeTicket.update({
@@ -178,10 +201,23 @@ export class DisputesService {
         data: { adminId, finalDecision: dto.decision, status: DisputeStatus.RESOLVED },
       });
 
+      // B-05 — Bên B thua Dispute (Admin xử REJECT = giữ nguyên từ chối của
+      // Tài khoản Dịch vụ) thì trừ Trust Score. Thắng (APPROVE) không + điểm
+      // riêng — phần thưởng của họ là được trả KPoint, không nhân đôi qua
+      // Trust Score (tránh vòng lặp "thắng dispute được lợi 2 lần").
+      if (dto.decision === 'REJECT') {
+        await this.trustScore.applyRule(publisherId, 'DISPUTE_LOST', `dispute:${disputeId}`, tx);
+      }
+
       this.logger.log(
-        `Dispute ${disputeId}: Admin ${adminId} phán quyết ${dto.decision} — thông báo Bên A & Bên B (mock)`,
+        `Dispute ${disputeId}: Admin ${adminId} phán quyết ${dto.decision}${isEscalated ? ' (leo thang do quá hạn Moderator)' : ''} — thông báo Bên A & Bên B (mock)`,
       );
-      return { disputeId: updated.id, resolved: true, decision: dto.decision };
+      return {
+        disputeId: updated.id,
+        resolved: true,
+        decision: dto.decision,
+        escalated: isEscalated,
+      };
     });
   }
 
@@ -190,22 +226,36 @@ export class DisputesService {
   }
 
   // Campaign.rewardPerSlot là BigInt — serialize về string giống mọi public
-  // response khác trong hệ thống (toPublicCampaign/toPublicWallet...).
+  // response khác trong hệ thống (toPublicCampaign/toPublicWallet...). Kèm
+  // tính toán hạn SLA (B-03/04) để CMS hiện badge "Quá hạn".
   private toPublicDetailed<
     T extends {
+      status: string;
+      createdAt: Date;
       submission: { campaign: { rewardPerSlot: bigint } & Record<string, unknown> } & Record<
         string,
         unknown
       >;
     },
-  >(dispute: T) {
+  >(dispute: T, sla: { moderatorHours: number; adminHours: number }) {
     const { campaign, ...restSubmission } = dispute.submission;
     const { rewardPerSlot, ...restCampaign } = campaign;
+    const moderatorDeadline = new Date(
+      dispute.createdAt.getTime() + sla.moderatorHours * 60 * 60 * 1000,
+    );
+    const adminDeadline = new Date(dispute.createdAt.getTime() + sla.adminHours * 60 * 60 * 1000);
+    const now = new Date();
     return {
       ...dispute,
       submission: {
         ...restSubmission,
         campaign: { ...restCampaign, rewardPerSlot: rewardPerSlot.toString() },
+      },
+      sla: {
+        moderatorDeadline,
+        adminDeadline,
+        isOverdueModerator: dispute.status === 'OPEN' && now > moderatorDeadline,
+        isOverdueAdmin: dispute.status !== 'RESOLVED' && now > adminDeadline,
       },
     };
   }

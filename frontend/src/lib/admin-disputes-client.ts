@@ -39,6 +39,13 @@ export interface DisputeDetail {
   submission: DisputeSubmission;
   moderator: { id: string; email: string } | null;
   admin: { id: string; email: string } | null;
+  // B-03/B-04 — hạn SLA tính sẵn từ backend theo cấu hình hiện hành.
+  sla: {
+    moderatorDeadline: string;
+    adminDeadline: string;
+    isOverdueModerator: boolean;
+    isOverdueAdmin: boolean;
+  };
 }
 
 export async function listDisputes(status?: DisputeStatus): Promise<DisputeDetail[]> {
@@ -60,7 +67,7 @@ export async function recommendDispute(
 export async function resolveDispute(
   id: string,
   decision: 'APPROVE' | 'REJECT',
-): Promise<{ disputeId: string; resolved: boolean; decision: string }> {
+): Promise<{ disputeId: string; resolved: boolean; decision: string; escalated: boolean }> {
   return apiFetch(`/admin/disputes/${id}/resolve`, {
     method: 'POST',
     auth: true,

@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes, createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { TrustScoreService } from '../trust-score/trust-score.service.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { ForgotPasswordDto } from './dto/forgot-password.dto.js';
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly mail: MailService,
+    private readonly trustScore: TrustScoreService,
   ) {}
 
   private signTokens(user: { id: string; email: string; role: string; activeMode: string }) {
@@ -85,8 +87,60 @@ export class AuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    const tokens = this.signTokens(user);
-    return { user: this.toPublicUser(user), ...tokens };
+    // CMS Quản Trị Tài Khoản — tài khoản bị vô hiệu hoá không đăng nhập được,
+    // bất kể mật khẩu đúng (khác serviceActivatedAt chỉ gate tạo Campaign).
+    if (user.disabledAt) {
+      throw new UnauthorizedException(
+        'Tài khoản của bạn đã bị vô hiệu hoá. Vui lòng liên hệ quản trị viên.',
+      );
+    }
+
+    const updatedUser = await this.updateLoginStreak(user);
+    const tokens = this.signTokens(updatedUser);
+    return { user: this.toPublicUser(updatedUser), ...tokens };
+  }
+
+  // B-05 — "đăng nhập liên tục 7 ngày" (+ điểm Trust Score). Tính theo ngày
+  // lịch (không phải 24h kể từ lần trước) — nhiều lần đăng nhập cùng 1 ngày
+  // không đổi chuỗi; cách nhau đúng 1 ngày thì +1; cách hơn 1 ngày thì reset
+  // về 1. Đạt 7 thì thưởng điểm + reset về 0 để có thể lặp lại chu kỳ sau.
+  private async updateLoginStreak(user: {
+    id: string;
+    lastLoginAt: Date | null;
+    loginStreakDays: number;
+  }) {
+    const now = new Date();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    let streak = user.loginStreakDays;
+    if (!user.lastLoginAt) {
+      streak = 1;
+    } else {
+      const diffDays = Math.round(
+        (startOfDay(now).getTime() - startOfDay(user.lastLoginAt).getTime()) / 86_400_000,
+      );
+      if (diffDays === 0) {
+        // Đã đăng nhập hôm nay rồi — giữ nguyên chuỗi, chỉ cập nhật mốc giờ.
+      } else if (diffDays === 1) {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+    }
+
+    const completedStreak = streak >= 7;
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: now, loginStreakDays: completedStreak ? 0 : streak },
+    });
+
+    if (completedStreak) {
+      await this.trustScore
+        .applyRule(user.id, 'ONLINE_STREAK_7D', `streak-complete:${now.toISOString().slice(0, 10)}`)
+        .catch(() => {});
+    }
+
+    return updated;
   }
 
   async refresh(refreshToken: string) {

@@ -111,6 +111,9 @@ describe('Phase 7 — CMS RBAC nâng cao (e2e)', () => {
       where: { submission: { publisher: { email: pubEmail } } },
     });
     await prisma.walletTransaction.deleteMany({ where: { user: { email: { in: seededEmails } } } });
+    await prisma.trustScoreTransaction.deleteMany({
+      where: { user: { email: { in: seededEmails } } },
+    });
     await prisma.submission.deleteMany({ where: { publisher: { email: pubEmail } } });
     await prisma.campaign.deleteMany({ where: { owner: { email: advEmail } } });
     await prisma.rolePermission.deleteMany({ where: { roleName: `E2E_P7_${suffix}` } });

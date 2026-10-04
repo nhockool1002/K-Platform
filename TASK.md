@@ -255,11 +255,17 @@
 > Tham chiếu PLAN.md § 11 — cần quyết định/bổ sung trước khi các Phase liên quan có thể hoàn thành 100%.
 
 - [x] **B-01** Thiết kế Wireframe/UI chi tiết — làm bằng Next.js/Tailwind thật (không phải Figma) tại `frontend/src/app/`, xem `/wireframes` + `frontend/DESIGN.md`. Cần Product Owner duyệt trước khi chuyển sang code production ở Phase 1.
-- [ ] **B-02** Chốt chính sách version hóa tỷ giá KPoint ↔ VNĐ ↔ USD theo thời gian — cần trước Phase 2 & 6
-- [ ] **B-03** Chốt SLA xử lý Dispute (thời gian Admin phải duyệt)
-- [ ] **B-04** Chốt SLA duyệt Nạp Quốc tế (thời gian Admin phải duyệt)
-- [ ] **B-05** Chốt ngưỡng Trust Score cụ thể & quy tắc khóa tài khoản gian lận
-- [ ] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung
+- [x] **B-02** Chốt chính sách version hóa tỷ giá KPoint ↔ VNĐ ↔ USD theo thời gian — giữ 1 KPoint = 1 VNĐ cố định; thêm CMS "Cài đặt thanh toán" tab "Quốc Tế (BMC)" (chuẩn bị trước cho Phase 6): tỷ giá USD→VNĐ mặc định 26.300, lưu lịch sử append-only (`exchange_rate_history`, không ghi đè dòng cũ) để tra theo thời điểm nạp + thống kê sau này; thời gian đối soát Admin mặc định 7 ngày, cũng cấu hình được.
+- [x] **B-03** Chốt SLA xử lý Dispute — mặc định Moderator đề xuất trong 12h đầu (Admin cũng xử lý được trong khung này), Admin chốt phán quyết cuối trong 24h đầu; cấu hình qua Modal "Cài Đặt SLA" ngay trong CMS Dispute Center (chỉ Admin/Root Admin thấy + chỉnh). Quá hạn Moderator → Admin được phán quyết thẳng, bỏ qua bước chờ đề xuất (leo thang).
+- [x] **B-04** Chốt SLA duyệt Nạp Quốc tế — mặc định Admin đối soát trong 7 ngày (~1 tuần), cấu hình tại CMS "Cài đặt thanh toán" tab Quốc Tế (dùng chung hạ tầng với B-02, chuẩn bị trước cho Phase 6 BMC).
+- [x] **B-05** Chốt ngưỡng Trust Score & quy tắc khóa tài khoản gian lận — hệ thống `TrustScoreRule` (CRUD qua CMS, Admin tự tạo thêm lý do) + sổ cái `TrustScoreTransaction`. 5 rule mặc định: thua Dispute -10, Proof bị từ chối -5, hoàn thành 3/5 Proof trong tuần +5/+10 (cron hằng tuần), đăng nhập liên tục 7 ngày +5 (tính lúc login). Admin +/- điểm tay cho bất kỳ tài khoản nào (trừ Root). Không giới hạn trần 100 — có bảng Top 10 Trust Score ở CMS Thống Kê Doanh Thu. "Khóa tài khoản gian lận" dùng chung cơ chế vô hiệu hoá của CMS Quản Trị Tài Khoản (xem mục mới bên dưới) — Admin tự quyết định ngưỡng, không enforce cứng trong code.
+- [ ] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — việc định kỳ, chưa có SRS bản mới để đối chiếu lại.
+
+### Ad-hoc — CMS Quản Trị Tài Khoản (yêu cầu mới, chưa có mã task gốc)
+
+- [x] Màn hình `/cms/accounts` — CRUD đầy đủ mọi tài khoản (tạo/sửa email+mật khẩu/đổi role/xóa), kích hoạt/vô hiệu hoá (`users.disabled_at`, chặn đăng nhập khi vô hiệu hoá). Chỉ Admin/Root Admin truy cập.
+- [x] Bảo vệ Root Administrator nâng cao — **chỉ chính Root mới tự sửa được hồ sơ của mình** (email/mật khẩu, `RootAdminSelfOnlyGuard`); **không ai** (kể cả chính Root) vô hiệu hoá/xóa/đổi role được Root qua API (`RootAdminTargetGuard`, giữ nguyên từ P1-09).
+- [x] Rà soát hardening RBAC đi kèm: chỉ Root tạo được tài khoản role ADMIN (Admin thường chỉ tạo USER/MODERATOR).
 
 ---
 
