@@ -9,6 +9,8 @@ import { PrismaService } from '../src/prisma/prisma.service.js';
 
 // P6-08/09/12/13/14/15 — Audit Log: ghi đủ IP/UA/fingerprint, mức CRITICAL đúng,
 // không lưu credential, request bị từ chối vẫn được ghi, và API tra cứu chỉ Admin.
+const SEPAY_TEST_KEY = process.env.SEPAY_WEBHOOK_API_KEY ?? '';
+
 describe('Audit Logs (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
@@ -191,7 +193,7 @@ describe('Audit Logs (e2e)', () => {
   it('P6-15: webhook SePay (không có người thao tác) ghi WEBHOOK với actor null', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/payments/sepay-webhook')
-      .set('Authorization', 'Apikey test-sepay-key')
+      .set('Authorization', `Apikey ${SEPAY_TEST_KEY}`)
       .send({ id: 1, content: 'khong co ma', transferAmount: 1000, transferType: 'in' })
       .expect(200);
 
