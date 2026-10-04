@@ -10,6 +10,7 @@ import type {
   ActiveMode as ActiveModeEnum,
   AuditActionType as AuditActionTypeEnum,
   AuditLevel as AuditLevelEnum,
+  BmcTopupStatus as BmcTopupStatusEnum,
   CampaignStatus as CampaignStatusEnum,
   DisputeDecision as DisputeDecisionEnum,
   DisputeStatus as DisputeStatusEnum,
@@ -38,6 +39,7 @@ export const ModRecommendation = pkg.ModRecommendation;
 export const DisputeDecision = pkg.DisputeDecision;
 export const AuditActionType = pkg.AuditActionType;
 export const AuditLevel = pkg.AuditLevel;
+export const BmcTopupStatus = pkg.BmcTopupStatus;
 
 export type PrismaClient = PrismaClientClass;
 export type UserRole = UserRoleEnum;
@@ -52,3 +54,4 @@ export type ModRecommendation = ModRecommendationEnum;
 export type DisputeDecision = DisputeDecisionEnum;
 export type AuditActionType = AuditActionTypeEnum;
 export type AuditLevel = AuditLevelEnum;
+export type BmcTopupStatus = BmcTopupStatusEnum;

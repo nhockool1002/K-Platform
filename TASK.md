@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                   |
-| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------------------------------ |
-| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)                         |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
-| 2        | Ví KPoint & SePay                | 13        | 12         | 92%     | 🔄 Gần xong (P2-12 cần chạy thật trên VPS + SePay dashboard) |
-| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
-| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
-| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật) |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                      |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **88**     | **68%** |                                                              |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                                                |
+| -------- | -------------------------------- | --------- | ---------- | ------- | ----------------------------------------------------------------------------------------- |
+| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)                                                      |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                                                     |
+| 2        | Ví KPoint & SePay                | 13        | 12         | 92%     | 🔄 Gần xong (P2-12 cần chạy thật trên VPS + SePay dashboard)                              |
+| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                                                   |
+| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                                                   |
+| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật)                              |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 6          | 40%     | 🔄 Đang làm (luồng nạp BMC + đối soát xong; còn email, interceptor audit, màn Audit Logs) |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                                                   |
+| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                                                           |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                                                           |
+| **Tổng** |                                  | **129**   | **94**     | **73%** |                                                                                           |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -176,13 +176,13 @@
 
 **Mục tiêu:** Admin duyệt nạp quốc tế thủ công an toàn; mọi thao tác nhạy cảm đều truy vết được.
 
-- [ ] **P6-01** Bảng `bmc_topups` (migration + model)
-- [ ] **P6-02** Form nạp Buy Me a Coffee — nhập Transaction ID + upload Receipt _(FN-PAY-02)_
-- [ ] **P6-03** API `POST /api/v1/payments/bmc-topup` — trạng thái `PENDING_MANUAL_VERIFICATION`
-- [ ] **P6-04** Màn hình CMS Duyệt Nạp Tiền Quốc Tế — xem Receipt, Approve/Reject _(SCR-10)_
-- [ ] **P6-05** API `POST /api/v1/admin/payments/bmc/:id/approve` — ACID Transaction cộng KPoint _(FN-PAY-03)_
-- [ ] **P6-06** Gửi email xác nhận khi Approve; thông báo hủy khi Reject
-- [ ] **P6-07** Bảng `audit_logs` (migration + model, JSON Diff before/after)
+- [x] **P6-01** Bảng `bmc_topups` (migration + model) — `20261004150804_p6_enum_values` + `20261004150805_p6_international_payment`, kèm bảng `international_packages`
+- [x] **P6-02** Form nạp Buy Me a Coffee — tab "International Payment" (EN chính, VI phụ) trong modal Nạp KPoint: chọn gói → nhận mã `KPL-XXXXXXXX` do hệ thống sinh (user dán vào lời nhắn BMC) → mở link BMC → upload biên lai _(FN-PAY-02; không còn nhập Transaction ID tay)_
+- [x] **P6-03** API nạp BMC — `POST /payments/bmc/topups` (tạo `AWAITING_PAYMENT`, snapshot tỷ giá + gói), `POST /payments/bmc/topups/:id/receipt` (→ `PENDING_MANUAL_VERIFICATION`)
+- [x] **P6-04** Màn hình CMS "Đối soát nạp tiền" (`/cms/payments`, SCR-10) — gộp nạp SePay + BMC, lọc nguồn/trạng thái, xem biên lai, Duyệt/Từ chối (bắt buộc lý do), đánh dấu quá hạn theo B-04 _(thay thế bản mock cũ)_
+- [x] **P6-05** Duyệt BMC — `PATCH /admin/bmc/topups/:id/decision` ACID: khoá row giao dịch + ví, cộng KPoint theo tỷ giá snapshot, ghi ledger `TOPUP_BMC` + audit log trong cùng transaction _(FN-PAY-03)_
+- [ ] **P6-06** Gửi email xác nhận khi Approve; thông báo hủy khi Reject — _chưa làm: hạ tầng email thật chưa có (xem P5-09/P1-03), lý do từ chối đang hiển thị trong lịch sử nạp của user_
+- [x] **P6-07** Bảng `audit_logs` (migration + model, JSON Diff before/after) — đã có từ Phase 7; luồng duyệt BMC và CRUD gói ghi trực tiếp vào bảng này
 - [ ] **P6-08** Interceptor NestJS ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) _(FN-LOG-01)_
 - [ ] **P6-09** Ghi kèm IP Address + Device Fingerprint vào mỗi Audit Log
 - [ ] **P6-10** Màn hình CMS Quản lý Audit Logs — bộ lọc (thời gian/User/Role/Action/Level) _(SCR-13)_
@@ -261,6 +261,13 @@
 - [x] **B-05** Chốt ngưỡng Trust Score & quy tắc khóa tài khoản gian lận — hệ thống `TrustScoreRule` (CRUD đầy đủ ở backend `admin/trust-score/rules`) + sổ cái `TrustScoreTransaction`. 5 rule mặc định: thua Dispute -10, Proof bị từ chối -5, hoàn thành 3/5 Proof trong tuần +5/+10 (cron hằng tuần), đăng nhập liên tục 7 ngày +5 (tính lúc login). Admin +/- điểm tay cho bất kỳ tài khoản nào (trừ Root). Không giới hạn trần 100 — có bảng Top 10 Trust Score ở CMS Thống Kê Doanh Thu. "Khóa tài khoản gian lận" dùng chung cơ chế vô hiệu hoá của CMS Quản Trị Tài Khoản (xem mục mới bên dưới) — Admin tự quyết định ngưỡng, không enforce cứng trong code.
   > ⚠️ **Gap phát hiện khi đối chiếu B-06:** CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
 - [x] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — chưa có file `SRS_K-PLATFORM-v1.0.docx` bản mới, nhưng các quyết định nghiệp vụ khi xử lý B-02/03/04/05 (xem các mục trên) là một bản bổ sung yêu cầu trên thực tế, nên đã đối chiếu theo đó: thêm **SCR-14** (CMS Quản Trị Tài Khoản), **SCR-15** (CMS Cài đặt thanh toán), **FN-TRUST-01** (Trust Score), **FN-DISP-04** (SLA & leo thang Dispute), **FN-PAY-04** (cấu hình tỷ giá & SLA Thanh toán Quốc tế) vào README.md §IV/V + PLAN.md §6; sửa lại mô tả sai ở README §I.1 (tỷ giá KPoint↔VNĐ là **cố định** 1:1, không phải "linh hoạt" như bản cũ ghi nhầm — chỉ tỷ giá USD→VNĐ mới cấu hình được). Việc này vẫn định kỳ — đối chiếu lại lần tới khi có SRS bản mới hoặc backlog tiếp theo.
+
+### Ad-hoc — Thanh toán quốc tế BMC (theo yêu cầu chủ dự án)
+
+- [x] Modal Nạp KPoint: đổi tên tab "Buy Me a Coffee (USD)" → **International Payment** (nội dung EN chính, VI phụ). Mã đối soát `KPL-` do hệ thống sinh, không nhập tay.
+- [x] 3 gói mặc định ($10/$20/$50, link BMC do chủ dự án tạo sẵn) seed một lần khi bảng rỗng; Admin thêm/sửa/tắt/xoá gói tại CMS.
+- [x] CMS menu con **Cài Đặt > Thanh toán quốc tế** (`/cms/settings/international`): tỷ giá USD→VNĐ + thời gian đối soát (chuyển từ tab "Quốc Tế" cũ) + quản lý gói nạp. Trang **Cài đặt SePay** giữ riêng phần SePay.
+- [x] Đối soát tất cả giao dịch nạp (SePay + BMC) tại `/cms/payments`.
 
 ### Ad-hoc — CMS Quản Trị Tài Khoản (yêu cầu mới, chưa có mã task gốc)
 
