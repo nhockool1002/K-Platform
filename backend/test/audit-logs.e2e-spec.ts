@@ -9,6 +9,7 @@ import { PrismaService } from '../src/prisma/prisma.service.js';
 
 // P6-08/09/12/13/14/15 — Audit Log: ghi đủ IP/UA/fingerprint, mức CRITICAL đúng,
 // không lưu credential, request bị từ chối vẫn được ghi, và API tra cứu chỉ Admin.
+const WRONG_PASSWORD = `wrong-${randomBytes(8).toString('hex')}`;
 const SEPAY_TEST_KEY = process.env.SEPAY_WEBHOOK_API_KEY ?? '';
 
 describe('Audit Logs (e2e)', () => {
@@ -162,7 +163,7 @@ describe('Audit Logs (e2e)', () => {
   it('P6-15: đăng nhập sai ghi WARNING, không lưu mật khẩu', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/auth/login')
-      .send({ email: userEmail, password: 'sai-mat-khau-e2e' })
+      .send({ email: userEmail, password: WRONG_PASSWORD })
       .expect(401);
 
     const [row] = await rowsFor('/api/v1/auth/login').then((rs) =>
