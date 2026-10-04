@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Check, CheckCircle2, Copy, PlusCircle, UploadCloud } from 'lucide-react';
+import { ArrowUpRight, Check, CheckCircle2, Copy, PlusCircle } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
@@ -15,6 +15,7 @@ import { formatKpoint } from '@/lib/format';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useWallet } from '@/lib/use-wallet';
+import { BmcTopupTab } from './bmc-topup-tab';
 import {
   VIETQR_BANKS,
   createWithdrawal,
@@ -53,6 +54,7 @@ function buildTopupQrUrl(qr: SepayQrInfo, amount: number): string {
 
 const TX_TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   TOPUP_SEPAY: 'Nạp KPoint qua SePay (VietQR)',
+  TOPUP_BMC: 'Nạp KPoint quốc tế (Buy Me a Coffee)',
   WITHDRAWAL_REQUEST: 'Yêu cầu rút tiền về ngân hàng',
   CAMPAIGN_RESERVE: 'Ký quỹ tạo Campaign',
   TASK_REWARD: 'Nhận thưởng hoàn thành review',
@@ -63,6 +65,7 @@ const TX_TYPE_LABEL: Record<WalletTransaction['type'], string> = {
 
 const TX_TYPE_TONE: Record<WalletTransaction['type'], BadgeTone> = {
   TOPUP_SEPAY: 'positive',
+  TOPUP_BMC: 'positive',
   WITHDRAWAL_REQUEST: 'warning',
   CAMPAIGN_RESERVE: 'warning',
   TASK_REWARD: 'positive',
@@ -370,7 +373,7 @@ export default function WalletPage() {
               onClick={() => setGateway('BMC')}
               className={`flex-1 border-b-2 py-2.5 text-center ${gateway === 'BMC' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-500'}`}
             >
-              Buy Me a Coffee (USD)
+              International Payment
             </button>
           </div>
 
@@ -476,20 +479,7 @@ export default function WalletPage() {
               </div>
             )
           ) : (
-            <div className="space-y-3 text-xs">
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 leading-tight text-amber-900">
-                Thanh toán qua Buy Me a Coffee (USD) → Nhập Transaction ID và ảnh biên lai để Admin
-                CMS duyệt thủ công.
-              </div>
-              <div>
-                <label className="mb-1 block font-bold text-slate-700">Mã Giao Dịch BMC ID *</label>
-                <Input placeholder="#BMC-99120-TX" disabled />
-              </div>
-              <Button variant="gold" className="w-full" disabled title="Sắp ra mắt — Phase 6">
-                <UploadCloud className="h-4 w-4" />
-                Gửi Biên Lai Duyệt Nạp (Sắp ra mắt)
-              </Button>
-            </div>
+            <BmcTopupTab />
           )}
         </div>
       </Modal>

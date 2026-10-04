@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { logout } from '@/lib/auth-client';
-import { mockBmcTopups, mockDisputes } from '@/lib/mock-data';
+import { mockDisputes } from '@/lib/mock-data';
 
 interface NavLeaf {
   href: string;
@@ -45,10 +45,9 @@ const NAV: (NavLeaf | NavGroup)[] = [
   },
   {
     href: '/cms/payments',
-    label: 'SCR-10: Duyệt BMC',
+    label: 'SCR-10: Đối soát nạp tiền',
     icon: Coffee,
     iconClassName: 'text-brand-gold',
-    badge: mockBmcTopups.length,
   },
   {
     href: '/cms/disputes',
@@ -86,7 +85,8 @@ const NAV: (NavLeaf | NavGroup)[] = [
     icon: Settings,
     iconClassName: 'text-slate-500',
     children: [
-      { href: '/cms/settings/payments', label: 'Cài đặt thanh toán' },
+      { href: '/cms/settings/payments', label: 'Cài đặt SePay' },
+      { href: '/cms/settings/international', label: 'Thanh toán quốc tế' },
       { href: '/cms/settings/activation-fee', label: 'Cài đặt phí kích hoạt' },
     ],
   },
@@ -127,7 +127,8 @@ export function CmsShell({ active, children }: { active: string; children: React
               </span>
             </div>
             <p className="hidden text-[11px] text-slate-400 sm:block">
-              SCR-09 (Overview), SCR-10 (BMC), SCR-11 (Dispute), SCR-12 (RBAC), SCR-13 (Audit Logs)
+              SCR-09 (Overview), SCR-10 (Đối soát nạp tiền), SCR-11 (Dispute), SCR-12 (RBAC), SCR-13
+              (Audit Logs)
             </p>
           </div>
         </div>

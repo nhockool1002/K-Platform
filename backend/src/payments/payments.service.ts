@@ -17,7 +17,7 @@ const SEPAY_CONTENT_PREFIX = 'KLP';
 const TOPUP_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const TOPUP_CODE_LENGTH = 8;
 
-function generateTopupCode(): string {
+export function generateTopupCode(): string {
   const bytes = randomBytes(TOPUP_CODE_LENGTH);
   let code = '';
   for (let i = 0; i < TOPUP_CODE_LENGTH; i++) {
@@ -26,7 +26,7 @@ function generateTopupCode(): string {
   return code;
 }
 
-function isUniqueConstraintError(err: unknown): boolean {
+export function isUniqueConstraintError(err: unknown): boolean {
   return (
     typeof err === 'object' &&
     err !== null &&
