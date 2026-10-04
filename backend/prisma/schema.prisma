@@ -120,6 +120,10 @@ enum AuditActionType {
   DELETE
   DISPUTE_RESOLVE
   MANUAL_TOPUP
+  // P6-08 — đăng nhập thành công (kèm cảnh báo IP lạ ở mức CRITICAL).
+  LOGIN
+  // P6-08 — webhook bên thứ 3 (SePay) gọi vào, không có người thao tác.
+  WEBHOOK
 }
 
 enum AuditLevel {
@@ -385,20 +389,29 @@ model DisputeTicket {
 }
 
 model AuditLog {
-  id             String          @id @default(uuid())
-  actorId        String          @map("actor_id")
-  targetResource String          @map("target_resource")
-  actionType     AuditActionType @map("action_type")
-  level          AuditLevel      @default(INFO)
-  payloadBefore  Json?           @map("payload_before")
-  payloadAfter   Json?           @map("payload_after")
-  ip             String?
-  createdAt      DateTime        @default(now()) @map("created_at")
+  id                String          @id @default(uuid())
+  // Null khi request không có người thao tác (đăng nhập sai, webhook SePay).
+  actorId           String?         @map("actor_id")
+  actorRole         String?         @map("actor_role")
+  targetResource    String          @map("target_resource")
+  actionType        AuditActionType @map("action_type")
+  level             AuditLevel      @default(INFO)
+  method            String?
+  path              String?
+  statusCode        Int?            @map("status_code")
+  payloadBefore     Json?           @map("payload_before")
+  payloadAfter      Json?           @map("payload_after")
+  requestPayload    Json?           @map("request_payload")
+  ip                String?
+  userAgent         String?         @map("user_agent")
+  deviceFingerprint String?         @map("device_fingerprint")
+  createdAt         DateTime        @default(now()) @map("created_at")
 
-  actor User @relation("AuditActor", fields: [actorId], references: [id])
+  actor User? @relation("AuditActor", fields: [actorId], references: [id])
 
   @@index([actorId])
   @@index([actionType])
+  @@index([level, createdAt])
   @@index([createdAt])
   @@map("audit_logs")
 }

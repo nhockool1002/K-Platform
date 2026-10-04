@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                                                |
-| -------- | -------------------------------- | --------- | ---------- | ------- | ----------------------------------------------------------------------------------------- |
-| 0        | Khởi tạo nền tảng                | 12        | 11         | 92%     | 🔄 Gần xong (P0-10 cần hạ tầng thật)                                                      |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                                                     |
-| 2        | Ví KPoint & SePay                | 13        | 12         | 92%     | 🔄 Gần xong (P2-12 cần chạy thật trên VPS + SePay dashboard)                              |
-| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                                                   |
-| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                                                   |
-| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật)                              |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 6          | 40%     | 🔄 Đang làm (luồng nạp BMC + đối soát xong; còn email, interceptor audit, màn Audit Logs) |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                                                   |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                                                           |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                                                           |
-| **Tổng** |                                  | **129**   | **94**     | **73%** |                                                                                           |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                   |
+| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------------------------------ |
+| 0        | Khởi tạo nền tảng                | 12        | 12         | 100%    | ✅ Xong (staging đã lên: health + DB OK)                     |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
+| 2        | Ví KPoint & SePay                | 13        | 13         | 100%    | ✅ Xong (P2-12: chủ dự án đã nạp thật qua SePay)             |
+| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
+| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
+| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật) |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 14         | 93%     | 🔄 Còn P6-06 (email — chờ hạ tầng email thật)                |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                      |
+| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| **Tổng** |                                  | **129**   | **104**    | **81%** |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -64,7 +64,7 @@
 - [x] **P0-07** Dựng Docker Compose cho Dev (FE + BE + Postgres + Redis)
 - [x] **P0-08** Tạo file `.env.example` liệt kê đầy đủ biến môi trường cần thiết
 - [x] **P0-09** Thiết lập CI (GitHub Actions): lint + build + test chạy trên mỗi PR
-- [~] **P0-10** Dựng môi trường Staging — _kiến trúc đã chốt (Backend: Docker trên VPS aaPanel; Frontend: Vercel), workflow deploy + hướng dẫn từng bước đầy đủ tại `DEPLOY.md`; còn chờ thực hiện trên VPS/Vercel/GitHub Secrets thật (việc của bạn, ngoài phạm vi code)_
+- [x] **P0-10** Dựng môi trường Staging — _backend deploy qua GitHub Actions lên VPS (health `api-staging` OK, DB up), frontend Vercel. Lần deploy `develop → staging` (PR #66) thành công. Kiến trúc và hướng dẫn tại `DEPLOY.md`_
 - [x] **P0-11** Thiết lập Design Token/UI Kit theo Branding (màu `#1d4e89`/`#e8a93a`, logo, typography)
 - [x] **P0-12** Viết `CONTRIBUTING.md`/quy ước nhánh Git (tham chiếu PLAN.md § 9)
 
@@ -106,7 +106,7 @@
 - [x] **P2-09** Lịch sử giao dịch ví — tách biệt theo chế độ Bên A/Bên B _(theo quy tắc Switch Mode ở SRS Section II)_
 - [x] **P2-10** Test concurrency: 50 request cộng/trừ ví đồng thời không sai lệch số dư
 - [x] **P2-11** Test webhook retry/duplicate không cộng tiền 2 lần
-- [~] **P2-12** Test nạp tiền thật trên SePay sandbox end-to-end — _đã verify toàn bộ pipeline bằng webhook giả lập đúng format SePay (local Docker thật, không mock), 2/2 trình duyệt QA pass (QR → nội dung CK → cộng ví → ledger); còn thiếu bước gọi thật từ SePay (cần `SEPAY_WEBHOOK_API_KEY`/`SEPAY_BANK_*` trên VPS + cấu hình Webhook URL trên dashboard SePay + 1 lượt chuyển khoản thật — xem DEPLOY.md)_
+- [x] **P2-12** Test nạp tiền thật trên SePay sandbox end-to-end — _chủ dự án đã nộp tiền thành công qua SePay (webhook thật, cộng ví đúng). Trước đó đã verify pipeline bằng webhook giả lập đúng format SePay_
 - [x] **P2-13** Demo cuối Phase — bằng chứng QA tại đây + e2e test `backend/test/payments.e2e-spec.ts` (18/18 pass)
 
 ---
@@ -183,14 +183,14 @@
 - [x] **P6-05** Duyệt BMC — `PATCH /admin/bmc/topups/:id/decision` ACID: khoá row giao dịch + ví, cộng KPoint theo tỷ giá snapshot, ghi ledger `TOPUP_BMC` + audit log trong cùng transaction _(FN-PAY-03)_
 - [ ] **P6-06** Gửi email xác nhận khi Approve; thông báo hủy khi Reject — _chưa làm: hạ tầng email thật chưa có (xem P5-09/P1-03), lý do từ chối đang hiển thị trong lịch sử nạp của user_
 - [x] **P6-07** Bảng `audit_logs` (migration + model, JSON Diff before/after) — đã có từ Phase 7; luồng duyệt BMC và CRUD gói ghi trực tiếp vào bảng này
-- [ ] **P6-08** Interceptor NestJS ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) _(FN-LOG-01)_
-- [ ] **P6-09** Ghi kèm IP Address + Device Fingerprint vào mỗi Audit Log
-- [ ] **P6-10** Màn hình CMS Quản lý Audit Logs — bộ lọc (thời gian/User/Role/Action/Level) _(SCR-13)_
-- [ ] **P6-11** Bảng hiển thị Nhật ký + popup Log Detail (JSON viewer) _(SCR-13)_
-- [ ] **P6-12** Đánh dấu đỏ hành vi `CRITICAL` (hạ cấp Admin, sửa số dư thủ công, duyệt dispute lớn, IP lạ)
-- [ ] **P6-13** API `GET /api/v1/admin/audit-logs` (phân trang, filter)
-- [ ] **P6-14** Test: 100% hành động trong danh sách CRITICAL đều xuất hiện đúng định dạng trong Audit Log
-- [ ] **P6-15** Rà soát không còn "backdoor endpoint" nào bỏ qua ghi log
+- [x] **P6-08** Interceptor NestJS ghi Audit Log cho mọi Mutation (CREATE/UPDATE/DELETE/DISPUTE_RESOLVE/MANUAL_TOPUP) _(FN-LOG-01)_
+- [x] **P6-09** Ghi kèm IP Address + Device Fingerprint vào mỗi Audit Log
+- [x] **P6-10** Màn hình CMS Quản lý Audit Logs — bộ lọc (thời gian/User/Role/Action/Level) _(SCR-13)_
+- [x] **P6-11** Bảng hiển thị Nhật ký + popup Log Detail (JSON viewer) _(SCR-13)_
+- [x] **P6-12** Đánh dấu đỏ hành vi `CRITICAL` (hạ cấp Admin, sửa số dư thủ công, duyệt dispute lớn, IP lạ)
+- [x] **P6-13** API `GET /api/v1/admin/audit-logs` (phân trang, filter)
+- [x] **P6-14** Test: 100% hành động trong danh sách CRITICAL đều xuất hiện đúng định dạng trong Audit Log
+- [x] **P6-15** Rà soát không còn "backdoor endpoint" nào bỏ qua ghi log
 
 ---
 
@@ -259,8 +259,15 @@
 - [x] **B-03** Chốt SLA xử lý Dispute — mặc định Moderator đề xuất trong 12h đầu (Admin cũng xử lý được trong khung này), Admin chốt phán quyết cuối trong 24h đầu; cấu hình qua Modal "Cài Đặt SLA" ngay trong CMS Dispute Center (chỉ Admin/Root Admin thấy + chỉnh). Quá hạn Moderator → Admin được phán quyết thẳng, bỏ qua bước chờ đề xuất (leo thang).
 - [x] **B-04** Chốt SLA duyệt Nạp Quốc tế — mặc định Admin đối soát trong 7 ngày (~1 tuần), cấu hình tại CMS "Cài đặt thanh toán" tab Quốc Tế (dùng chung hạ tầng với B-02, chuẩn bị trước cho Phase 6 BMC).
 - [x] **B-05** Chốt ngưỡng Trust Score & quy tắc khóa tài khoản gian lận — hệ thống `TrustScoreRule` (CRUD đầy đủ ở backend `admin/trust-score/rules`) + sổ cái `TrustScoreTransaction`. 5 rule mặc định: thua Dispute -10, Proof bị từ chối -5, hoàn thành 3/5 Proof trong tuần +5/+10 (cron hằng tuần), đăng nhập liên tục 7 ngày +5 (tính lúc login). Admin +/- điểm tay cho bất kỳ tài khoản nào (trừ Root). Không giới hạn trần 100 — có bảng Top 10 Trust Score ở CMS Thống Kê Doanh Thu. "Khóa tài khoản gian lận" dùng chung cơ chế vô hiệu hoá của CMS Quản Trị Tài Khoản (xem mục mới bên dưới) — Admin tự quyết định ngưỡng, không enforce cứng trong code.
-  > ⚠️ **Gap phát hiện khi đối chiếu B-06:** CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
+  > ✅ **Đã bổ sung** (`/cms/settings/trust-score`): Admin tạo/sửa/bật-tắt/xoá lý do tự tạo. Ghi chú gap cũ giữ để lịch sử: CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
 - [x] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — chưa có file `SRS_K-PLATFORM-v1.0.docx` bản mới, nhưng các quyết định nghiệp vụ khi xử lý B-02/03/04/05 (xem các mục trên) là một bản bổ sung yêu cầu trên thực tế, nên đã đối chiếu theo đó: thêm **SCR-14** (CMS Quản Trị Tài Khoản), **SCR-15** (CMS Cài đặt thanh toán), **FN-TRUST-01** (Trust Score), **FN-DISP-04** (SLA & leo thang Dispute), **FN-PAY-04** (cấu hình tỷ giá & SLA Thanh toán Quốc tế) vào README.md §IV/V + PLAN.md §6; sửa lại mô tả sai ở README §I.1 (tỷ giá KPoint↔VNĐ là **cố định** 1:1, không phải "linh hoạt" như bản cũ ghi nhầm — chỉ tỷ giá USD→VNĐ mới cấu hình được). Việc này vẫn định kỳ — đối chiếu lại lần tới khi có SRS bản mới hoặc backlog tiếp theo.
+
+### Phase 6 — Audit Logs (ghi chú triển khai)
+
+- Interceptor toàn cục ghi mọi mutation HTTP (POST/PUT/PATCH/DELETE). Request bị từ chối, kể cả 401/403 từ guard, do `AuditExceptionFilter` ghi. Service nào ghi chi tiết thì dùng `AuditService.write` và không bị ghi trùng.
+- Credential (password, token, api key, secret) được redact trước khi ghi. Đăng nhập thành công ghi `LOGIN`; đăng nhập từ IP lạ sau khi đã có lịch sử thì `CRITICAL`.
+- Mức CRITICAL: Trust Score điều chỉnh tay, duyệt/từ chối dispute, duyệt rút tiền, duyệt nạp BMC, đăng nhập IP lạ, hạ cấp/xoá Admin (có sẵn).
+- P6-15 (rà soát backdoor): không có route mutation nào bị đánh dấu `skip`. Mọi route đi qua interceptor toàn cục. E2E `audit-logs.e2e-spec.ts` kiểm tra đại diện các nhóm: CRITICAL, login, webhook, request bị 403, và credential không bị lưu.
 
 ### Ad-hoc — Thanh toán quốc tế BMC (theo yêu cầu chủ dự án)
 

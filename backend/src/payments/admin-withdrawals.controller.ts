@@ -1,12 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service.js';
 import { DecideWithdrawalDto } from './dto/decide-withdrawal.dto.js';
-import { UserRole, WithdrawalStatus } from '../prisma/client.js';
+import { UserRole, WithdrawalStatus, AuditLevel } from '../prisma/client.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 // CMS "Yêu cầu rút tiền" — danh sách + duyệt/từ chối lệnh rút KPoint của
 // Tài khoản người dùng. Chỉ Admin/Root Admin (ảnh hưởng tiền thật rời ví).
@@ -23,6 +24,7 @@ export class AdminWithdrawalsController {
     return this.payments.listAllWithdrawals(normalized);
   }
 
+  @Audit({ level: AuditLevel.CRITICAL })
   @Patch(':id/decision')
   decide(
     @CurrentUser() admin: AccessTokenPayload,

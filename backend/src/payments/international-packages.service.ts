@@ -1,3 +1,4 @@
+import { AuditService } from '../audit/audit.service.js';
 import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuditActionType, AuditLevel } from '../prisma/client.js';
@@ -31,7 +32,10 @@ const DEFAULT_PACKAGES = [
 
 @Injectable()
 export class InternationalPackagesService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async onModuleInit() {
     const count = await this.prisma.internationalPackage.count();
@@ -52,7 +56,7 @@ export class InternationalPackagesService implements OnModuleInit {
     });
   }
 
-  async create(actorId: string, dto: CreateInternationalPackageDto, ip: string | null) {
+  async create(actorId: string, dto: CreateInternationalPackageDto) {
     return this.prisma.$transaction(async (tx) => {
       const pkg = await tx.internationalPackage.create({
         data: {
@@ -63,21 +67,21 @@ export class InternationalPackagesService implements OnModuleInit {
           sortOrder: dto.sortOrder ?? 0,
         },
       });
-      await tx.auditLog.create({
-        data: {
+      await await this.audit.write(
+        {
           actorId,
           targetResource: `international_package:${pkg.id}`,
           actionType: AuditActionType.CREATE,
           level: AuditLevel.INFO,
           payloadAfter: { name: pkg.name, amountUsd: pkg.amountUsd.toString(), bmcUrl: pkg.bmcUrl },
-          ip: ip ?? undefined,
         },
-      });
+        tx,
+      );
       return pkg;
     });
   }
 
-  async update(actorId: string, id: string, dto: UpdateInternationalPackageDto, ip: string | null) {
+  async update(actorId: string, id: string, dto: UpdateInternationalPackageDto) {
     return this.prisma.$transaction(async (tx) => {
       const before = await tx.internationalPackage.findUnique({ where: { id } });
       if (!before) throw new NotFoundException('Không tìm thấy gói nạp');
@@ -92,8 +96,8 @@ export class InternationalPackagesService implements OnModuleInit {
           sortOrder: dto.sortOrder,
         },
       });
-      await tx.auditLog.create({
-        data: {
+      await await this.audit.write(
+        {
           actorId,
           targetResource: `international_package:${id}`,
           actionType: AuditActionType.UPDATE,
@@ -110,29 +114,29 @@ export class InternationalPackagesService implements OnModuleInit {
             bmcUrl: after.bmcUrl,
             active: after.active,
           },
-          ip: ip ?? undefined,
         },
-      });
+        tx,
+      );
       return after;
     });
   }
 
-  async remove(actorId: string, id: string, ip: string | null) {
+  async remove(actorId: string, id: string) {
     return this.prisma.$transaction(async (tx) => {
       const before = await tx.internationalPackage.findUnique({ where: { id } });
       if (!before) throw new NotFoundException('Không tìm thấy gói nạp');
 
       await tx.internationalPackage.delete({ where: { id } });
-      await tx.auditLog.create({
-        data: {
+      await await this.audit.write(
+        {
           actorId,
           targetResource: `international_package:${id}`,
           actionType: AuditActionType.DELETE,
           level: AuditLevel.WARNING,
           payloadBefore: { name: before.name, amountUsd: before.amountUsd.toString() },
-          ip: ip ?? undefined,
         },
-      });
+        tx,
+      );
       return { success: true };
     });
   }
