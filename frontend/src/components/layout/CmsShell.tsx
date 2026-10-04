@@ -14,6 +14,7 @@ import {
   Settings,
   ShieldAlert,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { logout } from '@/lib/auth-client';
@@ -63,6 +64,12 @@ const NAV: (NavLeaf | NavGroup)[] = [
     iconClassName: 'text-rose-500',
   },
   {
+    href: '/cms/accounts',
+    label: 'Quản Trị Tài Khoản',
+    icon: Users,
+    iconClassName: 'text-blue-600',
+  },
+  {
     href: '/cms/audit-logs',
     label: 'SCR-13: Nhật Ký Audit Logs',
     icon: History,
@@ -79,7 +86,7 @@ const NAV: (NavLeaf | NavGroup)[] = [
     icon: Settings,
     iconClassName: 'text-slate-500',
     children: [
-      { href: '/cms/settings/sepay', label: 'Cài đặt SePay' },
+      { href: '/cms/settings/payments', label: 'Cài đặt thanh toán' },
       { href: '/cms/settings/activation-fee', label: 'Cài đặt phí kích hoạt' },
     ],
   },

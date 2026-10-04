@@ -143,22 +143,34 @@ model User {
   // chế độ Dịch vụ (activeMode=A) luôn miễn phí — chỉ cần trả phí 1 lần ở
   // đây mới mở khoá được chức năng tạo Campaign (AccountActivationService).
   serviceActivatedAt DateTime? @map("service_activated_at")
+  // Quản trị tài khoản (CMS "Quản Trị Tài Khoản") — null = đang hoạt động
+  // bình thường; có giá trị = tài khoản bị vô hiệu hoá, chặn đăng nhập
+  // (auth.service.ts: login()). Khác hẳn `serviceActivatedAt` (chỉ gate tạo
+  // Campaign) — đây là khoá toàn bộ tài khoản.
+  disabledAt      DateTime?  @map("disabled_at")
+  // B-05 — chuỗi ngày đăng nhập liên tục, dùng để + điểm Trust Score mỗi 7
+  // ngày liên tiếp (reset về 0 sau khi thưởng — xem auth.service.ts: login()).
+  lastLoginAt     DateTime?  @map("last_login_at")
+  loginStreakDays Int        @default(0) @map("login_streak_days")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
-  wallet                 Wallet?
-  walletTransactions     WalletTransaction[]
-  withdrawals            Withdrawal[]
-  bmcTopups              BmcTopup[]           @relation("BmcTopupRequester")
-  bmcTopupsVerified      BmcTopup[]           @relation("BmcTopupVerifier")
-  campaignsOwned         Campaign[]           @relation("CampaignOwner")
-  campaignsModerated     Campaign[]           @relation("CampaignAssignedModerator")
-  submissionsAsPublisher Submission[]         @relation("SubmissionPublisher")
-  disputesAsModerator    DisputeTicket[]      @relation("DisputeModerator")
-  disputesAsAdmin        DisputeTicket[]      @relation("DisputeAdmin")
-  auditLogs              AuditLog[]           @relation("AuditActor")
-  passwordResetTokens    PasswordResetToken[]
-  settingsUpdated        SystemSetting[]
+  wallet                   Wallet?
+  walletTransactions       WalletTransaction[]
+  withdrawals              Withdrawal[]
+  bmcTopups                BmcTopup[]               @relation("BmcTopupRequester")
+  bmcTopupsVerified        BmcTopup[]               @relation("BmcTopupVerifier")
+  campaignsOwned           Campaign[]               @relation("CampaignOwner")
+  campaignsModerated       Campaign[]               @relation("CampaignAssignedModerator")
+  submissionsAsPublisher   Submission[]             @relation("SubmissionPublisher")
+  disputesAsModerator      DisputeTicket[]          @relation("DisputeModerator")
+  disputesAsAdmin          DisputeTicket[]          @relation("DisputeAdmin")
+  auditLogs                AuditLog[]               @relation("AuditActor")
+  passwordResetTokens      PasswordResetToken[]
+  settingsUpdated          SystemSetting[]
+  trustScoreTransactions   TrustScoreTransaction[]  @relation("TrustScoreUser")
+  trustScoreAdjustmentsMade TrustScoreTransaction[] @relation("TrustScoreActor")
+  exchangeRatesSet         ExchangeRateHistory[]    @relation("ExchangeRateSetter")
 
   @@map("users")
 }
@@ -373,4 +385,62 @@ model SystemSetting {
   updatedBy User? @relation(fields: [updatedById], references: [id])
 
   @@map("system_settings")
+}
+
+// B-05 — danh sách lý do +/- Trust Score, Admin tự quản qua CMS (CRUD) thay
+// vì hard-code trong code — "tôi sẽ nghĩ ra thêm lý do khác để trừ" (yêu cầu
+// gốc). `isSystem=true` = rule được hệ thống tự động áp dụng theo code (vd.
+// DISPUTE_LOST, PROOF_REJECTED, WEEKLY_3_PROOFS...) — đổi `points` ở đây đổi
+// luôn mức thưởng/phạt áp dụng từ lần sau, không đổi các giao dịch đã ghi.
+// `isSystem=false` = lý do Admin tự tạo, chỉ chọn thủ công lúc +/- điểm tay.
+model TrustScoreRule {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  label     String
+  points    Int
+  isSystem  Boolean  @default(false) @map("is_system")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("trust_score_rules")
+}
+
+// Sổ cái Trust Score (giống WalletTransaction nhưng cho điểm uy tín) — mọi
+// thay đổi `users.trust_score` (tự động hoặc Admin chỉnh tay) đều phải ghi 1
+// dòng ở đây trong cùng transaction, để tra cứu lịch sử + hiển thị lý do.
+// Không giới hạn trần 100 điểm (yêu cầu B-05 — có bảng Top Trust Score).
+model TrustScoreTransaction {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  delta     Int
+  // Tham chiếu TrustScoreRule.code — null nếu Admin nhập tay không chọn rule
+  // có sẵn (ghi lý do tự do vào `note`).
+  ruleCode  String?  @map("rule_code")
+  note      String?
+  // null = hệ thống tự động trigger (Dispute thua, Proof bị từ chối, chuỗi
+  // ngày...); có giá trị = Admin nào đã chỉnh tay.
+  actorId   String?  @map("actor_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation("TrustScoreUser", fields: [userId], references: [id])
+  actor User? @relation("TrustScoreActor", fields: [actorId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("trust_score_transactions")
+}
+
+// B-02 — lịch sử tỷ giá USD→VNĐ (append-only, KHÔNG update dòng cũ) để
+// thống kê sau này + tra cứu "lúc duyệt giao dịch BMC X thì tỷ giá bao
+// nhiêu". Tỷ giá hiện hành = dòng mới nhất theo createdAt.
+model ExchangeRateHistory {
+  id          String   @id @default(uuid())
+  usdToVnd    Decimal  @map("usd_to_vnd") @db.Decimal(12, 2)
+  updatedById String?  @map("updated_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  updatedBy User? @relation("ExchangeRateSetter", fields: [updatedById], references: [id])
+
+  @@index([createdAt])
+  @@map("exchange_rate_history")
 }

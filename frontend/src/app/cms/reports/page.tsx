@@ -9,6 +9,10 @@ import { formatKpoint } from '@/lib/format';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { getReportsOverview, type ReportPeriod, type ReportsOverview } from '@/lib/reports-client';
+import {
+  getTrustScoreLeaderboard,
+  type TrustScoreLeaderboardEntry,
+} from '@/lib/trust-score-client';
 
 const PERIOD_TABS: { key: ReportPeriod; label: string }[] = [
   { key: 'day', label: 'Hôm nay' },
@@ -64,6 +68,7 @@ export default function CmsReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>('month');
   const [data, setData] = useState<ReportsOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<TrustScoreLeaderboardEntry[] | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -85,6 +90,22 @@ export default function CmsReportsPage() {
       cancelled = true;
     };
   }, [isAdmin, period]);
+
+  // B-05 — leaderboard không phụ thuộc bộ lọc kỳ (snapshot điểm hiện tại).
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    getTrustScoreLeaderboard(10)
+      .then((d) => {
+        if (!cancelled) setLeaderboard(d);
+      })
+      .catch(() => {
+        if (!cancelled) setLeaderboard([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   if (!userLoading && !isAdmin) {
     return (
@@ -204,6 +225,34 @@ export default function CmsReportsPage() {
               />
               <RankTable title="Top 10 Nạp KPoint Vào Hệ Thống" rows={data.topTopupUsers} />
               <RankTable title="Top 10 Tài Khoản Người Dùng (Top Earning)" rows={data.topEarners} />
+            </div>
+
+            <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4">
+              <h4 className="text-xs font-extrabold text-slate-700 uppercase">
+                Top 10 Trust Score (B-05)
+              </h4>
+              {!leaderboard || leaderboard.length === 0 ? (
+                <p className="py-4 text-center text-[11px] text-slate-400">Chưa có dữ liệu.</p>
+              ) : (
+                <Table>
+                  <Thead>
+                    <Th className="w-8">#</Th>
+                    <Th>Tài khoản</Th>
+                    <Th className="text-right">Trust Score</Th>
+                  </Thead>
+                  <Tbody>
+                    {leaderboard.map((u, i) => (
+                      <tr key={u.id} className="hover:bg-slate-50/70">
+                        <Td className="font-mono text-slate-400">{i + 1}</Td>
+                        <Td className="font-bold text-slate-800">{u.email}</Td>
+                        <Td className="text-right font-mono font-bold text-brand-blue">
+                          {u.trustScore}
+                        </Td>
+                      </tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              )}
             </div>
           </>
         )}

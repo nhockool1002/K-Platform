@@ -2,6 +2,9 @@ import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { SettingsService } from './settings.service.js';
 import { UpdateSepaySettingsDto } from './dto/update-sepay-settings.dto.js';
 import { UpdateActivationFeeDto } from './dto/update-activation-fee.dto.js';
+import { UpdateExchangeRateDto } from './dto/update-exchange-rate.dto.js';
+import { UpdateInternationalPaymentDto } from './dto/update-international-payment.dto.js';
+import { UpdateDisputeSlaDto } from './dto/update-dispute-sla.dto.js';
 import { UserRole } from '../prisma/client.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
@@ -9,9 +12,8 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
 
-// CMS "Cài Đặt" (menu mẹ) → "Cài đặt SePay" — chỉ Admin/Root Admin, mọi route
-// đều ghi đè cấu hình vận hành dùng chung toàn hệ thống (bank nhận tiền,
-// webhook API key) nên không mở cho Moderator.
+// CMS "Cài Đặt" (menu mẹ) → mọi route đều ghi đè cấu hình vận hành dùng
+// chung toàn hệ thống nên chỉ Admin/Root Admin, không mở cho Moderator.
 @Controller('admin/settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SettingsController {
@@ -42,5 +44,46 @@ export class SettingsController {
     @Body() dto: UpdateActivationFeeDto,
   ) {
     return this.settings.updateActivationFee(user.sub, dto);
+  }
+
+  // B-02 — tab "Cài đặt thanh toán Quốc tế" (chuẩn bị trước cho BMC, Phase 6).
+  @Get('international-payment')
+  @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  getInternationalPayment() {
+    return this.settings.getInternationalPaymentSettings();
+  }
+
+  @Put('international-payment/exchange-rate')
+  @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  updateExchangeRate(@CurrentUser() user: AccessTokenPayload, @Body() dto: UpdateExchangeRateDto) {
+    return this.settings.updateExchangeRate(user.sub, dto);
+  }
+
+  @Put('international-payment/review-days')
+  @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  updateReviewDays(
+    @CurrentUser() user: AccessTokenPayload,
+    @Body() dto: UpdateInternationalPaymentDto,
+  ) {
+    return this.settings.updateReviewDays(user.sub, dto);
+  }
+
+  @Get('international-payment/exchange-rate/history')
+  @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  getExchangeRateHistory() {
+    return this.settings.getExchangeRateHistory();
+  }
+
+  // B-03/B-04 — Modal "Cài đặt SLA" trong màn CMS Dispute Center.
+  @Get('dispute-sla')
+  @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  getDisputeSla() {
+    return this.settings.getDisputeSla();
+  }
+
+  @Put('dispute-sla')
+  @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  updateDisputeSla(@CurrentUser() user: AccessTokenPayload, @Body() dto: UpdateDisputeSlaDto) {
+    return this.settings.updateDisputeSla(user.sub, dto);
   }
 }

@@ -13,6 +13,7 @@ import { WATERMARK_QUEUE } from '../watermark/watermark.constants.js';
 import type { WatermarkJobData } from '../watermark/watermark.processor.js';
 import { PROOFS_DIR, WATERMARKED_DIR } from './upload-paths.js';
 import type { SubmitProofDto } from './dto/submit-proof.dto.js';
+import { TrustScoreService } from '../trust-score/trust-score.service.js';
 
 const AUTO_APPROVE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
@@ -28,6 +29,7 @@ export class SubmissionsService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue(WATERMARK_QUEUE) private readonly watermarkQueue: Queue<WatermarkJobData>,
+    private readonly trustScore: TrustScoreService,
   ) {}
 
   // P4-03/FN-TASK-01 — nộp Proof (chỉ khi đang ở trạng thái INVITED), kích
@@ -125,6 +127,20 @@ export class SubmissionsService {
         where: { id: submissionId },
         data: { status: SubmissionStatus.REJECTED, rejectReason: reason ?? null },
       });
+      // B-05 — Proof bị từ chối trừ Trust Score (độc lập với Dispute sau đó
+      // thắng/thua — xem trust-score-rules.service.ts: PROOF_REJECTED). PHẢI
+      // await (không fire-and-forget) để tránh race condition — promise chưa
+      // kịp ghi xong mà request đã trả response/test đã sang bước dọn dẹp;
+      // lỗi ghi điểm vẫn không chặn luồng từ chối Proof chính (try/catch).
+      try {
+        await this.trustScore.applyRule(
+          submission.publisherId,
+          'PROOF_REJECTED',
+          `submission:${submissionId}`,
+        );
+      } catch {
+        // Nghiệp vụ từ chối Proof quan trọng hơn — bỏ qua lỗi ghi điểm.
+      }
       return this.toPublic(updated);
     }
 

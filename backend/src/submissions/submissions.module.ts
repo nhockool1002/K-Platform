@@ -3,10 +3,11 @@ import { SubmissionsController } from './submissions.controller.js';
 import { SubmissionsService } from './submissions.service.js';
 import { AutoApproveService } from './auto-approve.service.js';
 import { WatermarkModule } from '../watermark/watermark.module.js';
+import { TrustScoreModule } from '../trust-score/trust-score.module.js';
 import { ensureUploadDirs } from './upload-paths.js';
 
 @Module({
-  imports: [WatermarkModule],
+  imports: [WatermarkModule, TrustScoreModule],
   controllers: [SubmissionsController],
   providers: [SubmissionsService, AutoApproveService],
   exports: [SubmissionsService],
