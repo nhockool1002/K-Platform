@@ -1,3 +1,4 @@
+import { AuditService } from '../audit/audit.service.js';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -72,6 +73,7 @@ function toPublicTopup(t: {
 export class InternationalPaymentsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
     private readonly rates: ExchangeRateConfigService,
     private readonly packages: InternationalPackagesService,
   ) {}
@@ -233,7 +235,7 @@ export class InternationalPaymentsService {
   // Duyệt/Từ chối (Admin). Approve: khoá row giao dịch + row ví, cộng KPoint
   // theo tỷ giá đã snapshot lúc user nạp, ghi ledger + audit log trong cùng
   // transaction — một trong các bước lỗi thì không bước nào được ghi.
-  async decide(adminId: string, topupId: string, dto: DecideBmcTopupDto, ip: string | null) {
+  async decide(adminId: string, topupId: string, dto: DecideBmcTopupDto) {
     if (dto.decision === 'REJECT' && !dto.reason?.trim()) {
       throw new BadRequestException('Vui lòng nhập lý do từ chối');
     }
@@ -282,12 +284,12 @@ export class InternationalPaymentsService {
         },
       });
 
-      await tx.auditLog.create({
-        data: {
+      await await this.audit.write(
+        {
           actorId: adminId,
           targetResource: `bmc_topup:${topupId}`,
           actionType: AuditActionType.MANUAL_TOPUP,
-          level: dto.decision === 'APPROVE' ? AuditLevel.WARNING : AuditLevel.INFO,
+          level: dto.decision === 'APPROVE' ? AuditLevel.CRITICAL : AuditLevel.INFO,
           payloadBefore: { status: PENDING },
           payloadAfter: {
             status: updated.status,
@@ -295,9 +297,9 @@ export class InternationalPaymentsService {
             kpointAmount: topup.kpoint_amount.toString(),
             rejectReason: updated.rejectReason,
           },
-          ip: ip ?? undefined,
         },
-      });
+        tx,
+      );
 
       return toPublicTopup(updated);
     });

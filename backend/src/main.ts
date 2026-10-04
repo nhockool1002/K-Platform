@@ -7,6 +7,8 @@ import { UPLOADS_ROOT, ensureUploadDirs } from './submissions/upload-paths.js';
 async function bootstrap() {
   ensureUploadDirs();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Sau nginx của aaPanel: đọc IP client thật từ X-Forwarded-For (P6-09).
+  app.set('trust proxy', 1);
   app.setGlobalPrefix('api/v1');
   app.enableCors({ origin: process.env.FRONTEND_URL ?? 'http://localhost:3000' });
   app.useGlobalPipes(

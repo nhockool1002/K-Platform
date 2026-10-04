@@ -1,3 +1,4 @@
+import { AuditService } from '../audit/audit.service.js';
 import {
   ConflictException,
   ForbiddenException,
@@ -33,7 +34,10 @@ function isUniqueConstraintError(err: unknown): boolean {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   // CMS Quản Trị Tài Khoản — danh sách đầy đủ mọi tài khoản (khác CMS RBAC
   // chỉ liệt kê staff). `isRootAdmin` để FE khoá toàn bộ hàng của Root.
@@ -52,7 +56,7 @@ export class UsersService {
   }
 
   // Admin tạo tài khoản mới trực tiếp từ CMS (khác luồng tự đăng ký).
-  async create(actorId: string, actorRole: UserRole, dto: CreateAccountDto, ip: string | null) {
+  async create(actorId: string, actorRole: UserRole, dto: CreateAccountDto) {
     const role = dto.role ?? UserRole.USER;
     if (role === UserRole.ROOT_ADMIN) {
       throw new ForbiddenException('Không thể tạo tài khoản với role ROOT_ADMIN qua API');
@@ -79,15 +83,12 @@ export class UsersService {
         return created;
       });
 
-      await this.prisma.auditLog.create({
-        data: {
-          actorId,
-          targetResource: `user:${user.id}`,
-          actionType: AuditActionType.CREATE,
-          level: role === UserRole.ADMIN ? AuditLevel.CRITICAL : AuditLevel.INFO,
-          payloadAfter: { email: user.email, role: user.role },
-          ip: ip ?? undefined,
-        },
+      await await this.audit.write({
+        actorId,
+        targetResource: `user:${user.id}`,
+        actionType: AuditActionType.CREATE,
+        level: role === UserRole.ADMIN ? AuditLevel.CRITICAL : AuditLevel.INFO,
+        payloadAfter: { email: user.email, role: user.role },
       });
 
       return { ...user, isRootAdmin: false };
@@ -101,12 +102,7 @@ export class UsersService {
 
   // Sửa email/mật khẩu — route gắn RootAdminSelfOnlyGuard (chỉ Root tự sửa
   // được chính mình, người khác không đụng vào Root được dù là Admin khác).
-  async updateProfile(
-    actorId: string,
-    targetId: string,
-    dto: UpdateAccountProfileDto,
-    ip: string | null,
-  ) {
+  async updateProfile(actorId: string, targetId: string, dto: UpdateAccountProfileDto) {
     const target = await this.prisma.user.findUnique({
       where: { id: targetId },
       select: { email: true },
@@ -127,18 +123,15 @@ export class UsersService {
         select: LIST_SELECT,
       });
 
-      await this.prisma.auditLog.create({
-        data: {
-          actorId,
-          targetResource: `user:${targetId}`,
-          actionType: AuditActionType.UPDATE,
-          level: targetId === ROOT_ADMIN_ID ? AuditLevel.CRITICAL : AuditLevel.INFO,
-          payloadBefore: { email: target.email },
-          payloadAfter: {
-            email: data.email ?? target.email,
-            passwordChanged: Boolean(dto.password),
-          },
-          ip: ip ?? undefined,
+      await await this.audit.write({
+        actorId,
+        targetResource: `user:${targetId}`,
+        actionType: AuditActionType.UPDATE,
+        level: targetId === ROOT_ADMIN_ID ? AuditLevel.CRITICAL : AuditLevel.INFO,
+        payloadBefore: { email: target.email },
+        payloadAfter: {
+          email: data.email ?? target.email,
+          passwordChanged: Boolean(dto.password),
         },
       });
 
@@ -154,7 +147,7 @@ export class UsersService {
   // Kích hoạt/Vô hiệu hoá tài khoản — route gắn RootAdminTargetGuard (chặn
   // tuyệt đối, kể cả Root tự khoá chính mình, để tránh tự khoá không ai mở
   // lại được).
-  async setActive(actorId: string, targetId: string, active: boolean, ip: string | null) {
+  async setActive(actorId: string, targetId: string, active: boolean) {
     const target = await this.prisma.user.findUnique({
       where: { id: targetId },
       select: { disabledAt: true },
@@ -167,16 +160,13 @@ export class UsersService {
       select: LIST_SELECT,
     });
 
-    await this.prisma.auditLog.create({
-      data: {
-        actorId,
-        targetResource: `user:${targetId}`,
-        actionType: AuditActionType.UPDATE,
-        level: AuditLevel.WARNING,
-        payloadBefore: { disabledAt: target.disabledAt },
-        payloadAfter: { disabledAt: updated.disabledAt },
-        ip: ip ?? undefined,
-      },
+    await await this.audit.write({
+      actorId,
+      targetResource: `user:${targetId}`,
+      actionType: AuditActionType.UPDATE,
+      level: AuditLevel.WARNING,
+      payloadBefore: { disabledAt: target.disabledAt },
+      payloadAfter: { disabledAt: updated.disabledAt },
     });
 
     return { ...updated, isRootAdmin: updated.id === ROOT_ADMIN_ID };
@@ -187,13 +177,7 @@ export class UsersService {
   // II "Root Administrator: ... nâng/hạ cấp các Admin khác". Admin thường chỉ
   // được đổi qua lại USER ↔ MODERATOR (vận hành nhân sự hằng ngày), không
   // được tự phong/hạ cấp Admin ngang hàng (tránh leo thang đặc quyền).
-  async updateRole(
-    actorId: string,
-    actorRole: UserRole,
-    targetId: string,
-    newRole: UserRole,
-    ip: string | null,
-  ) {
+  async updateRole(actorId: string, actorRole: UserRole, targetId: string, newRole: UserRole) {
     if (newRole === UserRole.ROOT_ADMIN) {
       throw new ForbiddenException('Không thể gán role ROOT_ADMIN qua API');
     }
@@ -220,22 +204,19 @@ export class UsersService {
     // P7-11 — ghi Audit Log cho thay đổi role (interceptor tổng quát bắt MỌI
     // Mutation thuộc Phase 6/FN-LOG-01; ở đây ghi trực tiếp cho riêng hành
     // động nhạy cảm này để P7-11 có dữ liệu thật để test ngay).
-    await this.prisma.auditLog.create({
-      data: {
-        actorId,
-        targetResource: `user:${targetId}`,
-        actionType: AuditActionType.UPDATE,
-        level: touchesAdminLevel ? AuditLevel.CRITICAL : AuditLevel.INFO,
-        payloadBefore: { role: target.role },
-        payloadAfter: { role: newRole },
-        ip: ip ?? undefined,
-      },
+    await await this.audit.write({
+      actorId,
+      targetResource: `user:${targetId}`,
+      actionType: AuditActionType.UPDATE,
+      level: touchesAdminLevel ? AuditLevel.CRITICAL : AuditLevel.INFO,
+      payloadBefore: { role: target.role },
+      payloadAfter: { role: newRole },
     });
 
     return updated;
   }
 
-  async remove(actorId: string, targetId: string, ip: string | null) {
+  async remove(actorId: string, targetId: string) {
     const target = await this.prisma.user.findUnique({
       where: { id: targetId },
       select: { role: true, email: true },
@@ -244,15 +225,12 @@ export class UsersService {
 
     await this.prisma.user.delete({ where: { id: targetId } });
 
-    await this.prisma.auditLog.create({
-      data: {
-        actorId,
-        targetResource: `user:${targetId}`,
-        actionType: AuditActionType.DELETE,
-        level: AuditLevel.CRITICAL,
-        payloadBefore: { email: target.email, role: target.role },
-        ip: ip ?? undefined,
-      },
+    await await this.audit.write({
+      actorId,
+      targetResource: `user:${targetId}`,
+      actionType: AuditActionType.DELETE,
+      level: AuditLevel.CRITICAL,
+      payloadBefore: { email: target.email, role: target.role },
     });
 
     return { success: true };

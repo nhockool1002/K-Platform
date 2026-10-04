@@ -1,5 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { UserRole } from '../prisma/client.js';
 import { UsersService } from './users.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
@@ -36,12 +35,8 @@ export class UsersController {
   }
 
   @Post()
-  create(
-    @CurrentUser() actor: AccessTokenPayload,
-    @Body() dto: CreateAccountDto,
-    @Req() req: Request,
-  ) {
-    return this.users.create(actor.sub, actor.role, dto, req.ip ?? null);
+  create(@CurrentUser() actor: AccessTokenPayload, @Body() dto: CreateAccountDto) {
+    return this.users.create(actor.sub, actor.role, dto);
   }
 
   // Sửa email/mật khẩu — Root chỉ tự sửa được chính mình, không ai khác
@@ -53,9 +48,8 @@ export class UsersController {
     @CurrentUser() actor: AccessTokenPayload,
     @Param('id') id: string,
     @Body() dto: UpdateAccountProfileDto,
-    @Req() req: Request,
   ) {
-    return this.users.updateProfile(actor.sub, id, dto, req.ip ?? null);
+    return this.users.updateProfile(actor.sub, id, dto);
   }
 
   // Kích hoạt/Vô hiệu hoá — chặn tuyệt đối trên Root (kể cả Root tự khoá
@@ -66,9 +60,8 @@ export class UsersController {
     @CurrentUser() actor: AccessTokenPayload,
     @Param('id') id: string,
     @Body() dto: SetAccountActiveDto,
-    @Req() req: Request,
   ) {
-    return this.users.setActive(actor.sub, id, dto.active, req.ip ?? null);
+    return this.users.setActive(actor.sub, id, dto.active);
   }
 
   @Patch(':id/role')
@@ -77,15 +70,14 @@ export class UsersController {
     @CurrentUser() actor: AccessTokenPayload,
     @Param('id') id: string,
     @Body() dto: UpdateUserRoleDto,
-    @Req() req: Request,
   ) {
-    return this.users.updateRole(actor.sub, actor.role, id, dto.role, req.ip ?? null);
+    return this.users.updateRole(actor.sub, actor.role, id, dto.role);
   }
 
   @Delete(':id')
   @Roles(UserRole.ROOT_ADMIN)
   @UseGuards(RootAdminTargetGuard)
-  remove(@CurrentUser() actor: AccessTokenPayload, @Param('id') id: string, @Req() req: Request) {
-    return this.users.remove(actor.sub, id, req.ip ?? null);
+  remove(@CurrentUser() actor: AccessTokenPayload, @Param('id') id: string) {
+    return this.users.remove(actor.sub, id);
   }
 }
