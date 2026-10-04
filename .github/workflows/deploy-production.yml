@@ -57,13 +57,21 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
-            docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build --wait --wait-timeout 120
+            # Build image backend trước, rồi chỉ bật postgres/redis và đợi 2 service
+            # này healthy (không đụng backend). Một số module backend chạy query DB
+            # ngay lúc bootstrap (vd. TrustScoreRulesService.onModuleInit seed rule
+            # mặc định) — nếu để `up --wait` bật cả backend trước khi migrate, app sẽ
+            # crash lúc khởi động vì bảng mới chưa tồn tại, container "unhealthy" mãi
+            # và `--wait` timeout. Nên PHẢI migrate xong rồi mới bật backend thật.
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env build backend
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --wait --wait-timeout 120 postgres redis
             # Dùng thẳng node_modules/.bin/prisma thay vì `pnpm prisma:deploy`: image
             # production chỉ cài production dependencies (pnpm deploy --prod), gọi qua
             # `pnpm run` khiến pnpm thấy "thiếu" devDependencies so với package.json và
             # tự tải lại pnpm mới nhất qua corepack — từng gây lỗi ERR_PNPM_IGNORED_BUILDS.
             # Xem DEPLOY.md § Troubleshooting.
-            docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend node_modules/.bin/prisma migrate deploy
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env run --rm --no-deps backend node_modules/.bin/prisma migrate deploy
+            docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --wait --wait-timeout 120 backend
 
       - name: Verify — health check qua domain công khai
         run: |
