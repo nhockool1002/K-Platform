@@ -18,6 +18,7 @@ import { DisputesModule } from './disputes/disputes.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { PermissionsModule } from './permissions/permissions.module.js';
 import { TrustScoreModule } from './trust-score/trust-score.module.js';
+import { AuditModule } from './audit/audit.module.js';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { TrustScoreModule } from './trust-score/trust-score.module.js';
     ReportsModule,
     PermissionsModule,
     TrustScoreModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

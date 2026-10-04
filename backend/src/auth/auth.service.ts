@@ -11,6 +11,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { TrustScoreService } from '../trust-score/trust-score.service.js';
+import { AuditService } from '../audit/audit.service.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { ForgotPasswordDto } from './dto/forgot-password.dto.js';
@@ -30,6 +31,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly mail: MailService,
     private readonly trustScore: TrustScoreService,
+    private readonly audit: AuditService,
   ) {}
 
   private signTokens(user: { id: string; email: string; role: string; activeMode: string }) {
@@ -95,6 +97,7 @@ export class AuthService {
       );
     }
 
+    await this.audit.recordLogin(user.id, user.role);
     const updatedUser = await this.updateLoginStreak(user);
     const tokens = this.signTokens(updatedUser);
     return { user: this.toPublicUser(updatedUser), ...tokens };

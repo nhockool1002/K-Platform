@@ -45,61 +45,6 @@ export const mockDisputes = [
   },
 ];
 
-export const mockAuditLogs = [
-  {
-    id: 'LOG-9021',
-    time: '2026-10-02 18:45:12',
-    actor: 'root_001',
-    action: 'MANUAL_TOPUP' as const,
-    resource: 'wallets:uid-namviet',
-    ip: '14.161.22.8',
-    fingerprint: 'fp_981ab23',
-    level: 'critical' as const,
-    diffOld: { balance_kpoint: 0, reserved_kpoint: 0 },
-    diffNew: {
-      balance_kpoint: 1_250_000,
-      reserved_kpoint: 0,
-      topup_source: 'BUY_ME_A_COFFEE',
-      txn_id: 'BMC-88219-TX',
-    },
-  },
-  {
-    id: 'LOG-9018',
-    time: '2026-10-02 17:20:05',
-    actor: 'adm_024',
-    action: 'DISPUTE_RESOLVE' as const,
-    resource: 'disputes:DSP-12',
-    ip: '118.69.14.92',
-    fingerprint: 'fp_442ee01',
-    level: 'warning' as const,
-    diffOld: { status: 'RECOMMENDED', mod_recommendation: 'PEND_APP' },
-    diffNew: {
-      status: 'RESOLVED',
-      final_decision: 'APPROVE',
-      released_to: 'pub-104',
-      kpoint: 60_000,
-    },
-  },
-  {
-    id: 'LOG-9010',
-    time: '2026-10-02 14:10:33',
-    actor: 'adv_theartisan',
-    action: 'CAMPAIGN_CREATE' as const,
-    resource: 'campaigns:CP-101',
-    ip: '171.244.10.15',
-    fingerprint: 'fp_bb1293c',
-    level: 'info' as const,
-    diffOld: null,
-    diffNew: {
-      id: 'CP-101',
-      slots: 20,
-      reward: 60_000,
-      reserved_kpoint: 550_000,
-      status: 'ACTIVE',
-    },
-  },
-];
-
 export const ROOT_ADMIN = {
   id: 'root_001',
   name: 'Root System Admin',

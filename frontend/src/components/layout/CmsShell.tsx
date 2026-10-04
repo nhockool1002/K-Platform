@@ -87,6 +87,7 @@ const NAV: (NavLeaf | NavGroup)[] = [
     children: [
       { href: '/cms/settings/payments', label: 'Cài đặt SePay' },
       { href: '/cms/settings/international', label: 'Thanh toán quốc tế' },
+      { href: '/cms/settings/trust-score', label: 'Lý do Trust Score' },
       { href: '/cms/settings/activation-fee', label: 'Cài đặt phí kích hoạt' },
     ],
   },

@@ -8,11 +8,9 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
 import {
   InternationalPaymentsService,
   type TopupSource,
@@ -23,12 +21,14 @@ import {
   CreateInternationalPackageDto,
   UpdateInternationalPackageDto,
 } from './dto/international-package.dto.js';
-import { BmcTopupStatus, UserRole } from '../prisma/client.js';
+import { BmcTopupStatus, UserRole, AuditLevel } from '../prisma/client.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
+import type { Response } from 'express';
 
 const SOURCES: TopupSource[] = ['SEPAY', 'BMC'];
 
@@ -52,14 +52,14 @@ export class AdminInternationalPaymentsController {
     return this.payments.listForReconciliation(normalizedSource, normalizedStatus);
   }
 
+  @Audit({ level: AuditLevel.CRITICAL })
   @Patch('bmc/topups/:id/decision')
   decide(
     @CurrentUser() admin: AccessTokenPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DecideBmcTopupDto,
-    @Req() req: Request,
   ) {
-    return this.payments.decide(admin.sub, id, dto, req.ip ?? null);
+    return this.payments.decide(admin.sub, id, dto);
   }
 
   @Get('bmc/topups/:id/receipt')
@@ -77,9 +77,8 @@ export class AdminInternationalPaymentsController {
   createPackage(
     @CurrentUser() admin: AccessTokenPayload,
     @Body() dto: CreateInternationalPackageDto,
-    @Req() req: Request,
   ) {
-    return this.packages.create(admin.sub, dto, req.ip ?? null);
+    return this.packages.create(admin.sub, dto);
   }
 
   @Patch('bmc/packages/:id')
@@ -87,17 +86,12 @@ export class AdminInternationalPaymentsController {
     @CurrentUser() admin: AccessTokenPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateInternationalPackageDto,
-    @Req() req: Request,
   ) {
-    return this.packages.update(admin.sub, id, dto, req.ip ?? null);
+    return this.packages.update(admin.sub, id, dto);
   }
 
   @Delete('bmc/packages/:id')
-  removePackage(
-    @CurrentUser() admin: AccessTokenPayload,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
-  ) {
-    return this.packages.remove(admin.sub, id, req.ip ?? null);
+  removePackage(@CurrentUser() admin: AccessTokenPayload, @Param('id', ParseUUIDPipe) id: string) {
+    return this.packages.remove(admin.sub, id);
   }
 }

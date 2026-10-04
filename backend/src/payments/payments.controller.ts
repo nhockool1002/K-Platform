@@ -5,6 +5,8 @@ import { SepayWebhookGuard } from './guards/sepay-webhook.guard.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
+import { AuditActionType } from '../prisma/client.js';
 
 @Controller('payments')
 export class PaymentsController {
@@ -54,6 +56,7 @@ export class PaymentsController {
   // không log được gì. Validate lỏng tay thủ công trong service thay vào đó
   // (xem payments.service.ts: handleSepayWebhook).
   @UseGuards(SepayWebhookGuard)
+  @Audit({ action: AuditActionType.WEBHOOK })
   @Post('sepay-webhook')
   @HttpCode(200)
   sepayWebhook(@Body() body: Record<string, unknown>) {

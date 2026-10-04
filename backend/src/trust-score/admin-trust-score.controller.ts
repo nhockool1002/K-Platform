@@ -1,13 +1,14 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { TrustScoreService } from './trust-score.service.js';
 import { AdjustTrustScoreDto } from './dto/adjust-trust-score.dto.js';
-import { UserRole } from '../prisma/client.js';
+import { UserRole, AuditActionType, AuditLevel } from '../prisma/client.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { RootAdminTargetGuard } from '../common/guards/root-admin-target.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 // B-05/CMS Quản Trị Tài Khoản — Admin +/- Trust Score trực tiếp cho 1 tài
 // khoản bất kỳ + xem lịch sử. RootAdminTargetGuard chặn thao tác lên Root
@@ -29,6 +30,7 @@ export class AdminTrustScoreController {
     return this.trustScore.getHistory(id);
   }
 
+  @Audit({ action: AuditActionType.MANUAL_TOPUP, level: AuditLevel.CRITICAL })
   @Post(':id/adjust')
   @UseGuards(RootAdminTargetGuard)
   adjust(

@@ -9,6 +9,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from './token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
+import { AuditActionType } from '../prisma/client.js';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +21,7 @@ export class AuthController {
     return this.auth.register(dto);
   }
 
+  @Audit({ action: AuditActionType.LOGIN })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {

@@ -5,12 +5,13 @@ import { UpdateActivationFeeDto } from './dto/update-activation-fee.dto.js';
 import { UpdateExchangeRateDto } from './dto/update-exchange-rate.dto.js';
 import { UpdateInternationalPaymentDto } from './dto/update-international-payment.dto.js';
 import { UpdateDisputeSlaDto } from './dto/update-dispute-sla.dto.js';
-import { UserRole } from '../prisma/client.js';
+import { UserRole, AuditLevel } from '../prisma/client.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 // CMS "Cài Đặt" (menu mẹ) → mọi route đều ghi đè cấu hình vận hành dùng
 // chung toàn hệ thống nên chỉ Admin/Root Admin, không mở cho Moderator.
@@ -25,6 +26,7 @@ export class SettingsController {
     return this.settings.getSepaySettings();
   }
 
+  @Audit({ level: AuditLevel.WARNING })
   @Put('sepay')
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
   updateSepay(@CurrentUser() user: AccessTokenPayload, @Body() dto: UpdateSepaySettingsDto) {
@@ -37,6 +39,7 @@ export class SettingsController {
     return this.settings.getActivationFee();
   }
 
+  @Audit({ level: AuditLevel.WARNING })
   @Put('activation-fee')
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
   updateActivationFee(
@@ -53,12 +56,14 @@ export class SettingsController {
     return this.settings.getInternationalPaymentSettings();
   }
 
+  @Audit({ level: AuditLevel.WARNING })
   @Put('international-payment/exchange-rate')
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
   updateExchangeRate(@CurrentUser() user: AccessTokenPayload, @Body() dto: UpdateExchangeRateDto) {
     return this.settings.updateExchangeRate(user.sub, dto);
   }
 
+  @Audit({ level: AuditLevel.WARNING })
   @Put('international-payment/review-days')
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
   updateReviewDays(
@@ -81,6 +86,7 @@ export class SettingsController {
     return this.settings.getDisputeSla();
   }
 
+  @Audit({ level: AuditLevel.WARNING })
   @Put('dispute-sla')
   @Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
   updateDisputeSla(@CurrentUser() user: AccessTokenPayload, @Body() dto: UpdateDisputeSlaDto) {

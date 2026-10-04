@@ -1,163 +1,340 @@
 'use client';
 
-import { useState } from 'react';
-import { Filter, MinusCircle, PlusCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ShieldAlert } from 'lucide-react';
 import { CmsShell } from '@/components/layout/CmsShell';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
-import { Select } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Field, Input, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
-import { mockAuditLogs } from '@/lib/mock-data';
+import { ApiError } from '@/lib/auth-client';
+import { useCurrentUser } from '@/lib/use-current-user';
+import {
+  getAuditLog,
+  listAuditLogs,
+  type AuditLevel,
+  type AuditLogDetail,
+  type AuditLogPage,
+} from '@/lib/admin-audit-client';
 
-const LEVEL_TONE: Record<string, BadgeTone> = {
-  info: 'info',
-  warning: 'warning',
-  critical: 'critical',
+const PAGE_SIZE = 20;
+
+const LEVEL_TONE: Record<AuditLevel, BadgeTone> = {
+  INFO: 'info',
+  WARNING: 'warning',
+  CRITICAL: 'critical',
 };
 
-function formatJson(value: unknown): string {
-  return value === null ? 'null' : JSON.stringify(value, null, 2);
+const ACTION_OPTIONS = [
+  'CREATE',
+  'UPDATE',
+  'DELETE',
+  'DISPUTE_RESOLVE',
+  'MANUAL_TOPUP',
+  'LOGIN',
+  'WEBHOOK',
+];
+
+interface Filters {
+  actor: string;
+  role: string;
+  action: string;
+  level: '' | AuditLevel;
+  ip: string;
+  from: string;
+  to: string;
+}
+
+const EMPTY_FILTERS: Filters = {
+  actor: '',
+  role: '',
+  action: '',
+  level: '',
+  ip: '',
+  from: '',
+  to: '',
+};
+
+function toIso(local: string): string | undefined {
+  return local ? new Date(local).toISOString() : undefined;
 }
 
 export default function AuditLogsPage() {
-  const [active, setActive] = useState<(typeof mockAuditLogs)[number] | null>(null);
+  const { user, loading: userLoading } = useCurrentUser();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+
+  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
+  const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<AuditLogPage | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<AuditLogDetail | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    listAuditLogs({
+      page,
+      pageSize: PAGE_SIZE,
+      actor: applied.actor || undefined,
+      role: applied.role || undefined,
+      action: applied.action || undefined,
+      level: applied.level || undefined,
+      ip: applied.ip || undefined,
+      from: toIso(applied.from),
+      to: toIso(applied.to),
+    })
+      .then((res) => {
+        if (cancelled) return;
+        setData(res);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof ApiError ? err.message : 'Không tải được nhật ký');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, applied, page]);
+
+  async function openDetail(id: string) {
+    try {
+      setDetail(await getAuditLog(id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được chi tiết');
+    }
+  }
+
+  function applyFilters() {
+    setPage(1);
+    setApplied(draft);
+  }
+
+  if (!userLoading && !isAdmin) {
+    return (
+      <CmsShell active="/cms/audit-logs">
+        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+          <ShieldAlert className="h-8 w-8 text-rose-500" />
+          <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
+          <p className="text-xs text-slate-500">Chỉ Admin hoặc Root Admin được xem Audit Logs.</p>
+        </div>
+      </CmsShell>
+    );
+  }
+
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
   return (
     <CmsShell active="/cms/audit-logs">
       <div className="space-y-4">
-        <div className="space-y-0.5 border-b border-slate-100 pb-3">
-          <h3 className="text-base font-extrabold text-slate-900">
-            SCR-13: Quản Lý Nhật Ký Kiểm Toán Toàn Hệ Thống (Audit Logs)
-          </h3>
-          <p className="text-xs text-slate-500">
-            Ghi nhận toàn bộ thao tác nhạy cảm, giao dịch tài chính &amp; JSON Diff theo chuẩn
-            FN-LOG-01
+        <div className="border-b border-slate-100 pb-3">
+          <h3 className="text-base font-extrabold text-slate-900">SCR-13: Nhật Ký Audit Logs</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Mọi thao tác ghi dữ liệu (kể cả request bị từ chối) kèm IP, User-Agent và fingerprint
+            thiết bị. Mức <strong className="text-rose-600">CRITICAL</strong> là hành động nhạy cảm
+            cần rà soát.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-xs sm:grid-cols-12">
-          <div className="sm:col-span-3">
-            <label className="mb-1 block font-bold text-slate-600">Actor (User ID / Email)</label>
-            <input
-              type="text"
-              placeholder="root_001, adm_024..."
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 focus:outline-none"
+        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-xs sm:grid-cols-4">
+          <Field label="Actor (email)">
+            <Input
+              value={draft.actor}
+              onChange={(e) => setDraft((d) => ({ ...d, actor: e.target.value }))}
+              placeholder="admin@..."
             />
-          </div>
-          <div className="sm:col-span-3">
-            <label className="mb-1 block font-bold text-slate-600">Loại hành động</label>
-            <Select defaultValue="ALL" className="py-1.5">
-              <option value="ALL">Tất cả hành động</option>
-              <option value="MANUAL_TOPUP">MANUAL_TOPUP (Duyệt nạp ví)</option>
-              <option value="DISPUTE_RESOLVE">DISPUTE_RESOLVE (Phán quyết)</option>
-              <option value="CAMPAIGN_CREATE">CAMPAIGN_CREATE (Khởi tạo camp)</option>
+          </Field>
+          <Field label="Vai trò">
+            <Select
+              value={draft.role}
+              onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
+            >
+              <option value="">Tất cả</option>
+              <option value="USER">USER</option>
+              <option value="MODERATOR">MODERATOR</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="ROOT_ADMIN">ROOT_ADMIN</option>
             </Select>
-          </div>
-          <div className="sm:col-span-3">
-            <label className="mb-1 block font-bold text-slate-600">Mức độ cảnh báo</label>
-            <Select defaultValue="ALL" className="py-1.5">
-              <option value="ALL">Tất cả mức độ</option>
-              <option value="CRITICAL">🔴 CRITICAL</option>
-              <option value="WARNING">🟡 WARNING</option>
-              <option value="INFO">🟢 INFO</option>
+          </Field>
+          <Field label="Hành động">
+            <Select
+              value={draft.action}
+              onChange={(e) => setDraft((d) => ({ ...d, action: e.target.value }))}
+            >
+              <option value="">Tất cả</option>
+              {ACTION_OPTIONS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
             </Select>
-          </div>
-          <div className="flex items-end sm:col-span-3">
-            <button className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2 font-bold text-white transition hover:bg-slate-800">
-              <Filter className="h-3.5 w-3.5" />
-              <span>Lọc Nhật Ký</span>
-            </button>
+          </Field>
+          <Field label="Mức độ">
+            <Select
+              value={draft.level}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, level: e.target.value as Filters['level'] }))
+              }
+            >
+              <option value="">Tất cả</option>
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="WARNING">WARNING</option>
+              <option value="INFO">INFO</option>
+            </Select>
+          </Field>
+          <Field label="IP">
+            <Input
+              value={draft.ip}
+              onChange={(e) => setDraft((d) => ({ ...d, ip: e.target.value }))}
+              placeholder="203.0.113..."
+            />
+          </Field>
+          <Field label="Từ">
+            <Input
+              type="datetime-local"
+              value={draft.from}
+              onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value }))}
+            />
+          </Field>
+          <Field label="Đến">
+            <Input
+              type="datetime-local"
+              value={draft.to}
+              onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value }))}
+            />
+          </Field>
+          <div className="flex items-end">
+            <Button variant="dark" className="w-full" onClick={applyFilters}>
+              Lọc nhật ký
+            </Button>
           </div>
         </div>
 
-        <Table>
-          <Thead>
-            <Th>Timestamp</Th>
-            <Th>Actor</Th>
-            <Th>Hành động</Th>
-            <Th>Tài nguyên (Target)</Th>
-            <Th>IP &amp; Fingerprint</Th>
-            <Th>Mức độ</Th>
-            <Th className="text-right">Chi tiết</Th>
-          </Thead>
-          <Tbody>
-            {mockAuditLogs.map((log) => (
-              <tr
-                key={log.id}
-                className={`font-mono text-[11px] hover:bg-slate-50 ${log.level === 'critical' ? 'bg-rose-50/20' : ''}`}
+        {error && (
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
+          </p>
+        )}
+
+        {data === null ? (
+          <p className="py-6 text-center text-xs text-slate-500">Đang tải...</p>
+        ) : data.items.length === 0 ? (
+          <p className="py-6 text-center text-xs text-slate-500">Không có bản ghi nào.</p>
+        ) : (
+          <Table>
+            <Thead>
+              <Th>Thời gian</Th>
+              <Th>Actor</Th>
+              <Th>Hành động</Th>
+              <Th>Tài nguyên</Th>
+              <Th>Status</Th>
+              <Th>IP &amp; Fingerprint</Th>
+              <Th>Mức độ</Th>
+              <Th className="text-right">Chi tiết</Th>
+            </Thead>
+            <Tbody>
+              {data.items.map((log) => (
+                <tr
+                  key={log.id}
+                  className={`font-mono text-[11px] hover:bg-slate-50 ${log.level === 'CRITICAL' ? 'bg-rose-50/40' : ''}`}
+                >
+                  <Td className="text-slate-500">
+                    {new Date(log.createdAt).toLocaleString('vi-VN')}
+                  </Td>
+                  <Td className="font-bold text-slate-800">
+                    {log.actor?.email ?? '— (ẩn danh)'}
+                    {log.actorRole && (
+                      <div className="text-[10px] font-normal text-slate-400">{log.actorRole}</div>
+                    )}
+                  </Td>
+                  <Td className="font-bold text-brand-blue">{log.actionType}</Td>
+                  <Td className="max-w-[260px] truncate">
+                    {log.method} {log.path ?? log.targetResource}
+                  </Td>
+                  <Td>{log.statusCode ?? '—'}</Td>
+                  <Td className="text-slate-500">
+                    {log.ip ?? '—'}
+                    {log.deviceFingerprint && (
+                      <div className="text-[10px] text-slate-400">
+                        fp {log.deviceFingerprint.slice(0, 12)}…
+                      </div>
+                    )}
+                  </Td>
+                  <Td>
+                    <Badge tone={LEVEL_TONE[log.level]}>{log.level}</Badge>
+                  </Td>
+                  <Td className="text-right">
+                    <Button variant="outline" size="sm" onClick={() => openDetail(log.id)}>
+                      Xem JSON
+                    </Button>
+                  </Td>
+                </tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+
+        {data && data.total > 0 && (
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>
+              {data.total.toLocaleString('vi-VN')} bản ghi · trang {page}/{totalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
               >
-                <Td className="text-slate-500">{log.time}</Td>
-                <Td className="font-bold text-slate-800">{log.actor}</Td>
-                <Td className="font-bold text-brand-blue">{log.action}</Td>
-                <Td>{log.resource}</Td>
-                <Td className="text-slate-500">
-                  {log.ip}
-                  <br />
-                  <span className="text-[10px] text-slate-400">{log.fingerprint}</span>
-                </Td>
-                <Td>
-                  <Badge tone={LEVEL_TONE[log.level]}>{log.level.toUpperCase()}</Badge>
-                </Td>
-                <Td className="text-right">
-                  <button
-                    onClick={() => setActive(log)}
-                    className="rounded border border-slate-300 bg-slate-100 px-2.5 py-1 font-bold text-slate-800 hover:bg-slate-200"
-                  >
-                    JSON Diff
-                  </button>
-                </Td>
-              </tr>
-            ))}
-          </Tbody>
-        </Table>
+                Trước
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal
-        open={!!active}
-        onClose={() => setActive(null)}
-        eyebrow="SCR-13 • Audit Log Inspector"
-        title={`Chi tiết thay đổi dữ liệu: [${active?.action ?? ''}]`}
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        title="Chi tiết nhật ký"
         maxWidth="max-w-2xl"
-        footer={
-          <button
-            onClick={() => setActive(null)}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800"
-          >
-            Đóng
-          </button>
-        }
       >
-        {active && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs text-slate-500">
-              <span>
-                Target: <strong className="text-slate-800">{active.resource}</strong>
-              </span>
-              <span>
-                Actor: <strong className="text-brand-blue">{active.actor}</strong>
+        {detail && (
+          <div className="space-y-3 font-mono text-[11px]">
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <span>Actor: {detail.actor?.email ?? 'ẩn danh'}</span>
+              <span>Role: {detail.actorRole ?? '—'}</span>
+              <span>IP: {detail.ip ?? '—'}</span>
+              <span>Status: {detail.statusCode ?? '—'}</span>
+              <span className="col-span-2 truncate">UA: {detail.userAgent ?? '—'}</span>
+              <span className="col-span-2 truncate">
+                Fingerprint: {detail.deviceFingerprint ?? '—'}
               </span>
             </div>
-
-            <div className="grid grid-cols-1 gap-3 font-mono text-xs sm:grid-cols-2">
-              <div className="space-y-1">
-                <span className="flex items-center gap-1 font-bold text-rose-600">
-                  <MinusCircle className="h-3.5 w-3.5" />
-                  <span>Dữ liệu cũ (Old Value):</span>
-                </span>
-                <pre className="json-code max-h-48 overflow-x-auto rounded-xl border border-rose-200 bg-rose-50/60 p-3 text-rose-950">
-                  {formatJson(active.diffOld)}
+            {(
+              [
+                ['Request payload', detail.requestPayload],
+                ['Trước (before)', detail.payloadBefore],
+                ['Sau (after)', detail.payloadAfter],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label}>
+                <p className="mb-1 font-bold text-slate-600">{label}</p>
+                <pre className="max-h-48 overflow-auto rounded-xl bg-slate-900 p-3 text-slate-100">
+                  {value === null || value === undefined ? 'null' : JSON.stringify(value, null, 2)}
                 </pre>
               </div>
-              <div className="space-y-1">
-                <span className="flex items-center gap-1 font-bold text-emerald-600">
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  <span>Dữ liệu mới (New Value):</span>
-                </span>
-                <pre className="json-code max-h-48 overflow-x-auto rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-emerald-950">
-                  {formatJson(active.diffNew)}
-                </pre>
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </Modal>
