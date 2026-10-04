@@ -1,7 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CampaignStatus, SubmissionStatus, WalletTxSide, WalletTxType } from '../prisma/client.js';
-import { CREATION_FEE_KPOINT } from '../campaigns/campaigns.service.js';
+import {
+  CampaignStatus,
+  DisputeStatus,
+  SubmissionStatus,
+  WalletTxSide,
+  WalletTxType,
+  WithdrawalStatus,
+} from '../prisma/client.js';
+import { CREATION_FEE_KPOINT, SLOT_OCCUPYING_STATUSES } from '../campaigns/campaigns.service.js';
+
+// P4-09 — submitProof() đặt auto_approve_at = lúc nộp Proof + 48h, và KHÔNG
+// bao giờ bị cập nhật lại sau đó (xem submissions.service.ts) — dùng ngược
+// lại để suy ra chính xác "lúc Proof được nộp" cho P7-03 mà không cần thêm
+// cột mới (`submitted_at`).
+const AUTO_APPROVE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 export type ReportPeriod = 'day' | 'month' | 'year' | 'all';
 
@@ -64,6 +77,72 @@ export class ReportsService {
       topEscrowOwners,
       topTopupUsers,
       topEarners,
+    };
+  }
+
+  // P7-01/02/03/04/SCR-09 — CMS Overview, mở cho cả Moderator (xem ReportsController).
+  async getKpiOverview() {
+    const todayStart = periodStart('day')!;
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const monthStart = periodStart('month')!;
+
+    const [
+      walletAgg,
+      revenueThisMonth,
+      reviewsToday,
+      pendingWithdrawals,
+      pendingDisputes,
+      recentCampaigns,
+    ] = await Promise.all([
+      this.prisma.wallet.aggregate({ _sum: { balanceKpoint: true, reservedKpoint: true } }),
+      this.getRevenue({ createdAt: { gte: monthStart } }),
+      this.prisma.submission.count({
+        where: {
+          autoApproveAt: {
+            gte: new Date(todayStart.getTime() + AUTO_APPROVE_WINDOW_MS),
+            lt: new Date(todayEnd.getTime() + AUTO_APPROVE_WINDOW_MS),
+          },
+        },
+      }),
+      this.prisma.withdrawal.count({ where: { status: WithdrawalStatus.PENDING } }),
+      this.prisma.disputeTicket.count({
+        where: { status: { in: [DisputeStatus.OPEN, DisputeStatus.RECOMMENDED] } },
+      }),
+      this.prisma.campaign.findMany({
+        where: { status: CampaignStatus.ACTIVE },
+        select: {
+          id: true,
+          title: true,
+          platform: true,
+          totalSlots: true,
+          dripFeedLimit: true,
+          _count: {
+            select: { submissions: { where: { status: { in: SLOT_OCCUPYING_STATUSES } } } },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+    ]);
+
+    return {
+      // P7-02 — tổng KPoint hiện đang nằm trong ví người dùng (balance), snapshot.
+      circulatingKpoint: (walletAgg._sum.balanceKpoint ?? 0n).toString(),
+      totalReservedKpoint: (walletAgg._sum.reservedKpoint ?? 0n).toString(),
+      // P7-03.
+      reviewsToday,
+      // P7-04 — tháng hiện tại, chỉ phần phí tạo Campaign (khớp thẻ KPI cũ ở mock).
+      campaignFeeRevenueThisMonth: revenueThisMonth.campaignCreationFeeKpoint,
+      pendingWithdrawals,
+      pendingDisputes,
+      recentActiveCampaigns: recentCampaigns.map((c) => ({
+        id: c.id,
+        title: c.title,
+        platform: c.platform,
+        totalSlots: c.totalSlots,
+        slotsFilled: c._count.submissions,
+        dripFeedLimit: c.dripFeedLimit,
+      })),
     };
   }
 

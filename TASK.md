@@ -26,10 +26,10 @@
 | 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
 | 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật) |
 | 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                      |
 | 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
 | 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **77**     | **60%** |                                                              |
+| **Tổng** |                                  | **129**   | **88**     | **68%** |                                                              |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -198,17 +198,17 @@
 
 **Mục tiêu:** Admin/Root Admin vận hành toàn bộ hệ thống qua CMS, không cần đụng DB trực tiếp.
 
-- [ ] **P7-01** Màn hình CMS Overview & Thống kê _(SCR-09)_
-- [ ] **P7-02** Thống kê KPoint lưu thông
-- [ ] **P7-03** Thống kê số lượt review/ngày
-- [ ] **P7-04** Thống kê doanh thu phí khởi tạo Campaign
-- [ ] **P7-05** Màn hình CMS Quản lý RBAC & Root Admin _(SCR-12)_
-- [ ] **P7-06** Chức năng tạo role + gán permission
-- [ ] **P7-07** Chức năng gán quyền Admin/Moderator
-- [ ] **P7-08** Chức năng phân công Campaign cho Moderator cụ thể
-- [ ] **P7-09** Hoàn thiện Admin duyệt lệnh rút tiền về ngân hàng (nối từ Phase 2)
-- [ ] **P7-10** Rà soát & hoàn thiện toàn bộ ràng buộc RBAC còn lại theo bảng Section II SRS
-- [ ] **P7-11** Test: Root Administrator tạo/xóa Admin khác → hành động được Audit Log ghi đầy đủ
+- [x] **P7-01** Màn hình CMS Overview & Thống kê _(SCR-09)_ — real data qua `GET /admin/reports/kpi-overview`, mở cho Admin/Mod
+- [x] **P7-02** Thống kê KPoint lưu thông — `SUM(balance_kpoint)` toàn hệ thống
+- [x] **P7-03** Thống kê số lượt review/ngày — suy ra từ `auto_approve_at - 48h` (thời điểm nộp Proof thật), không cần thêm cột mới
+- [x] **P7-04** Thống kê doanh thu phí khởi tạo Campaign — tái dùng `ReportsService` (issue #55), tháng hiện tại
+- [x] **P7-05** Màn hình CMS Quản lý RBAC & Root Admin _(SCR-12)_ — danh sách nhân sự thật, đổi role, xóa user, tìm email để phong Moderator
+- [x] **P7-06** Chức năng tạo role + gán permission — CRUD bảng `RolePermission` (có sẵn từ P0-04, chưa dùng tới) làm tài liệu tham khảo, không dùng để enforce
+- [x] **P7-07** Chức năng gán quyền Admin/Moderator — `PATCH /admin/users/:id/role`
+- [x] **P7-08** Chức năng phân công Campaign cho Moderator cụ thể — `Campaign.assignedModeratorId` (migration mới) + CMS dropdown, enforce ở Dispute recommend
+- [x] **P7-09** Hoàn thiện Admin duyệt lệnh rút tiền về ngân hàng (nối từ Phase 2) — đã làm ở nhánh ad-hoc trước Phase 5 (`/cms/withdrawals`, `admin-withdrawals.controller.ts`)
+- [x] **P7-10** Rà soát & hoàn thiện toàn bộ ràng buộc RBAC còn lại theo bảng Section II SRS — phát hiện + vá 2 lỗ hổng: (1) Admin thường có thể tự phong/hạ cấp Admin khác (giờ chỉ Root Admin), (2) "Super/Moderator: Quản lý Campaign được phân công" chưa từng được enforce (giờ Moderator không được phân công bị chặn đề xuất Dispute của Campaign đó)
+- [x] **P7-11** Test: Root Administrator tạo/xóa Admin khác → hành động được Audit Log ghi đầy đủ — ghi trực tiếp từ `UsersService` (interceptor tổng quát bắt MỌI Mutation vẫn thuộc Phase 6/FN-LOG-01), test tại `backend/test/rbac-admin.e2e-spec.ts`
 
 ---
 

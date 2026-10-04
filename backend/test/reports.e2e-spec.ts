@@ -201,4 +201,41 @@ describe('Reports — Thống kê doanh thu (e2e)', () => {
     expect(body.period).toBe('day');
     expect(body.revenue.campaignCount).toBeGreaterThanOrEqual(2);
   });
+
+  // P7-01/02/03/04 — CMS Overview (SCR-09): mở thêm cho Moderator (khác route
+  // "overview" ở trên chỉ Admin/Root Admin theo đúng issue #55).
+  describe('GET /admin/reports/kpi-overview (P7-01/02/03/04)', () => {
+    it('USER thường bị chặn 403, Moderator xem được (khớp SCR-09 role "Admin/Mod")', async () => {
+      const pubToken = await loginAs(pubEmail);
+      await request(app.getHttpServer())
+        .get('/api/v1/admin/reports/kpi-overview')
+        .set('Authorization', `Bearer ${pubToken}`)
+        .expect(403);
+
+      const modToken = await loginAs(modEmail);
+      await request(app.getHttpServer())
+        .get('/api/v1/admin/reports/kpi-overview')
+        .set('Authorization', `Bearer ${modToken}`)
+        .expect(200);
+    });
+
+    it('Trả đúng hình dạng dữ liệu, khớp doanh thu phí Campaign tháng này', async () => {
+      const adminToken = await loginAs(adminEmail);
+      const { body } = await request(app.getHttpServer())
+        .get('/api/v1/admin/reports/kpi-overview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(BigInt(body.circulatingKpoint)).toBeGreaterThanOrEqual(0n);
+      expect(BigInt(body.totalReservedKpoint)).toBeGreaterThanOrEqual(170_000n);
+      // 2 Campaign tạo ở test trước (cùng tháng) → ít nhất 100.000 phí tạo.
+      expect(BigInt(body.campaignFeeRevenueThisMonth)).toBeGreaterThanOrEqual(100_000n);
+      expect(typeof body.reviewsToday).toBe('number');
+      expect(body.reviewsToday).toBeGreaterThanOrEqual(0);
+      expect(typeof body.pendingWithdrawals).toBe('number');
+      expect(typeof body.pendingDisputes).toBe('number');
+      expect(Array.isArray(body.recentActiveCampaigns)).toBe(true);
+      expect(body.recentActiveCampaigns.length).toBeLessThanOrEqual(5);
+    });
+  });
 });

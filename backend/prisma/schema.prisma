@@ -152,6 +152,7 @@ model User {
   bmcTopups              BmcTopup[]           @relation("BmcTopupRequester")
   bmcTopupsVerified      BmcTopup[]           @relation("BmcTopupVerifier")
   campaignsOwned         Campaign[]           @relation("CampaignOwner")
+  campaignsModerated     Campaign[]           @relation("CampaignAssignedModerator")
   submissionsAsPublisher Submission[]         @relation("SubmissionPublisher")
   disputesAsModerator    DisputeTicket[]      @relation("DisputeModerator")
   disputesAsAdmin        DisputeTicket[]      @relation("DisputeAdmin")
@@ -271,11 +272,16 @@ model Campaign {
   // [{ "question": "...", "answerType": "YES_NO" | "TEXT", "requiresReceipt": true }]
   surveyQuestions Json?          @map("survey_questions")
   status          CampaignStatus @default(ACTIVE)
+  // P7-08/SCR-12 — Moderator được phân công quản lý Campaign này (xem bằng
+  // chứng + đề xuất Dispute thuộc Campaign này trước — null = chưa phân
+  // công, mọi Moderator đều xử lý được, tránh Dispute bị kẹt không ai nhận.
+  assignedModeratorId String?    @map("assigned_moderator_id")
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
 
-  owner       User         @relation("CampaignOwner", fields: [ownerId], references: [id])
-  submissions Submission[]
+  owner             User         @relation("CampaignOwner", fields: [ownerId], references: [id])
+  assignedModerator User?        @relation("CampaignAssignedModerator", fields: [assignedModeratorId], references: [id])
+  submissions       Submission[]
 
   @@map("campaigns")
 }

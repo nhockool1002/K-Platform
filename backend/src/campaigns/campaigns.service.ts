@@ -31,7 +31,8 @@ export const CREATION_FEE_KPOINT = 50_000n;
 // Admin phán quyết, tránh 2 người cùng được trả thưởng từ 1 slot đã ký quỹ.
 // Chỉ khi Dispute RESOLVED thắng Bên A (submission về lại REJECTED) slot mới
 // thật sự mở lại.
-const SLOT_OCCUPYING_STATUSES: SubmissionStatus[] = [
+// Export để ReportsService tái dùng khi tính slotsFilled cho Overview (P7-01).
+export const SLOT_OCCUPYING_STATUSES: SubmissionStatus[] = [
   SubmissionStatus.INVITED,
   SubmissionStatus.PENDING,
   SubmissionStatus.APPROVED,
@@ -307,6 +308,55 @@ export class CampaignsService {
       data: { status: CampaignStatus.ARCHIVED },
     });
     return this.toPublicCampaign(campaign);
+  }
+
+  // P7-01/SCR-09/SCR-12 — danh sách rút gọn cho CMS (RBAC phân công Moderator
+  // + Overview "Chiến Dịch Mới Kích Hoạt"), không giới hạn theo owner.
+  async listAllForAdmin() {
+    const campaigns = await this.prisma.campaign.findMany({
+      include: {
+        owner: { select: { id: true, email: true } },
+        assignedModerator: { select: { id: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return campaigns.map((c) => {
+      const { rewardPerSlot, ...rest } = c;
+      return { ...rest, rewardPerSlot: rewardPerSlot.toString() };
+    });
+  }
+
+  // P7-08/SCR-12 — Admin/Root Admin phân công 1 Moderator cụ thể quản lý
+  // Campaign này (xem bằng chứng + đề xuất Dispute thuộc Campaign này trước —
+  // enforce ở DisputesService.recommend()). `moderatorId: null` = gỡ phân công.
+  async assignModerator(campaignId: string, moderatorId: string | null) {
+    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign) throw new NotFoundException('Không tìm thấy Campaign');
+
+    if (moderatorId) {
+      const moderator = await this.prisma.user.findUnique({
+        where: { id: moderatorId },
+        select: { role: true },
+      });
+      if (
+        !moderator ||
+        (moderator.role !== 'MODERATOR' &&
+          moderator.role !== 'ADMIN' &&
+          moderator.role !== 'ROOT_ADMIN')
+      ) {
+        throw new BadRequestException('Tài khoản được phân công phải có vai trò Moderator/Admin');
+      }
+    }
+
+    const updated = await this.prisma.campaign.update({
+      where: { id: campaignId },
+      data: { assignedModeratorId: moderatorId },
+      include: {
+        owner: { select: { id: true, email: true } },
+        assignedModerator: { select: { id: true, email: true } },
+      },
+    });
+    return this.toPublicCampaign(updated);
   }
 
   private async assertOwner(campaignId: string, ownerId: string) {

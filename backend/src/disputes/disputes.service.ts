@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DisputeStatus, SubmissionStatus } from '../prisma/client.js';
+import { DisputeStatus, SubmissionStatus, UserRole } from '../prisma/client.js';
 import { SubmissionsService } from '../submissions/submissions.service.js';
 import type { CreateDisputeDto } from './dto/create-dispute.dto.js';
 import type { RecommendDisputeDto } from './dto/recommend-dispute.dto.js';
@@ -108,11 +108,24 @@ export class DisputesService {
   // FN-DISP-02 — Moderator thẩm định, chỉ chuyển trạng thái đề xuất, KHÔNG
   // được tự duyệt chi (P5-06 — guard thật ở RolesGuard của route resolve()
   // chỉ cho ADMIN/ROOT_ADMIN, Moderator không gọi được, xem P5-12).
-  async recommend(modId: string, disputeId: string, dto: RecommendDisputeDto) {
-    const dispute = await this.prisma.disputeTicket.findUnique({ where: { id: disputeId } });
+  // P7-08/P7-10 — nếu Campaign liên quan đã được phân công cho 1 Moderator cụ
+  // thể, Moderator KHÁC không được đề xuất (đúng README § II "Super/Moderator:
+  // Quản lý Campaign được phân công"). Admin/Root Admin luôn được phép (toàn
+  // quyền), và Campaign chưa phân công (null) vẫn mở cho mọi Moderator để
+  // Dispute không bị kẹt không ai nhận.
+  async recommend(modId: string, actorRole: UserRole, disputeId: string, dto: RecommendDisputeDto) {
+    const dispute = await this.prisma.disputeTicket.findUnique({
+      where: { id: disputeId },
+      include: { submission: { select: { campaign: { select: { assignedModeratorId: true } } } } },
+    });
     if (!dispute) throw new NotFoundException('Không tìm thấy Dispute');
     if (dispute.status !== DisputeStatus.OPEN) {
       throw new BadRequestException('Dispute này đã được đề xuất hoặc xử lý trước đó');
+    }
+
+    const assignedModeratorId = dispute.submission.campaign.assignedModeratorId;
+    if (actorRole === UserRole.MODERATOR && assignedModeratorId && assignedModeratorId !== modId) {
+      throw new ForbiddenException('Campaign này đã được phân công cho Moderator khác quản lý');
     }
 
     const updated = await this.prisma.disputeTicket.update({

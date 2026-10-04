@@ -34,6 +34,6 @@ export class ModDisputesController {
     @Param('id') id: string,
     @Body() dto: RecommendDisputeDto,
   ) {
-    return this.disputes.recommend(mod.sub, id, dto);
+    return this.disputes.recommend(mod.sub, mod.role, id, dto);
   }
 }
