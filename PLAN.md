@@ -295,33 +295,38 @@ Mỗi Phase liệt kê: **Đầu việc** (tham chiếu mã FN/SCR trong SRS) ·
 
 ## 6. Ma trận FN/SCR → Module → Phase
 
-| Mã         | Tên                           | Module     | Phase                   |
-| ---------- | ----------------------------- | ---------- | ----------------------- |
-| FN-AUTH-01 | Switch Role Mode              | Auth       | 1                       |
-| FN-PAY-01  | Nạp SePay Tự động             | Wallet     | 2                       |
-| FN-PAY-02  | Nạp BuyMeACoffee              | Wallet     | 6                       |
-| FN-PAY-03  | Duyệt Nạp Quốc tế             | Wallet/CMS | 6                       |
-| FN-CAMP-01 | Khởi tạo Campaign             | Campaign   | 3                       |
-| FN-CAMP-02 | Ứng tuyển Survey              | Campaign   | 3                       |
-| FN-TASK-01 | Nộp Proof & Watermark         | Submission | 4                       |
-| FN-TASK-02 | Auto-Approve 48h              | Submission | 4                       |
-| FN-DISP-01 | Tạo Khiếu nại                 | Dispute    | 5                       |
-| FN-DISP-02 | Thẩm định Tranh chấp          | Dispute    | 5                       |
-| FN-DISP-03 | Phán quyết Tranh chấp         | Dispute    | 5                       |
-| FN-LOG-01  | Ghi Audit Logs                | Audit      | 6                       |
-| SCR-01     | Trang chủ & Public Campaigns  | Public     | 3                       |
-| SCR-02     | Đăng ký/Đăng nhập/OAuth       | Auth       | 1                       |
-| SCR-03     | Dashboard Bên A               | Campaign   | 1 (khung) / 3 (dữ liệu) |
-| SCR-04     | Tạo Campaign & Survey Filter  | Campaign   | 3                       |
-| SCR-05     | Quản lý Campaign & Appliers   | Campaign   | 3 / 4                   |
-| SCR-06     | Dashboard Bên B               | Submission | 1 (khung) / 4 (dữ liệu) |
-| SCR-07     | Làm Survey & Submit Proof     | Submission | 4                       |
-| SCR-08     | Quản lý Ví & Nạp/Rút          | Wallet     | 2                       |
-| SCR-09     | CMS Overview & Thống kê       | CMS        | 7                       |
-| SCR-10     | CMS Duyệt Nạp Tiền Quốc Tế    | CMS        | 6                       |
-| SCR-11     | CMS Tranh chấp                | CMS        | 5                       |
-| SCR-12     | CMS Quản lý RBAC & Root Admin | CMS        | 7                       |
-| SCR-13     | CMS Quản lý Audit Logs        | CMS        | 6                       |
+| Mã          | Tên                                      | Module      | Phase                              |
+| ----------- | ---------------------------------------- | ----------- | ---------------------------------- |
+| FN-AUTH-01  | Switch Role Mode                         | Auth        | 1                                  |
+| FN-PAY-01   | Nạp SePay Tự động                        | Wallet      | 2                                  |
+| FN-PAY-02   | Nạp BuyMeACoffee                         | Wallet      | 6                                  |
+| FN-PAY-03   | Duyệt Nạp Quốc tế                        | Wallet/CMS  | 6                                  |
+| FN-CAMP-01  | Khởi tạo Campaign                        | Campaign    | 3                                  |
+| FN-CAMP-02  | Ứng tuyển Survey                         | Campaign    | 3                                  |
+| FN-TASK-01  | Nộp Proof & Watermark                    | Submission  | 4                                  |
+| FN-TASK-02  | Auto-Approve 48h                         | Submission  | 4                                  |
+| FN-DISP-01  | Tạo Khiếu nại                            | Dispute     | 5                                  |
+| FN-DISP-02  | Thẩm định Tranh chấp                     | Dispute     | 5                                  |
+| FN-DISP-03  | Phán quyết Tranh chấp                    | Dispute     | 5                                  |
+| FN-LOG-01   | Ghi Audit Logs                           | Audit       | 6                                  |
+| FN-DISP-04  | SLA & Leo thang Dispute                  | Dispute     | Backlog B-03                       |
+| FN-TRUST-01 | Quản lý Trust Score                      | Trust Score | Backlog B-05                       |
+| FN-PAY-04   | Cấu hình tỷ giá & SLA Thanh toán Quốc tế | Wallet/CMS  | Backlog B-02/B-04 (chuẩn bị cho 6) |
+| SCR-01      | Trang chủ & Public Campaigns             | Public      | 3                                  |
+| SCR-02      | Đăng ký/Đăng nhập/OAuth                  | Auth        | 1                                  |
+| SCR-03      | Dashboard Bên A                          | Campaign    | 1 (khung) / 3 (dữ liệu)            |
+| SCR-04      | Tạo Campaign & Survey Filter             | Campaign    | 3                                  |
+| SCR-05      | Quản lý Campaign & Appliers              | Campaign    | 3 / 4                              |
+| SCR-06      | Dashboard Bên B                          | Submission  | 1 (khung) / 4 (dữ liệu)            |
+| SCR-07      | Làm Survey & Submit Proof                | Submission  | 4                                  |
+| SCR-08      | Quản lý Ví & Nạp/Rút                     | Wallet      | 2                                  |
+| SCR-09      | CMS Overview & Thống kê                  | CMS         | 7                                  |
+| SCR-10      | CMS Duyệt Nạp Tiền Quốc Tế               | CMS         | 6                                  |
+| SCR-11      | CMS Tranh chấp                           | CMS         | 5                                  |
+| SCR-12      | CMS Quản lý RBAC & Root Admin            | CMS         | 7                                  |
+| SCR-13      | CMS Quản lý Audit Logs                   | CMS         | 6                                  |
+| SCR-14      | CMS Quản Trị Tài Khoản                   | CMS         | Ad-hoc (sau Phase 7)               |
+| SCR-15      | CMS Cài đặt thanh toán                   | CMS         | Backlog B-02/B-04 (chuẩn bị cho 6) |
 
 ---
 

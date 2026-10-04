@@ -56,10 +56,11 @@
 | Tác giả                      | Chuyên viên Phân tích Hệ thống (System Analyst)                                   |
 | Trạng thái                   | Đã phê duyệt kiến trúc & Sẵn sàng bàn giao Dev                                    |
 
-| Phiên bản                 | Ngày            | Mô tả thay đổi                                                                                                                                                                                  |
-| ------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SRS v2.0                  | Tháng 10 / 2026 | Bản đặc tả gốc: Tổng quan, RBAC, Thanh toán quốc tế, Audit Logs, Screen/Function/API List, Database Schema.                                                                                     |
-| **Document Edition v1.0** | Tháng 10 / 2026 | Chuẩn hóa định dạng theo khung SRS chuẩn, thêm Branding header, Mục lục liên kết, **User Flow** (4 luồng) và **Sequence Diagram** (6 luồng kỹ thuật) minh họa chi tiết các chức năng đã đặc tả. |
+| Phiên bản                        | Ngày            | Mô tả thay đổi                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SRS v2.0                         | Tháng 10 / 2026 | Bản đặc tả gốc: Tổng quan, RBAC, Thanh toán quốc tế, Audit Logs, Screen/Function/API List, Database Schema.                                                                                                                                                                                                                                     |
+| **Document Edition v1.0**        | Tháng 10 / 2026 | Chuẩn hóa định dạng theo khung SRS chuẩn, thêm Branding header, Mục lục liên kết, **User Flow** (4 luồng) và **Sequence Diagram** (6 luồng kỹ thuật) minh họa chi tiết các chức năng đã đặc tả.                                                                                                                                                 |
+| Addendum (Backlog B-02/03/04/05) | 2026-10-04      | Chưa có bản SRS v2.1 chính thức — đối chiếu theo quyết định nghiệp vụ của Product Owner khi xử lý Backlog (xem PLAN.md §11, TASK.md Backlog). Thêm SCR-14, SCR-15, FN-TRUST-01, FN-DISP-04, FN-PAY-04; sửa lại §I.1 cho đúng: tỷ giá **KPoint ↔ VNĐ cố định 1:1**, chỉ tỷ giá **USD → VNĐ** (phục vụ BMC, Phase 6) mới cấu hình được trong CMS. |
 
 ---
 
@@ -69,8 +70,9 @@ Nền tảng KPoint là ứng dụng kết nối trung gian giữa **Doanh nghi�
 
 ### 1. Đơn vị tiền tệ nội bộ
 
-- Sử dụng đơn vị tiền tệ duy nhất: **KPoint** (Tỷ lệ quy đổi tiêu chuẩn: `1 KPoint = 1 VNĐ`, có thể điều chỉnh tỷ giá linh hoạt trong CMS Admin).
+- Sử dụng đơn vị tiền tệ duy nhất: **KPoint** (Tỷ lệ quy đổi **cố định**: `1 KPoint = 1 VNĐ`, không thay đổi theo thời gian).
 - Phí khởi tạo Campaign: `50.000 – 100.000 KPoint` (Cấu hình bởi Admin).
+- Riêng tỷ giá **USD → VNĐ** (phục vụ quy đổi nạp Quốc tế qua Buy Me a Coffee, Phase 6) **có cấu hình được** trong CMS "Cài đặt thanh toán" (tab Quốc Tế), mặc định `26.300 VNĐ/USD`, lưu lịch sử thay đổi append-only để tra theo thời điểm nạp — xem FN-PAY-04/SCR-15.
 
 ### 2. Mô hình & Phương thức Thanh toán
 
@@ -150,40 +152,45 @@ Nhật ký Audit Logs ghi lại toàn bộ các thao tác nhạy cảm của Qu�
 
 ## IV. Danh sách màn hình (Screen List)
 
-| Mã MH  | Tên Màn hình                    | Phân vùng  | Mô tả Chức năng Màn hình                                                                         |
-| ------ | ------------------------------- | ---------- | ------------------------------------------------------------------------------------------------ |
-| SCR-01 | Trang chủ & Public Campaigns    | End-User   | Hiển thị danh sách chiến dịch nổi bật, thanh tìm kiếm, bộ lọc nền tảng (Google Maps / Facebook). |
-| SCR-02 | Đăng ký / Đăng nhập / OAuth     | End-User   | Đăng nhập email/pass, Google/Facebook OAuth2, quên mật khẩu.                                     |
-| SCR-03 | Dashboard Bên A (Advertiser)    | Bên A      | Thống kê Campaign, tổng KPoint đã chi, lượt review hoàn thành, lối tắt tạo camp.                 |
-| SCR-04 | Tạo Campaign & Survey Filter    | Bên A      | Form cấu hình yêu cầu review, cài đặt Drip-feed, tạo câu hỏi Survey sàng lọc Bên B.              |
-| SCR-05 | Quản lý Campaign & Appliers     | Bên A      | Xem danh sách Bên B nộp Survey, bấm Invite/Reject, duyệt Proof bài viết.                         |
-| SCR-06 | Dashboard Bên B (Publisher)     | Bên B      | Thống kê KPoint kiếm được, nhiệm vụ đang làm, số dư ví khả dụng.                                 |
-| SCR-07 | Làm Survey & Submit Proof       | Bên B      | Form trả lời survey ứng tuyển, form tải lên hình ảnh/video bằng chứng review.                    |
-| SCR-08 | Quản lý Ví & Nạp/Rút KPoint     | End-User   | Nạp SePay QR, Nạp Buy Me a Coffee (upload receipt), lập lệnh rút tiền về ngân hàng.              |
-| SCR-09 | CMS Overview & Thống kê         | Admin/Mod  | Tổng quan KPoint lưu thông, số lượt review/ngày, doanh thu phí khởi tạo.                         |
-| SCR-10 | CMS Duyệt Nạp Tiền Quốc Tế      | Admin      | Danh sách giao dịch Buy Me a Coffee chờ duyệt, xem file đính kèm receipt, Approve/Reject.        |
-| SCR-11 | CMS Tranh chấp (Dispute Center) | Mod/Admin  | Xem chứng cứ 2 bên, Moderator chọn Pend App/Reject, Admin duyệt phán quyết.                      |
-| SCR-12 | CMS Quản lý RBAC & Root Admin   | Root/Admin | Tạo role, gán permission, gán quyền Admin/Mod, phân công Campaign cho Mod.                       |
-| SCR-13 | CMS Quản lý Audit Logs          | Admin/Root | Màn hình tra cứu nhật ký thao tác toàn hệ thống, bộ lọc nâng cao, JSON viewer.                   |
+| Mã MH  | Tên Màn hình                    | Phân vùng  | Mô tả Chức năng Màn hình                                                                                                                                                                                   |
+| ------ | ------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SCR-01 | Trang chủ & Public Campaigns    | End-User   | Hiển thị danh sách chiến dịch nổi bật, thanh tìm kiếm, bộ lọc nền tảng (Google Maps / Facebook).                                                                                                           |
+| SCR-02 | Đăng ký / Đăng nhập / OAuth     | End-User   | Đăng nhập email/pass, Google/Facebook OAuth2, quên mật khẩu.                                                                                                                                               |
+| SCR-03 | Dashboard Bên A (Advertiser)    | Bên A      | Thống kê Campaign, tổng KPoint đã chi, lượt review hoàn thành, lối tắt tạo camp.                                                                                                                           |
+| SCR-04 | Tạo Campaign & Survey Filter    | Bên A      | Form cấu hình yêu cầu review, cài đặt Drip-feed, tạo câu hỏi Survey sàng lọc Bên B.                                                                                                                        |
+| SCR-05 | Quản lý Campaign & Appliers     | Bên A      | Xem danh sách Bên B nộp Survey, bấm Invite/Reject, duyệt Proof bài viết.                                                                                                                                   |
+| SCR-06 | Dashboard Bên B (Publisher)     | Bên B      | Thống kê KPoint kiếm được, nhiệm vụ đang làm, số dư ví khả dụng.                                                                                                                                           |
+| SCR-07 | Làm Survey & Submit Proof       | Bên B      | Form trả lời survey ứng tuyển, form tải lên hình ảnh/video bằng chứng review.                                                                                                                              |
+| SCR-08 | Quản lý Ví & Nạp/Rút KPoint     | End-User   | Nạp SePay QR, Nạp Buy Me a Coffee (upload receipt), lập lệnh rút tiền về ngân hàng.                                                                                                                        |
+| SCR-09 | CMS Overview & Thống kê         | Admin/Mod  | Tổng quan KPoint lưu thông, số lượt review/ngày, doanh thu phí khởi tạo.                                                                                                                                   |
+| SCR-10 | CMS Duyệt Nạp Tiền Quốc Tế      | Admin      | Danh sách giao dịch Buy Me a Coffee chờ duyệt, xem file đính kèm receipt, Approve/Reject.                                                                                                                  |
+| SCR-11 | CMS Tranh chấp (Dispute Center) | Mod/Admin  | Xem chứng cứ 2 bên, Moderator chọn Pend App/Reject, Admin duyệt phán quyết.                                                                                                                                |
+| SCR-12 | CMS Quản lý RBAC & Root Admin   | Root/Admin | Tạo role, gán permission, gán quyền Admin/Mod, phân công Campaign cho Mod.                                                                                                                                 |
+| SCR-13 | CMS Quản lý Audit Logs          | Admin/Root | Màn hình tra cứu nhật ký thao tác toàn hệ thống, bộ lọc nâng cao, JSON viewer.                                                                                                                             |
+| SCR-14 | CMS Quản Trị Tài Khoản          | Admin/Root | CRUD tài khoản (tạo, sửa email/mật khẩu, đổi role, xóa), kích hoạt/vô hiệu hoá, điều chỉnh Trust Score tay. Root Administrator chỉ tự sửa được hồ sơ của chính mình; không ai khác thao tác được lên Root. |
+| SCR-15 | CMS Cài đặt thanh toán          | Admin      | Tab **SePay**: bank nhận tiền + Webhook API Key. Tab **Quốc Tế**: tỷ giá USD→VNĐ, thời gian đối soát — chuẩn bị hạ tầng cho luồng Buy Me a Coffee (Phase 6).                                               |
 
 ---
 
 ## V. Danh sách chức năng (Function List)
 
-| Mã FN      | Tên Chức năng           | Actor     | Mô tả Chi tiết Luồng Xử lý Kỹ thuật                                                              |
-| ---------- | ----------------------- | --------- | ------------------------------------------------------------------------------------------------ |
-| FN-AUTH-01 | Switch Role Mode        | Bên A / B | Chuyển đổi context làm việc giữa Advertiser và Publisher mà không thay đổi Session JWT.          |
-| FN-PAY-01  | Nạp SePay Tự động       | Bên A     | Tạo mã QR VietQR kèm nội dung `KPOINT <UserID>`. Webhook SePay gọi API tự động cộng điểm.        |
-| FN-PAY-02  | Nạp BuyMeACoffee        | Bên A     | Lưu Form thông tin thanh toán quốc tế + ảnh receipt. Đẩy trạng thái `PENDING_VERIFY` cho Admin.  |
-| FN-PAY-03  | Duyệt Nạp Quốc tế       | Admin     | Admin xem ảnh receipt, bấm Duyệt → Hệ thống gọi Transaction ACID cộng balance KPoint.            |
-| FN-CAMP-01 | Khởi tạo Campaign       | Bên A     | Tính `Tổng KPoint = Phí tạo + (Slots × Price)`. Khóa số dư trong Wallet, lưu cấu hình Drip-feed. |
-| FN-CAMP-02 | Ứng tuyển Survey        | Bên B     | Kiểm tra Fingerprint, IP, Trust Score. Lưu câu trả lời survey + ảnh hóa đơn trải nghiệm.         |
-| FN-TASK-01 | Nộp Proof & Watermark   | Bên B     | Tải lên ảnh/video review. Backend tự động đóng dấu chèn mã UserID + CampaignID lên file.         |
-| FN-TASK-02 | Auto-Approve 48h        | System    | Cronjob chạy định kỳ kiểm tra task quá 48h chưa duyệt → Tự động Approve và trả thưởng.           |
-| FN-DISP-01 | Tạo Khiếu nại (Dispute) | Bên B     | Kích hoạt khi Bên A từ chối. Phong tỏa tiền slot, tạo Ticket tranh chấp chuyển cho Moderator.    |
-| FN-DISP-02 | Thẩm định Tranh chấp    | Moderator | Xem bằng chứng 2 bên, chọn `Pend Approval` hoặc `Pend Reject`. Gửi thông báo cho Admin.          |
-| FN-DISP-03 | Phán quyết Tranh chấp   | Admin     | Chốt phán quyết cuối cùng. Giải phóng KPoint bị phong tỏa về Ví của Bên A hoặc Bên B.            |
-| FN-LOG-01  | Ghi Audit Logs          | System    | Interceptor bắt các sự kiện Mutation (POST/PUT/DELETE/DISPUTE), lưu chi tiết JSON Diff và IP.    |
+| Mã FN       | Tên Chức năng                            | Actor        | Mô tả Chi tiết Luồng Xử lý Kỹ thuật                                                                                                                                                                                                      |
+| ----------- | ---------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FN-AUTH-01  | Switch Role Mode                         | Bên A / B    | Chuyển đổi context làm việc giữa Advertiser và Publisher mà không thay đổi Session JWT.                                                                                                                                                  |
+| FN-PAY-01   | Nạp SePay Tự động                        | Bên A        | Tạo mã QR VietQR kèm nội dung `KPOINT <UserID>`. Webhook SePay gọi API tự động cộng điểm.                                                                                                                                                |
+| FN-PAY-02   | Nạp BuyMeACoffee                         | Bên A        | Lưu Form thông tin thanh toán quốc tế + ảnh receipt. Đẩy trạng thái `PENDING_VERIFY` cho Admin.                                                                                                                                          |
+| FN-PAY-03   | Duyệt Nạp Quốc tế                        | Admin        | Admin xem ảnh receipt, bấm Duyệt → Hệ thống gọi Transaction ACID cộng balance KPoint.                                                                                                                                                    |
+| FN-CAMP-01  | Khởi tạo Campaign                        | Bên A        | Tính `Tổng KPoint = Phí tạo + (Slots × Price)`. Khóa số dư trong Wallet, lưu cấu hình Drip-feed.                                                                                                                                         |
+| FN-CAMP-02  | Ứng tuyển Survey                         | Bên B        | Kiểm tra Fingerprint, IP, Trust Score. Lưu câu trả lời survey + ảnh hóa đơn trải nghiệm.                                                                                                                                                 |
+| FN-TASK-01  | Nộp Proof & Watermark                    | Bên B        | Tải lên ảnh/video review. Backend tự động đóng dấu chèn mã UserID + CampaignID lên file.                                                                                                                                                 |
+| FN-TASK-02  | Auto-Approve 48h                         | System       | Cronjob chạy định kỳ kiểm tra task quá 48h chưa duyệt → Tự động Approve và trả thưởng.                                                                                                                                                   |
+| FN-DISP-01  | Tạo Khiếu nại (Dispute)                  | Bên B        | Kích hoạt khi Bên A từ chối. Phong tỏa tiền slot, tạo Ticket tranh chấp chuyển cho Moderator.                                                                                                                                            |
+| FN-DISP-02  | Thẩm định Tranh chấp                     | Moderator    | Xem bằng chứng 2 bên, chọn `Pend Approval` hoặc `Pend Reject`. Gửi thông báo cho Admin.                                                                                                                                                  |
+| FN-DISP-03  | Phán quyết Tranh chấp                    | Admin        | Chốt phán quyết cuối cùng. Giải phóng KPoint bị phong tỏa về Ví của Bên A hoặc Bên B.                                                                                                                                                    |
+| FN-LOG-01   | Ghi Audit Logs                           | System       | Interceptor bắt các sự kiện Mutation (POST/PUT/DELETE/DISPUTE), lưu chi tiết JSON Diff và IP.                                                                                                                                            |
+| FN-DISP-04  | SLA & Leo thang Dispute                  | System       | Moderator xử lý trong 12h đầu (cấu hình được), Admin chốt cuối trong 24h đầu. Quá hạn Moderator → Admin được phán quyết thẳng từ trạng thái `OPEN`, bỏ qua bước chờ đề xuất.                                                             |
+| FN-TRUST-01 | Quản lý Trust Score                      | System/Admin | Sổ cái cộng/trừ điểm uy tín theo rule cấu hình được (thua Dispute, Proof bị từ chối, hoàn thành Proof đúng hạn trong tuần, đăng nhập liên tục 7 ngày). Admin +/- điểm tay cho bất kỳ tài khoản nào (trừ Root). Không giới hạn trần điểm. |
+| FN-PAY-04   | Cấu hình tỷ giá & SLA Thanh toán Quốc tế | Admin        | Tỷ giá USD→VNĐ mặc định `26.300`, lưu lịch sử append-only (tra theo thời điểm nạp); thời gian đối soát mặc định 7 ngày. Chuẩn bị hạ tầng cấu hình cho FN-PAY-02/FN-PAY-03 (Phase 6).                                                     |
 
 ---
 
