@@ -78,6 +78,11 @@ describe('Disputes (e2e)', () => {
       where: { submission: { publisher: { email: publisherEmail } } },
     });
     await prisma.walletTransaction.deleteMany({ where: { user: { email: { in: seededEmails } } } });
+    // B-05 — resolve() thắng Bên A tự động ghi TrustScoreTransaction
+    // (DISPUTE_LOST) cho publisher, chặn xoá user nếu không dọn trước.
+    await prisma.trustScoreTransaction.deleteMany({
+      where: { user: { email: { in: seededEmails } } },
+    });
     await prisma.submission.deleteMany({ where: { publisher: { email: publisherEmail } } });
     await prisma.campaign.deleteMany({ where: { owner: { email: advertiserEmail } } });
     await prisma.user.deleteMany({ where: { email: { in: seededEmails } } });
@@ -350,5 +355,51 @@ describe('Disputes (e2e)', () => {
       .set('Authorization', `Bearer ${pubToken}`)
       .send({ submissionId: submission.id, reason: 'Tạo dispute khi chưa bị từ chối' })
       .expect(400);
+  });
+
+  // B-03 — "quá hạn sẽ leo thang lên Quản trị viên xử lý": Dispute còn OPEN
+  // (chưa ai đề xuất) quá hạn SLA Moderator (mặc định 12h) thì Admin được
+  // phán quyết thẳng, bỏ qua bước chờ đề xuất.
+  it('Dispute OPEN quá hạn SLA Moderator — Admin phán quyết thẳng (leo thang), và chưa quá hạn thì vẫn bị chặn 400', async () => {
+    const adminToken = await loginAs(adminEmail);
+
+    // Case 1: còn trong hạn 12h — Admin KHÔNG được phán quyết thẳng.
+    const fresh = await createRejectedSubmission('E2E Dispute SLA Fresh', 25_000);
+    const { body: freshDispute } = await request(app.getHttpServer())
+      .post('/api/v1/disputes')
+      .set('Authorization', `Bearer ${fresh.pubToken}`)
+      .send({ submissionId: fresh.submissionId, reason: 'Còn trong hạn Moderator' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/disputes/${freshDispute.id}/resolve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ decision: 'REJECT' })
+      .expect(400);
+
+    // Case 2: giả lập quá hạn 12h bằng cách lùi createdAt trong DB (không
+    // thể chờ 12h thật trong test) — rồi Admin phán quyết thẳng từ OPEN.
+    const overdue = await createRejectedSubmission('E2E Dispute SLA Overdue', 25_000);
+    const { body: overdueDispute } = await request(app.getHttpServer())
+      .post('/api/v1/disputes')
+      .set('Authorization', `Bearer ${overdue.pubToken}`)
+      .send({ submissionId: overdue.submissionId, reason: 'Đã quá hạn Moderator' })
+      .expect(201);
+    await prisma.disputeTicket.update({
+      where: { id: overdueDispute.id },
+      data: { createdAt: new Date(Date.now() - 13 * 60 * 60 * 1000) },
+    });
+
+    const { body: resolved } = await request(app.getHttpServer())
+      .post(`/api/v1/admin/disputes/${overdueDispute.id}/resolve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ decision: 'REJECT' })
+      .expect(200);
+    expect(resolved.escalated).toBe(true);
+
+    const { body: detail } = await request(app.getHttpServer())
+      .get(`/api/v1/mod/disputes/${freshDispute.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(detail.sla).toMatchObject({ isOverdueModerator: false });
   });
 });

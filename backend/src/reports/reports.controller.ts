@@ -21,4 +21,13 @@ export class ReportsController {
       period && (VALID_PERIODS as string[]).includes(period) ? (period as ReportPeriod) : 'month';
     return this.reports.getOverview(normalized);
   }
+
+  // P7-01/SCR-09 — CMS Overview, mở thêm cho Moderator (khác route "overview"
+  // ở trên chỉ dành cho Admin/Root Admin theo đúng SCR-09 role "Admin/Mod" vs
+  // yêu cầu issue #55 "Thống kê doanh thu" chỉ Admin/Root Admin).
+  @Get('kpi-overview')
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.ROOT_ADMIN)
+  getKpiOverview() {
+    return this.reports.getKpiOverview();
+  }
 }

@@ -16,6 +16,8 @@ import { SubmissionsModule } from './submissions/submissions.module.js';
 import { AccountActivationModule } from './account/account-activation.module.js';
 import { DisputesModule } from './disputes/disputes.module.js';
 import { ReportsModule } from './reports/reports.module.js';
+import { PermissionsModule } from './permissions/permissions.module.js';
+import { TrustScoreModule } from './trust-score/trust-score.module.js';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { ReportsModule } from './reports/reports.module.js';
     AccountActivationModule,
     DisputesModule,
     ReportsModule,
+    PermissionsModule,
+    TrustScoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

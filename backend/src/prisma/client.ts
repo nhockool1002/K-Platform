@@ -8,6 +8,8 @@
 // import thẳng không resolve được dưới Node ESM — xem package.json "type": "module").
 import type {
   ActiveMode as ActiveModeEnum,
+  AuditActionType as AuditActionTypeEnum,
+  AuditLevel as AuditLevelEnum,
   CampaignStatus as CampaignStatusEnum,
   DisputeDecision as DisputeDecisionEnum,
   DisputeStatus as DisputeStatusEnum,
@@ -34,6 +36,8 @@ export const WithdrawalStatus = pkg.WithdrawalStatus;
 export const DisputeStatus = pkg.DisputeStatus;
 export const ModRecommendation = pkg.ModRecommendation;
 export const DisputeDecision = pkg.DisputeDecision;
+export const AuditActionType = pkg.AuditActionType;
+export const AuditLevel = pkg.AuditLevel;
 
 export type PrismaClient = PrismaClientClass;
 export type UserRole = UserRoleEnum;
@@ -46,3 +50,5 @@ export type WithdrawalStatus = WithdrawalStatusEnum;
 export type DisputeStatus = DisputeStatusEnum;
 export type ModRecommendation = ModRecommendationEnum;
 export type DisputeDecision = DisputeDecisionEnum;
+export type AuditActionType = AuditActionTypeEnum;
+export type AuditLevel = AuditLevelEnum;

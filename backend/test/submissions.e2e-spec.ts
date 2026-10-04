@@ -102,6 +102,11 @@ describe('Submissions & Proof (e2e)', () => {
 
   afterAll(async () => {
     await prisma.walletTransaction.deleteMany({ where: { user: { email: { in: seededEmails } } } });
+    // B-05 — decideProof(REJECT) tự động ghi TrustScoreTransaction
+    // (PROOF_REJECTED) cho publisher, chặn xoá user nếu không dọn trước.
+    await prisma.trustScoreTransaction.deleteMany({
+      where: { user: { email: { in: seededEmails } } },
+    });
     await prisma.submission.deleteMany({ where: { publisher: { email: publisherEmail } } });
     await prisma.campaign.deleteMany({ where: { owner: { email: { in: seededEmails } } } });
     await prisma.user.deleteMany({ where: { email: { in: seededEmails } } });
