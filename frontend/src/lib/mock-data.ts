@@ -45,25 +45,6 @@ export const mockDisputes = [
   },
 ];
 
-export const mockBmcTopups = [
-  {
-    id: 'BMC-88219-TX',
-    user: 'Cty TNHH Truyền Thông Nam Việt',
-    uid: '9f81a7-usr',
-    amountUsd: 50,
-    kpointAmount: 1_250_000,
-    status: 'PENDING_VERIFY' as const,
-  },
-  {
-    id: 'BMC-88220-TX',
-    user: 'Boutique Hotel Da Nang',
-    uid: '3b12cc-usr',
-    amountUsd: 100,
-    kpointAmount: 2_500_000,
-    status: 'PENDING_VERIFY' as const,
-  },
-];
-
 export const mockAuditLogs = [
   {
     id: 'LOG-9021',

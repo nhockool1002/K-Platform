@@ -36,6 +36,8 @@ enum UserRole {
 }
 
 enum BmcTopupStatus {
+  // User đã tạo mã KPL- nhưng chưa upload biên lai (đang chuyển khoản trên BMC).
+  AWAITING_PAYMENT
   PENDING_MANUAL_VERIFICATION
   APPROVED
   REJECTED
@@ -59,6 +61,9 @@ enum WalletTxType {
   // Admin từ chối lệnh rút — hoàn trả (giải phóng) phần reserved_kpoint đã
   // khoá lúc user lập lệnh, không đổi balance_kpoint.
   WITHDRAWAL_REJECTED
+  // Admin duyệt nạp quốc tế qua Buy Me a Coffee — cộng KPoint theo tỷ giá
+  // snapshot lúc user bắt đầu nạp (BmcTopup.exchangeRateUsdToVnd).
+  TOPUP_BMC
 }
 
 // Bên nào trong SRS Section II mà giao dịch này thuộc về — dùng để lọc Lịch
@@ -253,21 +258,48 @@ model Withdrawal {
 }
 
 model BmcTopup {
-  id           String         @id @default(uuid())
-  userId       String         @map("user_id")
-  amountUsd    Decimal        @map("amount_usd") @db.Decimal(12, 2)
-  kpointAmount BigInt         @map("kpoint_amount")
-  txnId        String         @unique @map("txn_id")
-  receiptUrl   String         @map("receipt_url")
-  status       BmcTopupStatus @default(PENDING_MANUAL_VERIFICATION)
-  verifiedById String?        @map("verified_by")
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
+  id                   String         @id @default(uuid())
+  userId               String         @map("user_id")
+  packageId            String?        @map("package_id")
+  packageName          String         @map("package_name")
+  bmcUrl               String         @map("bmc_url")
+  amountUsd            Decimal        @map("amount_usd") @db.Decimal(12, 2)
+  exchangeRateUsdToVnd Decimal        @map("exchange_rate_usd_to_vnd") @db.Decimal(12, 2)
+  kpointAmount         BigInt         @map("kpoint_amount")
+  // Mã đối soát do hệ thống sinh (KPL-XXXXXXXX) — user dán vào ô lời nhắn
+  // khi thanh toán trên BMC để Admin khớp biến động.
+  txnId                String         @unique @map("txn_id")
+  receiptUrl           String?        @map("receipt_url")
+  status               BmcTopupStatus @default(AWAITING_PAYMENT)
+  rejectReason         String?        @map("reject_reason")
+  verifiedById         String?        @map("verified_by")
+  verifiedAt           DateTime?      @map("verified_at")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
 
-  user       User  @relation("BmcTopupRequester", fields: [userId], references: [id])
-  verifiedBy User? @relation("BmcTopupVerifier", fields: [verifiedById], references: [id])
+  user       User                 @relation("BmcTopupRequester", fields: [userId], references: [id])
+  verifiedBy User?                @relation("BmcTopupVerifier", fields: [verifiedById], references: [id])
+  package    InternationalPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
 
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
   @@map("bmc_topups")
+}
+
+// Gói nạp quốc tế (Buy Me a Coffee extra) — Admin CRUD qua CMS, link BMC do
+// Admin tạo sẵn trên nền tảng BMC.
+model InternationalPackage {
+  id        String     @id @default(uuid())
+  name      String
+  amountUsd Decimal    @map("amount_usd") @db.Decimal(12, 2)
+  bmcUrl    String     @map("bmc_url")
+  active    Boolean    @default(true)
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  topups    BmcTopup[]
+
+  @@map("international_packages")
 }
 
 model Campaign {

@@ -1,31 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Copy, History, QrCode, Save, ShieldAlert } from 'lucide-react';
+import { Copy, QrCode, Save, ShieldAlert } from 'lucide-react';
 import { CmsShell } from '@/components/layout/CmsShell';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
-import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
-import { formatKpoint } from '@/lib/format';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
-import {
-  getSepaySettings,
-  updateSepaySettings,
-  type SepaySettings,
-  getInternationalPaymentSettings,
-  updateExchangeRate,
-  updateReviewDays,
-  getExchangeRateHistory,
-  type InternationalPaymentSettings,
-  type ExchangeRateHistoryRow,
-} from '@/lib/settings-client';
+import { getSepaySettings, updateSepaySettings, type SepaySettings } from '@/lib/settings-client';
 import { VIETQR_BANKS } from '@/lib/wallet-client';
 
 const WEBHOOK_PATH = '/payments/sepay-webhook';
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-
-type Tab = 'sepay' | 'international';
 
 function SepayTab() {
   const [settings, setSettings] = useState<SepaySettings | null>(null);
@@ -204,176 +190,9 @@ function SepayTab() {
   );
 }
 
-function InternationalTab() {
-  const [settings, setSettings] = useState<InternationalPaymentSettings | null>(null);
-  const [history, setHistory] = useState<ExchangeRateHistoryRow[] | null>(null);
-  const [rateInput, setRateInput] = useState('');
-  const [reviewDaysInput, setReviewDaysInput] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [savingRate, setSavingRate] = useState(false);
-  const [savingReviewDays, setSavingReviewDays] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
-
-  function load() {
-    Promise.all([getInternationalPaymentSettings(), getExchangeRateHistory()])
-      .then(([s, h]) => {
-        setSettings(s);
-        setHistory(h);
-        setRateInput(String(s.usdToVnd));
-        setReviewDaysInput(String(s.reviewDays));
-        setError(null);
-      })
-      .catch((err) => {
-        setError(
-          err instanceof ApiError ? err.message : 'Không tải được cài đặt thanh toán quốc tế',
-        );
-      });
-  }
-
-  useEffect(load, []);
-
-  async function handleSaveRate() {
-    setError(null);
-    const value = Number(rateInput);
-    if (!Number.isFinite(value) || value <= 0) {
-      setError('Tỷ giá phải là số dương');
-      return;
-    }
-    setSavingRate(true);
-    try {
-      await updateExchangeRate(value);
-      load();
-      setSavedAt(Date.now());
-      setTimeout(() => setSavedAt(null), 2500);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Không lưu được tỷ giá');
-    } finally {
-      setSavingRate(false);
-    }
-  }
-
-  async function handleSaveReviewDays() {
-    setError(null);
-    const value = Number(reviewDaysInput);
-    if (!Number.isInteger(value) || value <= 0) {
-      setError('Thời gian đối soát phải là số nguyên dương');
-      return;
-    }
-    setSavingReviewDays(true);
-    try {
-      await updateReviewDays(value);
-      load();
-      setSavedAt(Date.now());
-      setTimeout(() => setSavedAt(null), 2500);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Không lưu được thời gian đối soát');
-    } finally {
-      setSavingReviewDays(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <p className="text-xs text-slate-500">
-        Chuẩn bị trước cho nạp quốc tế qua Buy Me a Coffee (Phase 6, B-02). Tỷ giá áp dụng theo{' '}
-        <strong>thời điểm người dùng nạp</strong> — mỗi lần đổi tỷ giá tạo 1 dòng lịch sử mới, không
-        ghi đè dòng cũ, để tra cứu/thống kê sau này.
-      </p>
-
-      {error && (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-          {error}
-        </p>
-      )}
-      {savedAt && (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-          Đã lưu.
-        </p>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="space-y-4 rounded-2xl border border-slate-200 p-5">
-          <h4 className="text-xs font-extrabold text-slate-700 uppercase">Tỷ Giá USD → VNĐ</h4>
-          <Field label="1 USD = ? VNĐ">
-            <Input
-              type="number"
-              min={1}
-              value={rateInput}
-              onChange={(e) => setRateInput(e.target.value)}
-            />
-          </Field>
-          {settings?.rateUpdatedAt && (
-            <p className="text-[11px] text-slate-400">
-              Áp dụng từ {new Date(settings.rateUpdatedAt).toLocaleString('vi-VN')}
-            </p>
-          )}
-          <Button variant="dark" className="w-full" onClick={handleSaveRate} disabled={savingRate}>
-            <Save className="h-4 w-4" />
-            {savingRate ? 'Đang lưu...' : 'Cập Nhật Tỷ Giá'}
-          </Button>
-        </div>
-
-        <div className="space-y-4 rounded-2xl border border-slate-200 p-5">
-          <h4 className="text-xs font-extrabold text-slate-700 uppercase">
-            Thời Gian Đối Soát (B-04)
-          </h4>
-          <Field label="Số ngày Admin phải đối soát">
-            <Input
-              type="number"
-              min={1}
-              value={reviewDaysInput}
-              onChange={(e) => setReviewDaysInput(e.target.value)}
-            />
-          </Field>
-          <p className="text-[11px] text-slate-400">Mặc định ~1 tuần (7 ngày).</p>
-          <Button
-            variant="dark"
-            className="w-full"
-            onClick={handleSaveReviewDays}
-            disabled={savingReviewDays}
-          >
-            <Save className="h-4 w-4" />
-            {savingReviewDays ? 'Đang lưu...' : 'Cập Nhật Thời Gian'}
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-2 rounded-2xl border border-slate-200 p-5">
-        <h4 className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 uppercase">
-          <History className="h-3.5 w-3.5" />
-          Lịch Sử Tỷ Giá
-        </h4>
-        {!history || history.length === 0 ? (
-          <p className="py-4 text-center text-[11px] text-slate-400">Chưa có lịch sử.</p>
-        ) : (
-          <Table>
-            <Thead>
-              <Th>Thời điểm</Th>
-              <Th>Tỷ giá (1 USD)</Th>
-              <Th>Người cập nhật</Th>
-            </Thead>
-            <Tbody>
-              {history.map((h) => (
-                <tr key={h.id} className="hover:bg-slate-50/70">
-                  <Td>{new Date(h.createdAt).toLocaleString('vi-VN')}</Td>
-                  <Td className="font-mono font-bold text-brand-blue">
-                    {formatKpoint(h.usdToVnd)}
-                  </Td>
-                  <Td className="text-slate-500">{h.updatedBy ?? '—'}</Td>
-                </tr>
-              ))}
-            </Tbody>
-          </Table>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function CmsPaymentsSettingsPage() {
   const { user, loading: userLoading } = useCurrentUser();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
-  const [tab, setTab] = useState<Tab>('sepay');
 
   if (!userLoading && !isAdmin) {
     return (
@@ -393,33 +212,10 @@ export default function CmsPaymentsSettingsPage() {
     <CmsShell active="/cms/settings/payments">
       <div className="space-y-5">
         <div className="border-b border-slate-100 pb-3">
-          <h3 className="text-base font-extrabold text-slate-900">Cài Đặt Thanh Toán</h3>
+          <h3 className="text-base font-extrabold text-slate-900">Cài Đặt SePay (Nội địa)</h3>
         </div>
 
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => setTab('sepay')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-              tab === 'sepay'
-                ? 'bg-brand-blue text-white shadow-sm'
-                : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            SePay (Nội địa)
-          </button>
-          <button
-            onClick={() => setTab('international')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-              tab === 'international'
-                ? 'bg-brand-blue text-white shadow-sm'
-                : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            Quốc Tế (BMC)
-          </button>
-        </div>
-
-        {tab === 'sepay' ? <SepayTab /> : <InternationalTab />}
+        <SepayTab />
       </div>
     </CmsShell>
   );

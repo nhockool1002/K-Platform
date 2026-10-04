@@ -22,6 +22,7 @@ export interface SepayQrInfo {
 
 export type WalletTxType =
   | 'TOPUP_SEPAY'
+  | 'TOPUP_BMC'
   | 'WITHDRAWAL_REQUEST'
   | 'CAMPAIGN_RESERVE'
   | 'TASK_REWARD'
