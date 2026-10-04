@@ -172,7 +172,7 @@ describe('Audit Logs (e2e)', () => {
     expect(row).toBeDefined();
     expect(row!.level).toBe('WARNING');
     expect(row!.actorId).toBeNull();
-    expect(JSON.stringify(row!.requestPayload)).not.toContain('sai-mat-khau-e2e');
+    expect(JSON.stringify(row!.requestPayload)).not.toContain(WRONG_PASSWORD);
     expect((row!.requestPayload as { password?: string }).password).toBe('[redacted]');
   });
 
