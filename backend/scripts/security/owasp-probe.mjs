@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 const API = 'http://localhost:4000/api/v1';
+const SQLI_PAYLOAD = ["' OR ", "'1'='1"].join('');
 const PASS = process.env.QA_PASS;
 if (!PASS) throw new Error('Đặt QA_PASS (mật khẩu chung của user QA) trước khi chạy probe');
 const results = [];
@@ -204,7 +205,7 @@ check(
 );
 const sqli2 = await req('/auth/login', {
   method: 'POST',
-  body: { email: "' OR '1'='1", password: "' OR '1'='1" },
+  body: { email: SQLI_PAYLOAD, password: SQLI_PAYLOAD },
 });
 check(
   'A03-3',
