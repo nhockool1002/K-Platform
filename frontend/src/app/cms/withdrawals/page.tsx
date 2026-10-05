@@ -37,7 +37,7 @@ const STATUS_LABEL: Record<WithdrawalStatus, string> = {
 };
 
 export default function CmsWithdrawalsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('withdrawals', 'READ');

@@ -47,7 +47,7 @@ const REC_LABEL: Record<string, string> = {
 };
 
 export default function DisputeCenterPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('disputes', 'READ');

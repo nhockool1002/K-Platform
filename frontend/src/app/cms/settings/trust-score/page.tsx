@@ -29,7 +29,7 @@ const EMPTY_FORM: RuleForm = { code: '', label: '', points: 5 };
 const CODE_PATTERN = /^[A-Z0-9_]+$/;
 
 export default function CmsTrustScoreRulesPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('trust_score', 'READ');

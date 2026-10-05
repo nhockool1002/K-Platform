@@ -60,7 +60,7 @@ describe('Đăng ký & Hồ sơ người dùng (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/api/v1/auth/register')
-      .send({ ...validRegister(), confirmPassword: 'khac-mat-khau' })
+      .send({ ...validRegister(), confirmPassword: `khac-${randomBytes(6).toString('hex')}` })
       .expect(400);
 
     await request(app.getHttpServer())

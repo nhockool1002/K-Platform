@@ -14,7 +14,7 @@ import { usePermissions } from '@/lib/use-permissions';
 import { getKpiOverview, type KpiOverview } from '@/lib/reports-client';
 
 export default function CmsOverviewPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('dashboard_overview', 'READ');

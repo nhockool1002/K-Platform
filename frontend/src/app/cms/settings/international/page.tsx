@@ -440,7 +440,7 @@ function PackagesSection() {
 }
 
 export default function CmsInternationalSettingsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('international_packages', 'READ');

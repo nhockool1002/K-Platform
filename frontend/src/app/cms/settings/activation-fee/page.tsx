@@ -12,7 +12,7 @@ import { usePermissions } from '@/lib/use-permissions';
 import { getActivationFeeSettings, updateActivationFeeSettings } from '@/lib/settings-client';
 
 export default function CmsActivationFeeSettingsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('settings', 'READ');

@@ -23,18 +23,16 @@ describe('RBAC — nhóm quyền & override (e2e)', () => {
   const staffEmail = `e2e-rbac-staff-${suffix}@kplatform.dev`;
   const newAccountEmail = `e2e-rbac-new-${suffix}@kplatform.dev`;
   const password = randomBytes(12).toString('hex');
+  const newAccountPassword = `np-${randomBytes(8).toString('hex')}`;
   const groupName = `E2E Supermoderator ${suffix}`;
 
   let adminToken: string;
-  let otherAdminToken: string;
   let modToken: string;
   let userToken: string;
   let staffToken: string;
   let adminId: string;
   let otherAdminId: string;
-  let modId: string;
   let staffId: string;
-  let userId: string;
   let groupId: string;
   let createdAccountId: string | undefined;
 
@@ -62,16 +60,12 @@ describe('RBAC — nhóm quyền & override (e2e)', () => {
         data: { email: otherAdminEmail, passwordHash, activeMode: 'A', role: 'ADMIN' },
       })
     ).id;
-    modId = (
-      await prisma.user.create({
-        data: { email: modEmail, passwordHash, activeMode: 'A', role: 'MODERATOR' },
-      })
-    ).id;
-    userId = (
-      await prisma.user.create({
-        data: { email: userEmail, passwordHash, activeMode: 'A', role: 'USER' },
-      })
-    ).id;
+    await prisma.user.create({
+      data: { email: modEmail, passwordHash, activeMode: 'A', role: 'MODERATOR' },
+    });
+    await prisma.user.create({
+      data: { email: userEmail, passwordHash, activeMode: 'A', role: 'USER' },
+    });
     staffId = (
       await prisma.user.create({
         data: { email: staffEmail, passwordHash, activeMode: 'A', role: 'USER' },
@@ -79,7 +73,6 @@ describe('RBAC — nhóm quyền & override (e2e)', () => {
     ).id;
 
     adminToken = await loginAs(adminEmail);
-    otherAdminToken = await loginAs(otherAdminEmail);
     modToken = await loginAs(modEmail);
     userToken = await loginAs(userEmail);
     staffToken = await loginAs(staffEmail);
@@ -181,7 +174,7 @@ describe('RBAC — nhóm quyền & override (e2e)', () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/admin/users')
       .set('Authorization', `Bearer ${staffToken}`)
-      .send({ email: newAccountEmail, password: `pw-${suffix}-abc` })
+      .send({ email: newAccountEmail, password: newAccountPassword })
       .expect(201);
     createdAccountId = created.body.id;
 
@@ -202,7 +195,7 @@ describe('RBAC — nhóm quyền & override (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/v1/admin/users')
       .set('Authorization', `Bearer ${staffToken}`)
-      .send({ email: `x-${newAccountEmail}`, password: `pw-${suffix}-abc` })
+      .send({ email: `x-${newAccountEmail}`, password: newAccountPassword })
       .expect(403);
 
     await request(app.getHttpServer())

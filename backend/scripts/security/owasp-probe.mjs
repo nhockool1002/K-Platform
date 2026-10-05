@@ -1,7 +1,8 @@
 import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 const API = 'http://localhost:4000/api/v1';
-const PASS = 'QaPass12345!';
+const PASS = process.env.QA_PASS;
+if (!PASS) throw new Error('Đặt QA_PASS (mật khẩu chung của user QA) trước khi chạy probe');
 const results = [];
 const check = (id, name, ok, detail = '') => results.push({ id, name, ok, detail });
 
@@ -81,11 +82,11 @@ check(
 );
 const e1 = await req('/auth/login', {
   method: 'POST',
-  body: { email: 'nobody-x@kplatform.dev', password: 'whatever123' },
+  body: { email: 'nobody-x@kplatform.dev', password: `x-${Date.now()}` },
 });
 const e2 = await req('/auth/login', {
   method: 'POST',
-  body: { email: 'qa-buyer@kplatform.dev', password: 'wrong-pass-123' },
+  body: { email: 'qa-buyer@kplatform.dev', password: `y-${Date.now()}` },
 });
 check(
   'A07-5',
@@ -161,7 +162,7 @@ const reg = await req('/auth/register', {
   method: 'POST',
   body: {
     email: `qa-mass-${Date.now()}@kplatform.dev`,
-    password: 'Mass12345',
+    password: `m-${Date.now()}`,
     confirmPassword: 'Mass12345',
     fullName: 'Mass Test',
     phone: '0912345678',
@@ -354,7 +355,7 @@ await Promise.all(
   Array.from({ length: N }, () =>
     req('/auth/login', {
       method: 'POST',
-      body: { email: 'qa-buyer@kplatform.dev', password: 'bad-pass-xxx' },
+      body: { email: 'qa-buyer@kplatform.dev', password: `z-${Date.now()}` },
     }).then((r) => {
       if (r.status === 429) limited++;
     }),

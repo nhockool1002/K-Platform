@@ -62,7 +62,7 @@ function toIso(local: string): string | undefined {
 }
 
 export default function AuditLogsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('audit_logs', 'READ');

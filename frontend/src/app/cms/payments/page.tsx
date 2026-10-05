@@ -48,7 +48,7 @@ const STATUS_LABEL: Record<BmcTopupStatus | 'CREDITED', string> = {
 };
 
 export default function CmsPaymentsReconciliationPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('payments_reconciliation', 'READ');

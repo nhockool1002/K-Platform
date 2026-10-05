@@ -63,7 +63,7 @@ function RankTable({
 }
 
 export default function CmsReportsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('reports', 'READ');

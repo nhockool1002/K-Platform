@@ -6,7 +6,8 @@ import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 
 const API = process.env.API ?? 'http://localhost:4000/api/v1';
-const SEPAY_KEY = process.env.SEPAY_WEBHOOK_API_KEY ?? 'qa-sepay-key';
+const SEPAY_KEY = process.env.SEPAY_WEBHOOK_API_KEY;
+if (!SEPAY_KEY) throw new Error('Đặt SEPAY_WEBHOOK_API_KEY trước khi chạy kịch bản tải');
 const PSQL = process.env.PSQL ?? 'docker';
 const PSQL_ARGS = process.env.PSQL_ARGS?.split(' ') ?? [
   'exec',
@@ -18,7 +19,9 @@ const PSQL_ARGS = process.env.PSQL_ARGS?.split(' ') ?? [
   'kplatform_p5',
   '-tA',
 ];
-const QA_PASS = process.env.QA_PASS ?? 'QaPass12345!';
+const QA_PASS = process.env.QA_PASS;
+if (!QA_PASS)
+  throw new Error('Đặt QA_PASS (mật khẩu chung của user QA) trước khi chạy kịch bản tải');
 const TARGET_P95_MS = 500;
 
 const sql = (q) => execFileSync(PSQL, [...PSQL_ARGS, '-c', q], { encoding: 'utf8' }).trim();

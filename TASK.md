@@ -262,6 +262,18 @@
   > ✅ **Đã bổ sung** (`/cms/settings/trust-score`): Admin tạo/sửa/bật-tắt/xoá lý do tự tạo. Ghi chú gap cũ giữ để lịch sử: CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
 - [x] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — chưa có file `SRS_K-PLATFORM-v1.0.docx` bản mới, nhưng các quyết định nghiệp vụ khi xử lý B-02/03/04/05 (xem các mục trên) là một bản bổ sung yêu cầu trên thực tế, nên đã đối chiếu theo đó: thêm **SCR-14** (CMS Quản Trị Tài Khoản), **SCR-15** (CMS Cài đặt thanh toán), **FN-TRUST-01** (Trust Score), **FN-DISP-04** (SLA & leo thang Dispute), **FN-PAY-04** (cấu hình tỷ giá & SLA Thanh toán Quốc tế) vào README.md §IV/V + PLAN.md §6; sửa lại mô tả sai ở README §I.1 (tỷ giá KPoint↔VNĐ là **cố định** 1:1, không phải "linh hoạt" như bản cũ ghi nhầm — chỉ tỷ giá USD→VNĐ mới cấu hình được). Việc này vẫn định kỳ — đối chiếu lại lần tới khi có SRS bản mới hoặc backlog tiếp theo.
 
+### Kết quả kiểm thử toàn bộ — 2026-10-05 (nhánh RBAC + QA, trước khi merge vào develop)
+
+- **Backend e2e:** 114/114 pass (19 file), gồm bảo mật (`security-hardening`), RBAC (`rbac`), hồ sơ/đăng ký (`profile`), audit log.
+- **Lint / typecheck / build:** backend và frontend sạch (không lỗi; warning đã xử lý); `nest build` và `next build` (27 route) thành công.
+- **OWASP probe (`scripts/security/owasp-probe.mjs`):** 36/36 PASS.
+- **Tải (`scripts/load/load-test.mjs`, môi trường test local — không phản ánh VPS):**
+  - Nạp tiền: 400 webhook @25 đồng thời → p95 237 ms, 0 lỗi, cộng đúng, replay không cộng lại.
+  - Rút tiền: 60 lệnh tạo (p95 62 ms) + 60 duyệt (p95 69 ms), duyệt lần 2 bị chặn, không sai lệch số dư.
+  - Khiếu nại: 20 tạo (p95 27 ms), 20 đề xuất (p95 29 ms), 20 phán quyết (p95 163 ms), không còn khiếu nại mở.
+- **Lưu ý:** script tải và probe yêu cầu biến môi trường (`QA_PASS`, `SEPAY_WEBHOOK_API_KEY`) — không có mật khẩu cố định trong repo. Rate-limit đăng nhập có thể làm kịch bản bị 429 nếu chạy lại trong 10 phút; xoá bộ đếm Redis giữa các lần chạy.
+- **Chưa kiểm:** tải nhiều ví (đề xuất kiểm lại trên VPS); HSTS thực tế qua nginx staging; giao diện RBAC với người dùng thật.
+
 ### Phase 6 — Audit Logs (ghi chú triển khai)
 
 - Interceptor toàn cục ghi mọi mutation HTTP (POST/PUT/PATCH/DELETE). Request bị từ chối, kể cả 401/403 từ guard, do `AuditExceptionFilter` ghi. Service nào ghi chi tiết thì dùng `AuditService.write` và không bị ghi trùng.

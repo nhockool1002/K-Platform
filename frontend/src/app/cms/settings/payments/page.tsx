@@ -199,7 +199,7 @@ function SepayTab() {
 }
 
 export default function CmsPaymentsSettingsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { loading: userLoading } = useCurrentUser();
   const perms = usePermissions();
   const permsLoading = perms.loading;
   const isAdmin = perms.can('settings', 'READ');
