@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                   |
-| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------------------------------ |
-| 0        | Khởi tạo nền tảng                | 12        | 12         | 100%    | ✅ Xong (staging đã lên: health + DB OK)                     |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
-| 2        | Ví KPoint & SePay                | 13        | 13         | 100%    | ✅ Xong (P2-12: chủ dự án đã nạp thật qua SePay)             |
-| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
-| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
-| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật) |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 14         | 93%     | 🔄 Còn P6-06 (email — chờ hạ tầng email thật)                |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                      |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **104**    | **81%** |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                                        |
+| -------- | -------------------------------- | --------- | ---------- | ------- | --------------------------------------------------------------------------------- |
+| 0        | Khởi tạo nền tảng                | 12        | 12         | 100%    | ✅ Xong (staging đã lên: health + DB OK)                                          |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                                             |
+| 2        | Ví KPoint & SePay                | 13        | 13         | 100%    | ✅ Xong (P2-12: chủ dự án đã nạp thật qua SePay)                                  |
+| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                                           |
+| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                                           |
+| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật)                      |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 14         | 93%     | 🔄 Còn P6-06 (email — chờ hạ tầng email thật)                                     |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                                           |
+| 8        | Hardening, QA & Go-live          | 14        | 3          | 21%     | 🔄 P8-03/04/05 xong; P8-01 có lỗ hổng cần sửa; P8-02 bị chặn (chưa có rate-limit) |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                                                   |
+| **Tổng** |                                  | **129**   | **107**    | **83%** |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -216,11 +216,11 @@
 
 **Mục tiêu:** Hệ thống sẵn sàng vận hành thật, có giám sát 48h đầu sau go-live.
 
-- [ ] **P8-01** Kiểm thử OWASP Top 10 cơ bản (injection, IDOR giữa các role)
-- [ ] **P8-02** Kiểm thử rate-limit cho luồng Auth
-- [ ] **P8-03** Kiểm thử tải cho luồng Nạp tiền (mục tiêu p95 < 500ms)
-- [ ] **P8-04** Kiểm thử tải cho luồng Rút tiền
-- [ ] **P8-05** Kiểm thử tải cho luồng Dispute
+- [x] **P8-01** Kiểm thử OWASP Top 10 cơ bản (injection, IDOR giữa các role) — _`backend/scripts/security/owasp-probe.mjs`: 36/36 PASS sau khi sửa. Đã sửa: (1) upload giả mạo (avatar, proof, biên lai BMC) — đuôi file lấy từ MIME đã whitelist, kiểm tra nội dung thật (sharp / `%PDF-`), chặn stored XSS; (2) header bảo mật (nosniff, X-Frame-Options, CSP, HSTS, Referrer-Policy) và bỏ `X-Powered-By`; `/uploads` có CSP sandbox. Regression: `test/security-hardening.e2e-spec.ts`._
+- [x] **P8-02** Kiểm thử rate-limit cho luồng Auth — _Đã thêm rate-limit Redis (fail-open khi Redis lỗi): đăng nhập 20 lần/10 phút theo cặp IP+email; đăng ký 30/giờ/IP; quên mật khẩu 5/giờ theo IP+email; đặt lại mật khẩu 30/giờ/IP. Kiểm thử: 150 lần sai đồng thời → 130 bị 429, 0 lỗi kết nối._
+- [x] **P8-03** Kiểm thử tải luồng Nạp tiền (mục tiêu p95 < 500ms) — _`backend/scripts/load/load-test.mjs deposit`: 400 webhook @ 25 đồng thời: p95 208ms, 0 lỗi, cộng đúng, replay không cộng lại. Ghi chú: 2.000 @ 100 đồng thời vào **cùng một ví** → p95 555ms (tranh chấp khoá hàng ví), vẫn đúng số dư. Kiểm lại với nhiều ví và trên VPS thật._
+- [x] **P8-04** Kiểm thử tải luồng Rút tiền — _60 lệnh tạo @ 20 đồng thời (p95 45ms) + 60 Admin duyệt (p95 61ms), duyệt lần 2 bị chặn, số dư và khoá reserved đúng._
+- [x] **P8-05** Kiểm thử tải luồng Dispute — _20 khiếu nại (p95 19ms, chặn trùng khiếu nại đồng thời), 20 đề xuất (p95 23ms), 20 phán quyết (p95 162ms); không còn khiếu nại mở sau phán quyết._
 - [ ] **P8-06** Viết runbook: xử lý webhook SePay lỗi
 - [ ] **P8-07** Viết runbook: xử lý cronjob Auto-Approve fail
 - [ ] **P8-08** Viết runbook: rollback migration CSDL
@@ -262,12 +262,35 @@
   > ✅ **Đã bổ sung** (`/cms/settings/trust-score`): Admin tạo/sửa/bật-tắt/xoá lý do tự tạo. Ghi chú gap cũ giữ để lịch sử: CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
 - [x] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — chưa có file `SRS_K-PLATFORM-v1.0.docx` bản mới, nhưng các quyết định nghiệp vụ khi xử lý B-02/03/04/05 (xem các mục trên) là một bản bổ sung yêu cầu trên thực tế, nên đã đối chiếu theo đó: thêm **SCR-14** (CMS Quản Trị Tài Khoản), **SCR-15** (CMS Cài đặt thanh toán), **FN-TRUST-01** (Trust Score), **FN-DISP-04** (SLA & leo thang Dispute), **FN-PAY-04** (cấu hình tỷ giá & SLA Thanh toán Quốc tế) vào README.md §IV/V + PLAN.md §6; sửa lại mô tả sai ở README §I.1 (tỷ giá KPoint↔VNĐ là **cố định** 1:1, không phải "linh hoạt" như bản cũ ghi nhầm — chỉ tỷ giá USD→VNĐ mới cấu hình được). Việc này vẫn định kỳ — đối chiếu lại lần tới khi có SRS bản mới hoặc backlog tiếp theo.
 
+### Kết quả kiểm thử toàn bộ — 2026-10-05 (nhánh RBAC + QA, trước khi merge vào develop)
+
+- **Backend e2e:** 114/114 pass (19 file), gồm bảo mật (`security-hardening`), RBAC (`rbac`), hồ sơ/đăng ký (`profile`), audit log.
+- **Lint / typecheck / build:** backend và frontend sạch (không lỗi; warning đã xử lý); `nest build` và `next build` (27 route) thành công.
+- **OWASP probe (`scripts/security/owasp-probe.mjs`):** 36/36 PASS.
+- **Tải (`scripts/load/load-test.mjs`, môi trường test local — không phản ánh VPS):**
+  - Nạp tiền: 400 webhook @25 đồng thời → p95 237 ms, 0 lỗi, cộng đúng, replay không cộng lại.
+  - Rút tiền: 60 lệnh tạo (p95 62 ms) + 60 duyệt (p95 69 ms), duyệt lần 2 bị chặn, không sai lệch số dư.
+  - Khiếu nại: 20 tạo (p95 27 ms), 20 đề xuất (p95 29 ms), 20 phán quyết (p95 163 ms), không còn khiếu nại mở.
+- **Lưu ý:** script tải và probe yêu cầu biến môi trường (`QA_PASS`, `SEPAY_WEBHOOK_API_KEY`) — không có mật khẩu cố định trong repo. Rate-limit đăng nhập có thể làm kịch bản bị 429 nếu chạy lại trong 10 phút; xoá bộ đếm Redis giữa các lần chạy.
+- **Chưa kiểm:** tải nhiều ví (đề xuất kiểm lại trên VPS); HSTS thực tế qua nginx staging; giao diện RBAC với người dùng thật.
+
 ### Phase 6 — Audit Logs (ghi chú triển khai)
 
 - Interceptor toàn cục ghi mọi mutation HTTP (POST/PUT/PATCH/DELETE). Request bị từ chối, kể cả 401/403 từ guard, do `AuditExceptionFilter` ghi. Service nào ghi chi tiết thì dùng `AuditService.write` và không bị ghi trùng.
 - Credential (password, token, api key, secret) được redact trước khi ghi. Đăng nhập thành công ghi `LOGIN`; đăng nhập từ IP lạ sau khi đã có lịch sử thì `CRITICAL`.
 - Mức CRITICAL: Trust Score điều chỉnh tay, duyệt/từ chối dispute, duyệt rút tiền, duyệt nạp BMC, đăng nhập IP lạ, hạ cấp/xoá Admin (có sẵn).
 - P6-15 (rà soát backdoor): không có route mutation nào bị đánh dấu `skip`. Mọi route đi qua interceptor toàn cục. E2E `audit-logs.e2e-spec.ts` kiểm tra đại diện các nhóm: CRITICAL, login, webhook, request bị 403, và credential không bị lưu.
+
+### Ad-hoc — Phân quyền theo nhóm, hồ sơ & đăng ký (yêu cầu mới)
+
+- [x] **Phân quyền lại toàn bộ (SCR-12):** danh mục chức năng × hành động (Xem / Tạo / Sửa / Xoá / Duyệt) trong `backend/src/rbac/permission-catalog.ts`. Nhóm quyền tự tạo (vd. Supermoderator); 2 nhóm hệ thống gắn role (Quản trị viên, Moderator) không xoá được. Quyền riêng từng user ALLOW/DENY ưu tiên hơn nhóm. Root luôn toàn quyền. Mọi route CMS dùng `@RequirePermission`.
+- [x] Phân công Campaign cho moderator bắt buộc moderator đó có quyền "Quản trị Campaign" (Sửa); thiếu quyền thì báo lỗi yêu cầu quản trị viên cấp quyền.
+- [x] Hạ role về USER thì xoá hết nhóm và quyền riêng. Xoá Quản trị viên vẫn chỉ Root được.
+- [x] Menu CMS và nút hành động ẩn/hiện theo quyền thật (`/admin/rbac/me`); backend vẫn kiểm tra mọi request.
+- [x] Đăng ký: xác nhận mật khẩu, họ tên, SĐT, ngày sinh (≥ 16 tuổi), giới tính, tỉnh/thành, nghề nghiệp (không bắt buộc).
+- [x] Hồ sơ `/profile`: ảnh đại diện, họ tên, SĐT, ngày sinh, giới tính, tỉnh/thành, nghề nghiệp, bio. Email không đổi được.
+- [x] Trang công khai nhận biết đã đăng nhập (không bắt đăng nhập lại khi bấm "Khám phá Campaign").
+- [x] Layout CMS full-width, giữ nguyên cột trái.
 
 ### Ad-hoc — Thanh toán quốc tế BMC (theo yêu cầu chủ dự án)
 

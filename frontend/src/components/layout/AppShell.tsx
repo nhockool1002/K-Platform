@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Briefcase, LogOut, Sparkles, Wallet } from 'lucide-react';
+import { Briefcase, LogOut, Sparkles, UserCircle, Wallet } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { ActivationConfirmModal } from '@/components/ActivationConfirmModal';
 import { formatKpoint } from '@/lib/format';
@@ -143,6 +143,15 @@ export function AppShell({
               <span className="font-mono text-xs font-bold text-white">
                 {walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.availableKpoint))}
               </span>
+            </Link>
+
+            <Link
+              href="/profile"
+              title="Hồ sơ của tôi"
+              className="flex h-8 items-center gap-1.5 rounded-xl border border-slate-300 px-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+              <UserCircle className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Hồ sơ</span>
             </Link>
 
             <button

@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PermissionService } from '../rbac/permission.service.js';
 import {
   CampaignStatus,
   SubmissionStatus,
@@ -60,7 +61,10 @@ function hashFingerprint(raw: string): string {
 
 @Injectable()
 export class CampaignsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly permissions: PermissionService,
+  ) {}
 
   // P3-03/P3-04 (FN-CAMP-01) — tính Tổng KPoint, khoá reserved_kpoint trong 1
   // transaction ACID (row lock SELECT ... FOR UPDATE) để tránh 2 request tạo
@@ -336,7 +340,7 @@ export class CampaignsService {
     if (moderatorId) {
       const moderator = await this.prisma.user.findUnique({
         where: { id: moderatorId },
-        select: { role: true },
+        select: { email: true, role: true },
       });
       if (
         !moderator ||
@@ -345,6 +349,12 @@ export class CampaignsService {
           moderator.role !== 'ROOT_ADMIN')
       ) {
         throw new BadRequestException('Tài khoản được phân công phải có vai trò Moderator/Admin');
+      }
+      const canManage = await this.permissions.can(moderatorId, 'campaigns', 'UPDATE');
+      if (!canManage) {
+        throw new BadRequestException(
+          `Tài khoản ${moderator.email} chưa được cấp quyền "Quản trị Campaign" (Sửa). Vui lòng yêu cầu Quản trị viên cấp quyền này trong Phân quyền trước khi phân công Campaign.`,
+        );
       }
     }
 

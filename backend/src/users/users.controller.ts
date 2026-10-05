@@ -1,11 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { UserRole } from '../prisma/client.js';
 import { UsersService } from './users.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../common/guards/roles.guard.js';
+import { PermissionsGuard } from '../rbac/permissions.guard.js';
+import { RequirePermission } from '../rbac/require-permission.decorator.js';
 import { RootAdminTargetGuard } from '../common/guards/root-admin-target.guard.js';
 import { RootAdminSelfOnlyGuard } from '../common/guards/root-admin-self-only.guard.js';
-import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto.js';
@@ -19,21 +18,23 @@ import { SetAccountActiveDto } from './dto/set-account-active.dto.js';
 // setActive, CRUD đầy đủ + kích hoạt/vô hiệu hoá tài khoản. Chỉ Admin/Root
 // Admin truy cập được toàn bộ controller này.
 @Controller('admin/users')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.ROOT_ADMIN)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
+  @RequirePermission(['accounts', 'READ'])
   @Get()
   list() {
     return this.users.list();
   }
 
+  @RequirePermission(['accounts', 'READ'])
   @Get(':id')
   getOne(@Param('id') id: string) {
     return this.users.getOne(id);
   }
 
+  @RequirePermission(['accounts', 'CREATE'])
   @Post()
   create(@CurrentUser() actor: AccessTokenPayload, @Body() dto: CreateAccountDto) {
     return this.users.create(actor.sub, actor.role, dto);
@@ -42,6 +43,7 @@ export class UsersController {
   // Sửa email/mật khẩu — Root chỉ tự sửa được chính mình, không ai khác
   // đụng vào Root được (RootAdminSelfOnlyGuard, khác guard "chặn tuyệt đối"
   // dùng cho role/active bên dưới).
+  @RequirePermission(['accounts', 'UPDATE'])
   @Patch(':id/profile')
   @UseGuards(RootAdminSelfOnlyGuard)
   updateProfile(
@@ -54,6 +56,7 @@ export class UsersController {
 
   // Kích hoạt/Vô hiệu hoá — chặn tuyệt đối trên Root (kể cả Root tự khoá
   // chính mình), tránh tự khoá không ai mở lại được.
+  @RequirePermission(['accounts', 'UPDATE'])
   @Patch(':id/active')
   @UseGuards(RootAdminTargetGuard)
   setActive(
@@ -64,6 +67,7 @@ export class UsersController {
     return this.users.setActive(actor.sub, id, dto.active);
   }
 
+  @RequirePermission(['accounts', 'UPDATE'])
   @Patch(':id/role')
   @UseGuards(RootAdminTargetGuard)
   updateRole(
@@ -74,10 +78,10 @@ export class UsersController {
     return this.users.updateRole(actor.sub, actor.role, id, dto.role);
   }
 
+  @RequirePermission(['accounts', 'DELETE'])
   @Delete(':id')
-  @Roles(UserRole.ROOT_ADMIN)
   @UseGuards(RootAdminTargetGuard)
   remove(@CurrentUser() actor: AccessTokenPayload, @Param('id') id: string) {
-    return this.users.remove(actor.sub, id);
+    return this.users.remove(actor.sub, actor.role, id);
   }
 }

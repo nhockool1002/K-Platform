@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import {
   createTrustScoreRule,
   deleteTrustScoreRule,
@@ -28,8 +29,13 @@ const EMPTY_FORM: RuleForm = { code: '', label: '', points: 5 };
 const CODE_PATTERN = /^[A-Z0-9_]+$/;
 
 export default function CmsTrustScoreRulesPage() {
-  const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const { loading: userLoading } = useCurrentUser();
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('trust_score', 'READ');
+  const canCreate = perms.can('trust_score', 'CREATE');
+  const canUpdate = perms.can('trust_score', 'UPDATE');
+  const canRemove = perms.can('trust_score', 'DELETE');
 
   const [rules, setRules] = useState<TrustScoreRule[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -125,14 +131,14 @@ export default function CmsTrustScoreRulesPage() {
     }
   }
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/settings/trust-score">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
           <p className="text-xs text-slate-500">
-            Chỉ Admin hoặc Root Admin được quản lý lý do Trust Score.
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
           </p>
         </div>
       </CmsShell>
@@ -151,10 +157,12 @@ export default function CmsTrustScoreRulesPage() {
               Không có trần điểm.
             </p>
           </div>
-          <Button variant="dark" size="sm" onClick={openCreate}>
-            <Plus className="h-3.5 w-3.5" />
-            Thêm lý do
-          </Button>
+          {canCreate && (
+            <Button variant="dark" size="sm" onClick={openCreate}>
+              <Plus className="h-3.5 w-3.5" />
+              Thêm lý do
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -193,7 +201,11 @@ export default function CmsTrustScoreRulesPage() {
                     </Badge>
                   </Td>
                   <Td>
-                    <button onClick={() => toggleActive(r)} className="hover:opacity-80">
+                    <button
+                      disabled={!canUpdate}
+                      onClick={() => toggleActive(r)}
+                      className="hover:opacity-80 disabled:opacity-60"
+                    >
                       <Badge tone={r.active ? 'positive' : 'neutral'}>
                         {r.active ? 'Đang áp dụng' : 'Đã tắt'}
                       </Badge>
@@ -201,11 +213,13 @@ export default function CmsTrustScoreRulesPage() {
                   </Td>
                   <Td className="text-right">
                     <div className="flex justify-end gap-1.5">
-                      <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                        Sửa
-                      </Button>
-                      {!r.isSystem && (
+                      {canUpdate && (
+                        <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                          Sửa
+                        </Button>
+                      )}
+                      {!r.isSystem && canRemove && (
                         <Button variant="danger-ghost" size="sm" onClick={() => handleDelete(r)}>
                           <Trash2 className="h-3.5 w-3.5" />
                           Xoá

@@ -83,7 +83,7 @@ export class UsersService {
         return created;
       });
 
-      await await this.audit.write({
+      await this.audit.write({
         actorId,
         targetResource: `user:${user.id}`,
         actionType: AuditActionType.CREATE,
@@ -195,11 +195,20 @@ export class UsersService {
       );
     }
 
-    const updated = await this.prisma.user.update({
-      where: { id: targetId },
-      data: { role: newRole },
-      select: { id: true, email: true, role: true },
-    });
+    // Hạ về USER thì bỏ hết quyền CMS đã gán (nhóm + override) để không tồn đọng.
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetId },
+        data: { role: newRole },
+        select: { id: true, email: true, role: true },
+      }),
+      ...(newRole === UserRole.USER
+        ? [
+            this.prisma.userAccessGroup.deleteMany({ where: { userId: targetId } }),
+            this.prisma.userPermissionOverride.deleteMany({ where: { userId: targetId } }),
+          ]
+        : []),
+    ]);
 
     // P7-11 — ghi Audit Log cho thay đổi role (interceptor tổng quát bắt MỌI
     // Mutation thuộc Phase 6/FN-LOG-01; ở đây ghi trực tiếp cho riêng hành
@@ -216,16 +225,19 @@ export class UsersService {
     return updated;
   }
 
-  async remove(actorId: string, targetId: string) {
+  async remove(actorId: string, actorRole: UserRole, targetId: string) {
     const target = await this.prisma.user.findUnique({
       where: { id: targetId },
       select: { role: true, email: true },
     });
     if (!target) throw new NotFoundException('Không tìm thấy tài khoản');
+    if (target.role === UserRole.ADMIN && actorRole !== UserRole.ROOT_ADMIN) {
+      throw new ForbiddenException('Chỉ Root Administrator được xoá một Quản trị viên');
+    }
 
     await this.prisma.user.delete({ where: { id: targetId } });
 
-    await await this.audit.write({
+    await this.audit.write({
       actorId,
       targetResource: `user:${targetId}`,
       actionType: AuditActionType.DELETE,
