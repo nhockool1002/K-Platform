@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import {
   getAuditLog,
   listAuditLogs,
@@ -62,7 +63,9 @@ function toIso(local: string): string | undefined {
 
 export default function AuditLogsPage() {
   const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('audit_logs', 'READ');
 
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
@@ -112,13 +115,15 @@ export default function AuditLogsPage() {
     setApplied(draft);
   }
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/audit-logs">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
-          <p className="text-xs text-slate-500">Chỉ Admin hoặc Root Admin được xem Audit Logs.</p>
+          <p className="text-xs text-slate-500">
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
+          </p>
         </div>
       </CmsShell>
     );

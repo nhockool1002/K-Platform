@@ -17,12 +17,15 @@ import {
   Users,
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import { logout } from '@/lib/auth-client';
 import { mockDisputes } from '@/lib/mock-data';
 
 interface NavLeaf {
   href: string;
   label: string;
+  /** Tài nguyên phân quyền cần quyền READ để hiện mục này. */
+  resource?: string;
   icon: typeof BarChart3;
   iconClassName?: string;
   badge?: number;
@@ -36,21 +39,29 @@ interface NavGroup {
 }
 
 const NAV: (NavLeaf | NavGroup)[] = [
-  { href: '/cms/overview', label: 'SCR-09: Tổng Quan KPI', icon: BarChart3 },
+  {
+    href: '/cms/overview',
+    resource: 'dashboard_overview',
+    label: 'SCR-09: Tổng Quan KPI',
+    icon: BarChart3,
+  },
   {
     href: '/cms/reports',
+    resource: 'reports',
     label: 'Thống Kê Doanh Thu',
     icon: TrendingUp,
     iconClassName: 'text-emerald-600',
   },
   {
     href: '/cms/payments',
+    resource: 'payments_reconciliation',
     label: 'SCR-10: Đối soát nạp tiền',
     icon: Coffee,
     iconClassName: 'text-brand-gold',
   },
   {
     href: '/cms/disputes',
+    resource: 'disputes',
     label: 'SCR-11: Dispute Center',
     icon: Scale,
     iconClassName: 'text-purple-600',
@@ -58,24 +69,28 @@ const NAV: (NavLeaf | NavGroup)[] = [
   },
   {
     href: '/cms/rbac',
+    resource: 'rbac',
     label: 'SCR-12: Phân Quyền RBAC',
     icon: ShieldAlert,
     iconClassName: 'text-rose-500',
   },
   {
     href: '/cms/accounts',
+    resource: 'accounts',
     label: 'Quản Trị Tài Khoản',
     icon: Users,
     iconClassName: 'text-blue-600',
   },
   {
     href: '/cms/audit-logs',
+    resource: 'audit_logs',
     label: 'SCR-13: Nhật Ký Audit Logs',
     icon: History,
     iconClassName: 'text-slate-500',
   },
   {
     href: '/cms/withdrawals',
+    resource: 'withdrawals',
     label: 'Yêu Cầu Rút Tiền',
     icon: Banknote,
     iconClassName: 'text-emerald-600',
@@ -85,10 +100,18 @@ const NAV: (NavLeaf | NavGroup)[] = [
     icon: Settings,
     iconClassName: 'text-slate-500',
     children: [
-      { href: '/cms/settings/payments', label: 'Cài đặt SePay' },
-      { href: '/cms/settings/international', label: 'Thanh toán quốc tế' },
-      { href: '/cms/settings/trust-score', label: 'Lý do Trust Score' },
-      { href: '/cms/settings/activation-fee', label: 'Cài đặt phí kích hoạt' },
+      { href: '/cms/settings/payments', resource: 'settings', label: 'Cài đặt SePay' },
+      {
+        href: '/cms/settings/international',
+        resource: 'international_packages',
+        label: 'Thanh toán quốc tế',
+      },
+      { href: '/cms/settings/trust-score', resource: 'trust_score', label: 'Lý do Trust Score' },
+      {
+        href: '/cms/settings/activation-fee',
+        resource: 'settings',
+        label: 'Cài đặt phí kích hoạt',
+      },
     ],
   },
 ];
@@ -100,6 +123,14 @@ function isGroup(item: NavLeaf | NavGroup): item is NavGroup {
 export function CmsShell({ active, children }: { active: string; children: ReactNode }) {
   const router = useRouter();
   const { user } = useCurrentUser();
+  const perms = usePermissions();
+  const visibleNav = NAV.flatMap((item): (NavLeaf | NavGroup)[] => {
+    const canSee = (resource?: string) =>
+      !resource || (!perms.loading && perms.can(resource, 'READ'));
+    if (!isGroup(item)) return canSee(item.resource) ? [item] : [];
+    const children = item.children.filter((c) => canSee(c.resource));
+    return children.length ? [{ ...item, children }] : [];
+  });
   const [openGroup, setOpenGroup] = useState<string | null>(
     () =>
       NAV.find((item) => isGroup(item) && item.children.some((c) => c.href === active))?.label ??
@@ -148,12 +179,12 @@ export function CmsShell({ active, children }: { active: string; children: React
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 md:flex-row">
+      <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 md:flex-row">
         <aside className="h-fit w-full shrink-0 space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:w-64">
           <div className="px-3 py-1 font-mono text-[10px] font-bold text-slate-400 uppercase">
             Phân Hệ Nghiệp Vụ CMS
           </div>
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             if (isGroup(item)) {
               const Icon = item.icon;
               const isOpen = openGroup === item.label;

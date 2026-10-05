@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -22,6 +23,14 @@ import type { AccessTokenPayload, RefreshTokenPayload } from './token.types.js';
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL = '7d';
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 phút
+
+function ageInYears(dob: Date): number {
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
+  return age;
+}
 
 @Injectable()
 export class AuthService {
@@ -56,6 +65,14 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('Mật khẩu xác nhận không khớp');
+    }
+    const age = ageInYears(new Date(dto.dateOfBirth));
+    if (age < 16 || age > 120) {
+      throw new BadRequestException('Ngày sinh không hợp lệ (phải từ 16 tuổi trở lên)');
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('Email đã được đăng ký');
@@ -67,6 +84,12 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         activeMode: dto.activeMode ?? 'A',
+        fullName: dto.fullName.trim(),
+        phone: dto.phone,
+        dateOfBirth: new Date(dto.dateOfBirth),
+        gender: dto.gender,
+        province: dto.province,
+        occupation: dto.occupation?.trim() || null,
       },
     });
 

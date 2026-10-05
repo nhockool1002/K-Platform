@@ -269,6 +269,17 @@
 - Mức CRITICAL: Trust Score điều chỉnh tay, duyệt/từ chối dispute, duyệt rút tiền, duyệt nạp BMC, đăng nhập IP lạ, hạ cấp/xoá Admin (có sẵn).
 - P6-15 (rà soát backdoor): không có route mutation nào bị đánh dấu `skip`. Mọi route đi qua interceptor toàn cục. E2E `audit-logs.e2e-spec.ts` kiểm tra đại diện các nhóm: CRITICAL, login, webhook, request bị 403, và credential không bị lưu.
 
+### Ad-hoc — Phân quyền theo nhóm, hồ sơ & đăng ký (yêu cầu mới)
+
+- [x] **Phân quyền lại toàn bộ (SCR-12):** danh mục chức năng × hành động (Xem / Tạo / Sửa / Xoá / Duyệt) trong `backend/src/rbac/permission-catalog.ts`. Nhóm quyền tự tạo (vd. Supermoderator); 2 nhóm hệ thống gắn role (Quản trị viên, Moderator) không xoá được. Quyền riêng từng user ALLOW/DENY ưu tiên hơn nhóm. Root luôn toàn quyền. Mọi route CMS dùng `@RequirePermission`.
+- [x] Phân công Campaign cho moderator bắt buộc moderator đó có quyền "Quản trị Campaign" (Sửa); thiếu quyền thì báo lỗi yêu cầu quản trị viên cấp quyền.
+- [x] Hạ role về USER thì xoá hết nhóm và quyền riêng. Xoá Quản trị viên vẫn chỉ Root được.
+- [x] Menu CMS và nút hành động ẩn/hiện theo quyền thật (`/admin/rbac/me`); backend vẫn kiểm tra mọi request.
+- [x] Đăng ký: xác nhận mật khẩu, họ tên, SĐT, ngày sinh (≥ 16 tuổi), giới tính, tỉnh/thành, nghề nghiệp (không bắt buộc).
+- [x] Hồ sơ `/profile`: ảnh đại diện, họ tên, SĐT, ngày sinh, giới tính, tỉnh/thành, nghề nghiệp, bio. Email không đổi được.
+- [x] Trang công khai nhận biết đã đăng nhập (không bắt đăng nhập lại khi bấm "Khám phá Campaign").
+- [x] Layout CMS full-width, giữ nguyên cột trái.
+
 ### Ad-hoc — Thanh toán quốc tế BMC (theo yêu cầu chủ dự án)
 
 - [x] Modal Nạp KPoint: đổi tên tab "Buy Me a Coffee (USD)" → **International Payment** (nội dung EN chính, VI phụ). Mã đối soát `KPL-` do hệ thống sinh, không nhập tay.

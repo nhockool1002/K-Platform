@@ -11,6 +11,7 @@ import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
 import { ApiError } from '@/lib/auth-client';
 import type { UserRole } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import {
   createAccount,
   deleteUser,
@@ -39,8 +40,14 @@ const EDITABLE_ROLES: UserRole[] = ['USER', 'MODERATOR', 'ADMIN'];
 
 export default function AccountsPage() {
   const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('accounts', 'READ');
   const isRootAdmin = user?.role === 'ROOT_ADMIN';
+  const canCreate = perms.can('accounts', 'CREATE');
+  const canUpdate = perms.can('accounts', 'UPDATE');
+  const canRemove = perms.can('accounts', 'DELETE');
+  const canTrust = perms.can('trust_score', 'UPDATE');
 
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -213,14 +220,14 @@ export default function AccountsPage() {
     }
   }
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/accounts">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
           <p className="text-xs text-slate-500">
-            Chỉ Admin hoặc Root Admin được quản trị tài khoản.
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
           </p>
         </div>
       </CmsShell>
@@ -242,10 +249,12 @@ export default function AccountsPage() {
               được chính mình — không ai khác (kể cả Admin khác) sửa hay vô hiệu hoá được Root.
             </p>
           </div>
-          <Button variant="gold" size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-3.5 w-3.5" />
-            Tạo Tài Khoản Mới
-          </Button>
+          {canCreate && (
+            <Button variant="gold" size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Tạo Tài Khoản Mới
+            </Button>
+          )}
         </div>
 
         <Input
@@ -276,10 +285,11 @@ export default function AccountsPage() {
             <Tbody>
               {filtered.map((u) => {
                 const touchesAdmin = u.role === 'ADMIN';
-                const canEditRole = !u.isRootAdmin && (isRootAdmin || !touchesAdmin);
-                const canEditProfile = !u.isRootAdmin || isRootAdmin;
-                const canToggleActive = !u.isRootAdmin;
-                const canDelete = isRootAdmin && !u.isRootAdmin;
+                const canEditRole = canUpdate && !u.isRootAdmin && (isRootAdmin || !touchesAdmin);
+                const canEditProfile = canUpdate && (!u.isRootAdmin || isRootAdmin);
+                const canToggleActive = canUpdate && !u.isRootAdmin;
+                const canDelete =
+                  canRemove && !u.isRootAdmin && (isRootAdmin || u.role !== 'ADMIN');
                 return (
                   <tr key={u.id} className="hover:bg-slate-50/70">
                     <Td className="font-bold text-slate-800">{u.email}</Td>
@@ -315,7 +325,7 @@ export default function AccountsPage() {
                     </Td>
                     <Td className="text-right">
                       <div className="flex justify-end gap-1.5">
-                        {u.role === 'USER' && (
+                        {u.role === 'USER' && canTrust && (
                           <button
                             onClick={() => openTrustModal(u)}
                             title="Điều chỉnh Trust Score"

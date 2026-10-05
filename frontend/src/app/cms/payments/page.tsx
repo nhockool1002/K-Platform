@@ -10,6 +10,7 @@ import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
 import { formatKpoint } from '@/lib/format';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import type { BmcTopupStatus } from '@/lib/bmc-client';
 import {
   decideBmcTopup,
@@ -48,7 +49,10 @@ const STATUS_LABEL: Record<BmcTopupStatus | 'CREDITED', string> = {
 
 export default function CmsPaymentsReconciliationPage() {
   const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('payments_reconciliation', 'READ');
+  const canApprove = perms.can('payments_reconciliation', 'APPROVE');
 
   const [source, setSource] = useState<SourceFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('ALL');
@@ -127,14 +131,14 @@ export default function CmsPaymentsReconciliationPage() {
     }
   }
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/payments">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
           <p className="text-xs text-slate-500">
-            Chỉ Admin hoặc Root Admin được đối soát nạp tiền.
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
           </p>
         </div>
       </CmsShell>
@@ -281,7 +285,7 @@ export default function CmsPaymentsReconciliationPage() {
                           Biên lai
                         </Button>
                       )}
-                      {awaitingReview ? (
+                      {awaitingReview && canApprove ? (
                         <div className="mt-1 flex justify-end gap-1.5">
                           <Button
                             variant="dark"

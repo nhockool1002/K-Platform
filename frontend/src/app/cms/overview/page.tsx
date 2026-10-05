@@ -10,12 +10,15 @@ import { formatKpoint } from '@/lib/format';
 import { PLATFORM_LABEL } from '@/lib/mock-data';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import { getKpiOverview, type KpiOverview } from '@/lib/reports-client';
 
 export default function CmsOverviewPage() {
   const { user, loading: userLoading } = useCurrentUser();
-  const canView =
-    user?.role === 'MODERATOR' || user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('dashboard_overview', 'READ');
+  const canView = isAdmin;
 
   const [data, setData] = useState<KpiOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +43,7 @@ export default function CmsOverviewPage() {
     };
   }, [canView]);
 
-  if (!userLoading && !canView) {
+  if (!userLoading && !permsLoading && !canView) {
     return (
       <CmsShell active="/cms/overview">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">

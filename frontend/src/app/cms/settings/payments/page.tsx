@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import { getSepaySettings, updateSepaySettings, type SepaySettings } from '@/lib/settings-client';
 import { VIETQR_BANKS } from '@/lib/wallet-client';
 
@@ -14,6 +15,8 @@ const WEBHOOK_PATH = '/payments/sepay-webhook';
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 function SepayTab() {
+  const perms = usePermissions();
+  const canEditSettings = perms.can('settings', 'UPDATE');
   const [settings, setSettings] = useState<SepaySettings | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -154,7 +157,12 @@ function SepayTab() {
             />
           </Field>
 
-          <Button variant="dark" className="w-full" onClick={handleSave} disabled={saving}>
+          <Button
+            variant="dark"
+            className="w-full"
+            onClick={handleSave}
+            disabled={saving || !canEditSettings}
+          >
             <Save className="h-4 w-4" />
             {saving ? 'Đang lưu...' : 'Lưu Cài Đặt'}
           </Button>
@@ -192,16 +200,18 @@ function SepayTab() {
 
 export default function CmsPaymentsSettingsPage() {
   const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('settings', 'READ');
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/settings/payments">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
           <p className="text-xs text-slate-500">
-            Chỉ Admin hoặc Root Admin được xem/sửa Cài đặt thanh toán.
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
           </p>
         </div>
       </CmsShell>

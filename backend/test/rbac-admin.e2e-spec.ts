@@ -116,8 +116,7 @@ describe('Phase 7 — CMS RBAC nâng cao (e2e)', () => {
     });
     await prisma.submission.deleteMany({ where: { publisher: { email: pubEmail } } });
     await prisma.campaign.deleteMany({ where: { owner: { email: advEmail } } });
-    await prisma.rolePermission.deleteMany({ where: { roleName: `E2E_P7_${suffix}` } });
-    await prisma.user.deleteMany({ where: { email: { in: seededEmails } } });
+    await await prisma.user.deleteMany({ where: { email: { in: seededEmails } } });
     await app.close();
   });
 
@@ -257,52 +256,17 @@ describe('Phase 7 — CMS RBAC nâng cao (e2e)', () => {
     });
   });
 
-  describe('P7-06 — CRUD RolePermission (tham khảo quyền hạn theo vai trò)', () => {
-    const roleName = `E2E_P7_${suffix}`;
-
-    it('USER thường bị chặn 403', async () => {
-      const pubToken = await loginAs(pubEmail);
-      await request(app.getHttpServer())
-        .get('/api/v1/admin/permissions')
-        .set('Authorization', `Bearer ${pubToken}`)
-        .expect(403);
-    });
-
-    it('Admin tạo/xem/xóa permission thành công, trùng lặp bị chặn 409', async () => {
-      const adminToken = await loginAs(adminEmail);
-
-      const { body: created } = await request(app.getHttpServer())
-        .post('/api/v1/admin/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ roleName, permissionCode: 'e2e.test.permission' })
-        .expect(201);
-      expect(created.roleName).toBe(roleName);
-
-      await request(app.getHttpServer())
-        .post('/api/v1/admin/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ roleName, permissionCode: 'e2e.test.permission' })
-        .expect(409);
-
-      const { body: list } = await request(app.getHttpServer())
-        .get('/api/v1/admin/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-      expect(list.some((p: { id: string }) => p.id === created.id)).toBe(true);
-
-      await request(app.getHttpServer())
-        .delete(`/api/v1/admin/permissions/${created.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      await request(app.getHttpServer())
-        .delete(`/api/v1/admin/permissions/${created.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(404);
-    });
-  });
-
   describe('P7-08 — phân công Campaign cho Moderator cụ thể', () => {
+    beforeAll(async () => {
+      const adminToken = await loginAs(adminEmail);
+      // Phân công Campaign yêu cầu moderator có quyền "Quản trị Campaign" (campaigns:UPDATE).
+      await request(app.getHttpServer())
+        .put(`/api/v1/admin/rbac/users/${mod1Id}/overrides`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ overrides: [{ resource: 'campaigns', action: 'UPDATE', effect: 'ALLOW' }] })
+        .expect(200);
+    });
+
     async function createRejectedSubmission(title: string, reward: number) {
       const ownerToken = await loginAs(advEmail);
       const { body: campaign } = await request(app.getHttpServer())
@@ -342,6 +306,18 @@ describe('Phase 7 — CMS RBAC nâng cao (e2e)', () => {
 
       return { campaign, submissionId: submission.id as string, pubToken };
     }
+
+    it('Moderator chưa được cấp quyền Quản trị Campaign bị từ chối phân công, báo rõ cần cấp quyền', async () => {
+      const adminToken = await loginAs(adminEmail);
+      const { campaign } = await createRejectedSubmission('E2E P7 Assign Needs Grant', 20_000);
+
+      const { body } = await request(app.getHttpServer())
+        .patch(`/api/v1/admin/campaigns/${campaign.id}/assign-moderator`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ moderatorId: mod2Id })
+        .expect(400);
+      expect(body.message).toContain('chưa được cấp quyền "Quản trị Campaign"');
+    });
 
     it('USER thường bị chặn 403 trên GET/PATCH admin/campaigns', async () => {
       const pubToken = await loginAs(pubEmail);
