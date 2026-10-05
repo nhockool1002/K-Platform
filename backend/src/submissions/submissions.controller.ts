@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import { extname } from 'node:path';
 import {
   BadRequestException,
   Body,
@@ -15,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { assertFileContent, extForMime } from '../common/uploads.js';
 import type { Request } from 'express';
 import { SubmissionsService } from './submissions.service.js';
 import { SubmitProofDto } from './dto/submit-proof.dto.js';
@@ -24,7 +24,6 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
 
-const ALLOWED_MIME = /^(image|video)\//;
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50MB — đủ cho ảnh chụp màn hình + clip ngắn.
 
 @Controller('submissions')
@@ -41,16 +40,16 @@ export class SubmissionsController {
         filename: (req: Request, file, cb) => {
           const id = (req.params as { id: string }).id;
           const unique = randomBytes(6).toString('hex');
-          cb(null, `${id}-${Date.now()}-${unique}${extname(file.originalname)}`);
+          cb(null, `${id}-${Date.now()}-${unique}${extForMime(file.mimetype) ?? ''}`);
         },
       }),
       fileFilter: (_req, file, cb) => {
-        cb(null, ALLOWED_MIME.test(file.mimetype));
+        cb(null, extForMime(file.mimetype) !== null);
       },
       limits: { fileSize: MAX_FILE_BYTES },
     }),
   )
-  submitProof(
+  async submitProof(
     @CurrentUser() user: AccessTokenPayload,
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File | undefined,
@@ -60,6 +59,7 @@ export class SubmissionsController {
     if (!file) {
       throw new BadRequestException('Thiếu file ảnh/video Proof hoặc định dạng không hợp lệ');
     }
+    await assertFileContent(file.path, file.mimetype);
     return this.submissions.submitProof(id, user.sub, file, dto);
   }
 

@@ -11,6 +11,7 @@ import { formatKpoint } from '@/lib/format';
 import { PLATFORM_LABEL } from '@/lib/mock-data';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import {
   listDisputes,
   recommendDispute,
@@ -46,10 +47,14 @@ const REC_LABEL: Record<string, string> = {
 };
 
 export default function DisputeCenterPage() {
-  const { user, loading: userLoading } = useCurrentUser();
-  const isModerator = user?.role === 'MODERATOR';
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
-  const canView = isModerator || isAdmin;
+  const { loading: userLoading } = useCurrentUser();
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('disputes', 'READ');
+  const canView = isAdmin;
+  const canRecommend = perms.can('disputes', 'UPDATE');
+  const canSettleSla = perms.can('settings', 'UPDATE');
+  const canDecide = perms.can('disputes', 'APPROVE');
 
   const [tab, setTab] = useState<DisputeStatus | 'ALL'>('OPEN');
   const [disputes, setDisputes] = useState<DisputeDetail[] | null>(null);
@@ -149,7 +154,7 @@ export default function DisputeCenterPage() {
     }
   }
 
-  if (!userLoading && !canView) {
+  if (!userLoading && !permsLoading && !canView) {
     return (
       <CmsShell active="/cms/disputes">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
@@ -177,7 +182,7 @@ export default function DisputeCenterPage() {
               thắng. Quá hạn SLA Moderator thì Admin được phán quyết thẳng (leo thang).
             </p>
           </div>
-          {isAdmin && (
+          {canSettleSla && (
             <Button variant="outline" size="sm" onClick={openSlaModal}>
               <SettingsIcon className="h-3.5 w-3.5" />
               Cài Đặt SLA
@@ -303,7 +308,7 @@ export default function DisputeCenterPage() {
 
                   {(d.status === 'OPEN' || d.status === 'RECOMMENDED') && (
                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-purple-100 pt-2 text-xs">
-                      {isModerator || isAdmin ? (
+                      {canRecommend ? (
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold text-slate-600">Moderator:</span>
                           <Button
@@ -326,7 +331,7 @@ export default function DisputeCenterPage() {
                       ) : (
                         <span />
                       )}
-                      {isAdmin &&
+                      {canDecide &&
                         (() => {
                           const canResolve =
                             d.status === 'RECOMMENDED' ||

@@ -43,6 +43,27 @@ enum BmcTopupStatus {
   REJECTED
 }
 
+// RBAC — hành động trên một tài nguyên CMS (xem backend/src/rbac/permission-catalog.ts).
+enum PermissionAction {
+  READ
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+}
+
+// Override riêng từng user: ALLOW cấp thêm quyền, DENY cấm quyền dù nhóm có cấp.
+enum OverrideEffect {
+  ALLOW
+  DENY
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 // Loại biến động trong sổ cái ví (P2-09). Mở rộng ở phase sau: TOPUP_BMC (P6),
 // TASK_REWARD/CAMPAIGN_REFUND (P4/P5).
 enum WalletTxType {
@@ -160,6 +181,15 @@ model User {
   // B-05 — chuỗi ngày đăng nhập liên tục, dùng để + điểm Trust Score mỗi 7
   // ngày liên tiếp (reset về 0 sau khi thưởng — xem auth.service.ts: login()).
   lastLoginAt     DateTime?  @map("last_login_at")
+  // Hồ sơ cá nhân — thu thập lúc đăng ký để phục vụ khảo sát sau này.
+  fullName        String?    @map("full_name")
+  phone           String?
+  dateOfBirth     DateTime?  @map("date_of_birth") @db.Date
+  gender          Gender?
+  province        String?
+  occupation      String?
+  bio             String?
+  avatarUrl       String?    @map("avatar_url")
   loginStreakDays Int        @default(0) @map("login_streak_days")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
@@ -180,6 +210,8 @@ model User {
   trustScoreTransactions   TrustScoreTransaction[]  @relation("TrustScoreUser")
   trustScoreAdjustmentsMade TrustScoreTransaction[] @relation("TrustScoreActor")
   exchangeRatesSet         ExchangeRateHistory[]    @relation("ExchangeRateSetter")
+  accessGroups            UserAccessGroup[]
+  permissionOverrides     UserPermissionOverride[]
 
   @@map("users")
 }
@@ -196,15 +228,6 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
-}
-
-model RolePermission {
-  id             String @id @default(uuid())
-  roleName       String @map("role_name")
-  permissionCode String @map("permission_code")
-
-  @@unique([roleName, permissionCode])
-  @@map("roles_permissions")
 }
 
 model Wallet {
@@ -488,4 +511,58 @@ model ExchangeRateHistory {
 
   @@index([createdAt])
   @@map("exchange_rate_history")
+}
+
+// RBAC — nhóm quyền. `linkedRole` gắn nhóm hệ thống với role (ADMIN/MODERATOR):
+// mọi user có role đó đương nhiên thuộc nhóm (không cần gán tay). Nhóm hệ thống
+// không xoá được; quyền bên trong vẫn sửa được.
+model AccessGroup {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  linkedRole  UserRole? @unique @map("linked_role")
+  isSystem    Boolean   @default(false) @map("is_system")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  permissions AccessGroupPermission[]
+  members     UserAccessGroup[]
+
+  @@map("access_groups")
+}
+
+model AccessGroupPermission {
+  id       String           @id @default(uuid())
+  groupId  String           @map("group_id")
+  resource String
+  action   PermissionAction
+
+  group AccessGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, resource, action])
+  @@map("access_group_permissions")
+}
+
+model UserAccessGroup {
+  userId  String @map("user_id")
+  groupId String @map("group_id")
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group AccessGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("user_access_groups")
+}
+
+model UserPermissionOverride {
+  id       String           @id @default(uuid())
+  userId   String           @map("user_id")
+  resource String
+  action   PermissionAction
+  effect   OverrideEffect
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resource, action])
+  @@map("user_permission_overrides")
 }

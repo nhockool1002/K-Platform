@@ -8,11 +8,15 @@ import { Field, Input } from '@/components/ui/Input';
 import { formatKpoint } from '@/lib/format';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import { getActivationFeeSettings, updateActivationFeeSettings } from '@/lib/settings-client';
 
 export default function CmsActivationFeeSettingsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const { loading: userLoading } = useCurrentUser();
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('settings', 'READ');
+  const canEditSettings = perms.can('settings', 'UPDATE');
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [amountInput, setAmountInput] = useState('50000');
@@ -52,14 +56,14 @@ export default function CmsActivationFeeSettingsPage() {
     }
   }
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/settings/activation-fee">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
           <p className="text-xs text-slate-500">
-            Chỉ Admin hoặc Root Admin được xem/sửa Cài đặt phí kích hoạt.
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
           </p>
         </div>
       </CmsShell>
@@ -112,7 +116,12 @@ export default function CmsActivationFeeSettingsPage() {
           <p className="text-[11px] text-slate-400">
             = {formatKpoint(Number(amountInput) || 0)} KPoint (1 KPoint = 1 VNĐ)
           </p>
-          <Button variant="dark" className="w-full" onClick={handleSave} disabled={saving}>
+          <Button
+            variant="dark"
+            className="w-full"
+            onClick={handleSave}
+            disabled={saving || !canEditSettings}
+          >
             <Save className="h-4 w-4" />
             {saving ? 'Đang lưu...' : 'Lưu Cài Đặt'}
           </Button>

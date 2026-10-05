@@ -122,7 +122,16 @@ describe('Auth & RBAC (e2e)', () => {
   it('P1-13c: đăng ký trùng email bị chặn 409 và sai mật khẩu bị chặn 401', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/auth/register')
-      .send({ email: advertiserEmail, password })
+      .send({
+        email: advertiserEmail,
+        password,
+        confirmPassword: password,
+        fullName: 'Nguyễn Văn Test',
+        phone: '0912345678',
+        dateOfBirth: '1995-05-20',
+        gender: 'MALE',
+        province: 'Hà Nội',
+      })
       .expect(409);
 
     await request(app.getHttpServer())

@@ -11,6 +11,7 @@ import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
 import { formatKpoint } from '@/lib/format';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
 import {
   getInternationalPaymentSettings,
   updateExchangeRate,
@@ -29,6 +30,8 @@ import {
 } from '@/lib/admin-topups-client';
 
 function RateSettings() {
+  const perms = usePermissions();
+  const canEditRate = perms.can('settings', 'UPDATE');
   const [settings, setSettings] = useState<InternationalPaymentSettings | null>(null);
   const [history, setHistory] = useState<ExchangeRateHistoryRow[] | null>(null);
   const [rateInput, setRateInput] = useState('');
@@ -131,7 +134,12 @@ function RateSettings() {
               Áp dụng từ {new Date(settings.rateUpdatedAt).toLocaleString('vi-VN')}
             </p>
           )}
-          <Button variant="dark" className="w-full" onClick={handleSaveRate} disabled={savingRate}>
+          <Button
+            variant="dark"
+            className="w-full"
+            onClick={handleSaveRate}
+            disabled={savingRate || !canEditRate}
+          >
             <Save className="h-4 w-4" />
             {savingRate ? 'Đang lưu...' : 'Cập Nhật Tỷ Giá'}
           </Button>
@@ -154,7 +162,7 @@ function RateSettings() {
             variant="dark"
             className="w-full"
             onClick={handleSaveReviewDays}
-            disabled={savingReviewDays}
+            disabled={savingReviewDays || !canEditRate}
           >
             <Save className="h-4 w-4" />
             {savingReviewDays ? 'Đang lưu...' : 'Cập Nhật Thời Gian'}
@@ -203,6 +211,10 @@ const EMPTY_FORM: SaveInternationalPackageInput = {
 };
 
 function PackagesSection() {
+  const perms = usePermissions();
+  const canCreatePkg = perms.can('international_packages', 'CREATE');
+  const canUpdatePkg = perms.can('international_packages', 'UPDATE');
+  const canDeletePkg = perms.can('international_packages', 'DELETE');
   const [packages, setPackages] = useState<AdminInternationalPackage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminInternationalPackage | null>(null);
@@ -290,10 +302,12 @@ function PackagesSection() {
             xem được trong lịch sử giao dịch.
           </p>
         </div>
-        <Button variant="dark" size="sm" onClick={openCreate}>
-          <Plus className="h-3.5 w-3.5" />
-          Thêm gói
-        </Button>
+        {canCreatePkg && (
+          <Button variant="dark" size="sm" onClick={openCreate}>
+            <Plus className="h-3.5 w-3.5" />
+            Thêm gói
+          </Button>
+        )}
       </div>
 
       {error && (
@@ -341,14 +355,18 @@ function PackagesSection() {
                 </Td>
                 <Td className="text-right">
                   <div className="flex justify-end gap-1.5">
-                    <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                      Sửa
-                    </Button>
-                    <Button variant="danger-ghost" size="sm" onClick={() => handleDelete(pkg)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Xoá
-                    </Button>
+                    {canUpdatePkg && (
+                      <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                        Sửa
+                      </Button>
+                    )}
+                    {canDeletePkg && (
+                      <Button variant="danger-ghost" size="sm" onClick={() => handleDelete(pkg)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Xoá
+                      </Button>
+                    )}
                   </div>
                 </Td>
               </tr>
@@ -406,7 +424,12 @@ function PackagesSection() {
               </select>
             </Field>
           </div>
-          <Button variant="dark" className="w-full" onClick={handleSave} disabled={saving}>
+          <Button
+            variant="dark"
+            className="w-full"
+            onClick={handleSave}
+            disabled={saving || !(editing ? canUpdatePkg : canCreatePkg)}
+          >
             <Save className="h-4 w-4" />
             {saving ? 'Đang lưu...' : 'Lưu gói'}
           </Button>
@@ -417,17 +440,19 @@ function PackagesSection() {
 }
 
 export default function CmsInternationalSettingsPage() {
-  const { user, loading: userLoading } = useCurrentUser();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ROOT_ADMIN';
+  const { loading: userLoading } = useCurrentUser();
+  const perms = usePermissions();
+  const permsLoading = perms.loading;
+  const isAdmin = perms.can('international_packages', 'READ');
 
-  if (!userLoading && !isAdmin) {
+  if (!userLoading && !permsLoading && !isAdmin) {
     return (
       <CmsShell active="/cms/settings/international">
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <ShieldAlert className="h-8 w-8 text-rose-500" />
           <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
           <p className="text-xs text-slate-500">
-            Chỉ Admin hoặc Root Admin được xem/sửa Thanh toán quốc tế.
+            Bạn chưa được cấp quyền truy cập chức năng này. Liên hệ quản trị viên để được cấp quyền.
           </p>
         </div>
       </CmsShell>
