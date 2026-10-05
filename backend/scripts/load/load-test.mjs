@@ -196,16 +196,14 @@ async function scenarioWithdrawal({ users = 60, concurrency = 20 } = {}) {
 
   // Duyệt lần 2 đồng thời: chỉ được đúng 0 lần thành công (đã APPROVED)
   const twice = await pool(
-    ids
-      .slice(0, 20)
-      .map(
-        (id) => () =>
-          call(`/admin/withdrawals/${id}/decision`, {
-            method: 'PATCH',
-            token: adminToken,
-            body: { decision: 'APPROVE' },
-          }),
-      ),
+    ids.slice(0, 20).map(
+      (id) => () =>
+        call(`/admin/withdrawals/${id}/decision`, {
+          method: 'PATCH',
+          token: adminToken,
+          body: { decision: 'APPROVE' },
+        }),
+    ),
     concurrency,
   );
   const doubleOk = twice.filter((r) => r.status === 200).length;
@@ -315,16 +313,14 @@ async function scenarioDispute({ n = 20, concurrency = 10 } = {}) {
   const disputes = create.filter((r) => r.status === 201).map((r) => r.json.id);
   // Mở trùng 1 submission (đồng thời) — chỉ được 1
   const dup = await pool(
-    subs
-      .slice(0, 5)
-      .map(
-        (s) => () =>
-          call('/disputes', {
-            method: 'POST',
-            token: s.token,
-            body: { submissionId: s.subId, reason: 'dup' },
-          }),
-      ),
+    subs.slice(0, 5).map(
+      (s) => () =>
+        call('/disputes', {
+          method: 'POST',
+          token: s.token,
+          body: { submissionId: s.subId, reason: 'dup' },
+        }),
+    ),
     5,
   );
   const dupOk = dup.filter((r) => r.status === 201).length;

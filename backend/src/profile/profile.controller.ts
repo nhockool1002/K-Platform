@@ -12,13 +12,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { randomBytes } from 'node:crypto';
-import { extname } from 'node:path';
 import { ProfileService } from './profile.service.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
 import { AVATARS_DIR } from '../submissions/upload-paths.js';
+import { assertFileContent, extForMime } from '../common/uploads.js';
 
 const AVATAR_MIME = /^image\/(png|jpeg|webp)$/;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
@@ -44,7 +44,7 @@ export class ProfileController {
       storage: diskStorage({
         destination: AVATARS_DIR,
         filename: (_req, file, cb) =>
-          cb(null, `${randomBytes(12).toString('hex')}${extname(file.originalname).toLowerCase()}`),
+          cb(null, `${randomBytes(12).toString('hex')}${extForMime(file.mimetype) ?? ''}`),
       }),
       fileFilter: (_req, file, cb) => cb(null, AVATAR_MIME.test(file.mimetype)),
       limits: { fileSize: MAX_AVATAR_BYTES },
@@ -57,6 +57,7 @@ export class ProfileController {
     if (!file) {
       throw new BadRequestException('Ảnh đại diện phải là PNG, JPG hoặc WEBP, tối đa 2MB');
     }
+    await assertFileContent(file.path, file.mimetype);
     return this.profile.setAvatar(user.sub, file.filename);
   }
 }

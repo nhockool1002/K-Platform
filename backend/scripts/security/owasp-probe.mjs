@@ -207,8 +207,8 @@ const sqli2 = await req('/auth/login', {
 });
 check(
   'A03-3',
-  'SQLi qua đăng nhập bị từ chối (401)',
-  sqli2.status === 401,
+  'SQLi qua đăng nhập bị từ chối (400 do validate email, hoặc 401)',
+  [400, 401].includes(sqli2.status),
   `status ${sqli2.status}`,
 );
 const sqli3 = await req('/admin/audit-logs?actor=' + encodeURIComponent("' OR 1=1 --"), {

@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from '../auth/token.types.js';
 import { BMC_RECEIPTS_DIR } from '../submissions/upload-paths.js';
+import { assertFileContent } from '../common/uploads.js';
 
 const ALLOWED_RECEIPT_MIME = /^(image\/(png|jpeg|webp)|application\/pdf)$/;
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
@@ -50,7 +51,7 @@ export class InternationalPaymentsController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: BMC_RECEIPTS_DIR,
-        filename: (_req, file, cb) => cb(null, newReceiptFilename(file.originalname)),
+        filename: (_req, file, cb) => cb(null, newReceiptFilename(file.mimetype)),
       }),
       fileFilter: (_req, file, cb) => {
         cb(null, ALLOWED_RECEIPT_MIME.test(file.mimetype));
@@ -68,6 +69,7 @@ export class InternationalPaymentsController {
         'Thiếu biên lai hoặc định dạng không hợp lệ (ảnh PNG/JPG/WEBP hoặc PDF, tối đa 5MB)',
       );
     }
+    await assertFileContent(file.path, file.mimetype);
     return this.payments.attachReceipt(user.sub, id, file.filename);
   }
 }

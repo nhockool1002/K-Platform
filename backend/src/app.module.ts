@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -20,6 +20,8 @@ import { TrustScoreModule } from './trust-score/trust-score.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { RbacModule } from './rbac/rbac.module.js';
 import { ProfileModule } from './profile/profile.module.js';
+import { SecurityModule } from './security/security.module.js';
+import { SecurityHeadersMiddleware } from './security/security-headers.middleware.js';
 
 @Module({
   imports: [
@@ -48,8 +50,13 @@ import { ProfileModule } from './profile/profile.module.js';
     AuditModule,
     RbacModule,
     ProfileModule,
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(SecurityHeadersMiddleware).forRoutes('*');
+  }
+}

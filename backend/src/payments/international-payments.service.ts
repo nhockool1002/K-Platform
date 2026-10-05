@@ -13,6 +13,7 @@ import {
 } from '../prisma/client.js';
 import { ExchangeRateConfigService } from '../settings/exchange-rate-config.service.js';
 import { BMC_RECEIPTS_DIR } from '../submissions/upload-paths.js';
+import { extForMime } from '../common/uploads.js';
 import { generateTopupCode, isUniqueConstraintError } from './payments.service.js';
 import { InternationalPackagesService } from './international-packages.service.js';
 import type { DecideBmcTopupDto } from './dto/decide-bmc-topup.dto.js';
@@ -314,8 +315,7 @@ export class InternationalPaymentsService {
   }
 }
 
-export function newReceiptFilename(originalName: string): string {
+export function newReceiptFilename(mime: string): string {
   const unique = randomBytes(8).toString('hex');
-  const ext = originalName.match(/\.[a-zA-Z0-9]{1,5}$/)?.[0]?.toLowerCase() ?? '';
-  return `${Date.now()}-${unique}${ext}`;
+  return `${Date.now()}-${unique}${extForMime(mime) ?? ''}`;
 }
