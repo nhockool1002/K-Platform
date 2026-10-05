@@ -17,19 +17,19 @@
 
 ## Tiến độ tổng quan
 
-| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                   |
-| -------- | -------------------------------- | --------- | ---------- | ------- | ------------------------------------------------------------ |
-| 0        | Khởi tạo nền tảng                | 12        | 12         | 100%    | ✅ Xong (staging đã lên: health + DB OK)                     |
-| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                        |
-| 2        | Ví KPoint & SePay                | 13        | 13         | 100%    | ✅ Xong (P2-12: chủ dự án đã nạp thật qua SePay)             |
-| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                      |
-| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                      |
-| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật) |
-| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 14         | 93%     | 🔄 Còn P6-06 (email — chờ hạ tầng email thật)                |
-| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                      |
-| 8        | Hardening, QA & Go-live          | 14        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                              |
-| **Tổng** |                                  | **129**   | **104**    | **81%** |
+| Phase    | Tên                              | Tổng task | Hoàn thành | %       | Trạng thái                                                                        |
+| -------- | -------------------------------- | --------- | ---------- | ------- | --------------------------------------------------------------------------------- |
+| 0        | Khởi tạo nền tảng                | 12        | 12         | 100%    | ✅ Xong (staging đã lên: health + DB OK)                                          |
+| 1        | Auth, RBAC & Switch Mode         | 14        | 14         | 100%    | ✅ Xong (P1-04/05 ở mức mockup OAuth)                                             |
+| 2        | Ví KPoint & SePay                | 13        | 13         | 100%    | ✅ Xong (P2-12: chủ dự án đã nạp thật qua SePay)                                  |
+| 3        | Campaign & Survey                | 15        | 15         | 100%    | ✅ Xong                                                                           |
+| 4        | Submission, Proof & Auto-Approve | 13        | 13         | 100%    | ✅ Xong                                                                           |
+| 5        | Dispute Center                   | 12        | 12         | 100%    | ✅ Xong (P5-09 thông báo ở mức mock log, chưa có email thật)                      |
+| 6        | Thanh toán Quốc tế & Audit Logs  | 15        | 14         | 93%     | 🔄 Còn P6-06 (email — chờ hạ tầng email thật)                                     |
+| 7        | CMS Admin & RBAC nâng cao        | 11        | 11         | 100%    | ✅ Xong                                                                           |
+| 8        | Hardening, QA & Go-live          | 14        | 3          | 21%     | 🔄 P8-03/04/05 xong; P8-01 có lỗ hổng cần sửa; P8-02 bị chặn (chưa có rate-limit) |
+| 9        | Mobile App (React Native)        | 10        | 0          | 0%      | ⬜ Chưa bắt đầu                                                                   |
+| **Tổng** |                                  | **129**   | **107**    | **83%** |
 
 > Cập nhật dòng "Tổng task" nếu bạn chia nhỏ/gộp task bên dưới — con số phải luôn khớp với số checkbox thật của từng Phase.
 
@@ -216,11 +216,11 @@
 
 **Mục tiêu:** Hệ thống sẵn sàng vận hành thật, có giám sát 48h đầu sau go-live.
 
-- [ ] **P8-01** Kiểm thử OWASP Top 10 cơ bản (injection, IDOR giữa các role)
-- [ ] **P8-02** Kiểm thử rate-limit cho luồng Auth
-- [ ] **P8-03** Kiểm thử tải cho luồng Nạp tiền (mục tiêu p95 < 500ms)
-- [ ] **P8-04** Kiểm thử tải cho luồng Rút tiền
-- [ ] **P8-05** Kiểm thử tải cho luồng Dispute
+- [~] **P8-01** Kiểm thử OWASP Top 10 cơ bản (injection, IDOR giữa các role) — _đã chạy `backend/scripts/security/owasp-probe.mjs`: 28/37 PASS. Lỗ hổng cần sửa: (1) **stored XSS qua upload** — avatar nhận file `.html` giả mạo `image/png` và phục vụ `text/html` từ `/uploads` (cùng rủi ro với ảnh Proof); (2) thiếu security header (nosniff, X-Frame-Options, CSP) và lộ `X-Powered-By`. HSTS cần kiểm trên nginx staging. A03-3 (SQLi đăng nhập) trả 400 do validate email — không phải lỗ hổng._
+- [!] **P8-02** Kiểm thử rate-limit cho luồng Auth — _**Bị chặn: chưa có rate-limit.** 150 lần đăng nhập sai đồng thời đều trả 401, không có 429. Cần thêm throttling (vd. @nestjs/throttler + Redis) cho login/register/forgot-password trước khi kiểm thử đạt._
+- [x] **P8-03** Kiểm thử tải luồng Nạp tiền (mục tiêu p95 < 500ms) — _`backend/scripts/load/load-test.mjs deposit`: 400 webhook @ 25 đồng thời: p95 208ms, 0 lỗi, cộng đúng, replay không cộng lại. Ghi chú: 2.000 @ 100 đồng thời vào **cùng một ví** → p95 555ms (tranh chấp khoá hàng ví), vẫn đúng số dư. Kiểm lại với nhiều ví và trên VPS thật._
+- [x] **P8-04** Kiểm thử tải luồng Rút tiền — _60 lệnh tạo @ 20 đồng thời (p95 45ms) + 60 Admin duyệt (p95 61ms), duyệt lần 2 bị chặn, số dư và khoá reserved đúng._
+- [x] **P8-05** Kiểm thử tải luồng Dispute — _20 khiếu nại (p95 19ms, chặn trùng khiếu nại đồng thời), 20 đề xuất (p95 23ms), 20 phán quyết (p95 162ms); không còn khiếu nại mở sau phán quyết._
 - [ ] **P8-06** Viết runbook: xử lý webhook SePay lỗi
 - [ ] **P8-07** Viết runbook: xử lý cronjob Auto-Approve fail
 - [ ] **P8-08** Viết runbook: rollback migration CSDL
