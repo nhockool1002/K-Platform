@@ -22,6 +22,10 @@ env:
   SEPAY_BANK_ID: 'TestBank'
   SEPAY_BANK_ACCOUNT_NUMBER: '0123456789'
   SEPAY_BANK_ACCOUNT_NAME: 'CI TEST ACCOUNT'
+  # Từ Phase 4: AppModule đăng ký BullModule.forRootAsync ở root (watermark
+  # queue) — mọi test e2e (không chỉ submissions.e2e-spec.ts) giờ cần Redis
+  # kết nối được lúc bootstrap, trỏ vào service redis bên dưới.
+  REDIS_URL: 'redis://localhost:6379'
 
 jobs:
   lint-build-test:
@@ -38,6 +42,15 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5

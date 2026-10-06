@@ -17,43 +17,11 @@ export const PLATFORM_BADGE: Record<PlatformKey, string> = {
   TIKTOK: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
-// Campaign/Applicant/Submission (Phase 3) và Wallet/SePay (Phase 2) đã nối
-// API thật — xem src/lib/campaigns-client.ts / src/lib/wallet-client.ts. Mock
-// bên dưới chỉ còn phục vụ các màn hình thuộc Phase 4/5/6/7 (Proof, Dispute,
-// BMC, Audit, RBAC) chưa có API thật.
-
-export const mockMyTasks = [
-  {
-    id: 'PR-55',
-    campaignId: 'CP-101',
-    campaign: 'The Artisan Roastery',
-    platform: 'GOOGLE_MAPS' as PlatformKey,
-    requirement: 'Viết review tối thiểu 50 chữ kèm 2 ảnh thực tế (1 ảnh hóa đơn, 1 ảnh đồ uống).',
-    reward: 60_000,
-    status: 'awaiting_proof' as const,
-    deadline: 'Còn 24 giờ',
-  },
-  {
-    id: 'PR-49',
-    campaignId: 'CP-105',
-    campaign: 'Spa & Thẩm Mỹ Viện',
-    platform: 'FACEBOOK' as PlatformKey,
-    requirement: 'Check-in công khai tại fanpage kèm ảnh phiếu dịch vụ được xác nhận.',
-    reward: 70_000,
-    status: 'awaiting_proof' as const,
-    deadline: 'Còn 18 giờ',
-  },
-  {
-    id: 'PR-41',
-    campaignId: 'CP-087',
-    campaign: 'App giao đồ ăn NhanhNhanh',
-    platform: 'GOOGLE_MAPS' as PlatformKey,
-    requirement: 'Đã nộp — chờ Bên A duyệt.',
-    reward: 15_000,
-    status: 'approved' as const,
-    deadline: 'Đã cộng KPoint',
-  },
-];
+// Campaign/Applicant/Submission (Phase 3 + Phase 4 Proof) và Wallet/SePay
+// (Phase 2) đã nối API thật — xem src/lib/campaigns-client.ts /
+// src/lib/wallet-client.ts / src/lib/submissions-client.ts. Mock bên dưới
+// chỉ còn phục vụ các màn hình thuộc Phase 5/6/7 (Dispute, BMC, Audit, RBAC)
+// chưa có API thật.
 
 export const mockDisputes = [
   {
@@ -73,80 +41,6 @@ export const mockDisputes = [
       trustScore: 94,
       appeal: 'Tôi đã chụp lại ảnh rõ nét và gắn kèm link review Maps công khai.',
       watermark: 'UID:pub-104 • CP-101 • 2026-10-02',
-    },
-  },
-];
-
-export const mockBmcTopups = [
-  {
-    id: 'BMC-88219-TX',
-    user: 'Cty TNHH Truyền Thông Nam Việt',
-    uid: '9f81a7-usr',
-    amountUsd: 50,
-    kpointAmount: 1_250_000,
-    status: 'PENDING_VERIFY' as const,
-  },
-  {
-    id: 'BMC-88220-TX',
-    user: 'Boutique Hotel Da Nang',
-    uid: '3b12cc-usr',
-    amountUsd: 100,
-    kpointAmount: 2_500_000,
-    status: 'PENDING_VERIFY' as const,
-  },
-];
-
-export const mockAuditLogs = [
-  {
-    id: 'LOG-9021',
-    time: '2026-10-02 18:45:12',
-    actor: 'root_001',
-    action: 'MANUAL_TOPUP' as const,
-    resource: 'wallets:uid-namviet',
-    ip: '14.161.22.8',
-    fingerprint: 'fp_981ab23',
-    level: 'critical' as const,
-    diffOld: { balance_kpoint: 0, reserved_kpoint: 0 },
-    diffNew: {
-      balance_kpoint: 1_250_000,
-      reserved_kpoint: 0,
-      topup_source: 'BUY_ME_A_COFFEE',
-      txn_id: 'BMC-88219-TX',
-    },
-  },
-  {
-    id: 'LOG-9018',
-    time: '2026-10-02 17:20:05',
-    actor: 'adm_024',
-    action: 'DISPUTE_RESOLVE' as const,
-    resource: 'disputes:DSP-12',
-    ip: '118.69.14.92',
-    fingerprint: 'fp_442ee01',
-    level: 'warning' as const,
-    diffOld: { status: 'RECOMMENDED', mod_recommendation: 'PEND_APP' },
-    diffNew: {
-      status: 'RESOLVED',
-      final_decision: 'APPROVE',
-      released_to: 'pub-104',
-      kpoint: 60_000,
-    },
-  },
-  {
-    id: 'LOG-9010',
-    time: '2026-10-02 14:10:33',
-    actor: 'adv_theartisan',
-    action: 'CAMPAIGN_CREATE' as const,
-    resource: 'campaigns:CP-101',
-    ip: '171.244.10.15',
-    fingerprint: 'fp_bb1293c',
-    level: 'info' as const,
-    diffOld: null,
-    diffNew: {
-      id: 'CP-101',
-      slots: 20,
-      reward: 60_000,
-      reserved_kpoint: 550_000,
-      status: 'ACTIVE',
     },
   },
 ];

@@ -4,9 +4,10 @@ import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { KeyRound, Lock, Mail } from 'lucide-react';
+import { VN_PROVINCES } from '@/lib/vn-provinces';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
-import { Field, Input } from '@/components/ui/Input';
+import { Field, Input, Select } from '@/components/ui/Input';
 import {
   ApiError,
   login,
@@ -20,12 +21,12 @@ type Mode = 'login' | 'register' | 'forgot';
 
 const QUICK_FILL = [
   {
-    label: 'Bên A (Advertiser)',
+    label: 'Tài khoản Dịch vụ',
     email: 'advertiser@kplatform.dev',
     accent: 'hover:border-brand-gold',
   },
   {
-    label: 'Bên B (Publisher)',
+    label: 'Tài khoản Người dùng',
     email: 'publisher@kplatform.dev',
     accent: 'hover:border-brand-blue',
   },
@@ -40,15 +41,45 @@ function redirectForUser(user: CurrentUser): string {
   return user.activeMode === 'A' ? '/a/dashboard' : '/b/dashboard';
 }
 
+const VN_PHONE = /^(0|\+84)(3|5|7|8|9)\d{8}$/;
+
+function ageInYears(dob: string): number {
+  const d = new Date(dob);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+  return age;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeMode, setActiveMode] = useState<ActiveMode>('A');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState<'' | 'MALE' | 'FEMALE' | 'OTHER'>('');
+  const [province, setProvince] = useState('');
+  const [occupation, setOccupation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function validateRegister(): string | null {
+    if (password !== confirmPassword) return 'Mật khẩu xác nhận không khớp';
+    if (fullName.trim().length < 2) return 'Vui lòng nhập họ và tên';
+    if (!VN_PHONE.test(phone.trim())) return 'Số điện thoại không hợp lệ (vd. 0912345678)';
+    if (!dateOfBirth) return 'Vui lòng chọn ngày sinh';
+    const age = ageInYears(dateOfBirth);
+    if (age < 16 || age > 120) return 'Ngày sinh không hợp lệ (phải từ 16 tuổi trở lên)';
+    if (!gender) return 'Vui lòng chọn giới tính';
+    if (!province) return 'Vui lòng chọn tỉnh/thành';
+    return null;
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -64,7 +95,23 @@ export default function LoginPage() {
       }
 
       if (mode === 'register') {
-        const user = await register(email, password, activeMode);
+        const problem = validateRegister();
+        if (problem) {
+          setError(problem);
+          return;
+        }
+        const user = await register({
+          email,
+          password,
+          confirmPassword,
+          activeMode,
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          dateOfBirth,
+          gender: gender as 'MALE' | 'FEMALE' | 'OTHER',
+          province,
+          occupation: occupation.trim() || undefined,
+        });
         router.push(redirectForUser(user));
         return;
       }
@@ -97,7 +144,8 @@ export default function LoginPage() {
             </h1>
           </div>
           <p className="text-xs text-slate-500">
-            {mode === 'login' && 'Một tài khoản duy nhất - Sử dụng cả 2 chế độ Bên A và Bên B.'}
+            {mode === 'login' &&
+              'Một tài khoản duy nhất - Sử dụng cả Tài khoản Dịch vụ và Tài khoản Người dùng.'}
             {mode === 'register' && 'Tạo tài khoản để bắt đầu tạo Campaign hoặc nhận KPoint.'}
             {mode === 'forgot' && 'Nhập email để nhận liên kết đặt lại mật khẩu.'}
           </p>
@@ -194,6 +242,83 @@ export default function LoginPage() {
           )}
 
           {mode === 'register' && (
+            <div className="space-y-3">
+              <Field label="Xác nhận mật khẩu">
+                <Input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Nhập lại mật khẩu"
+                />
+              </Field>
+              <Field label="Họ và tên">
+                <Input
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nguyễn Văn A"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Số điện thoại">
+                  <Input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0912345678"
+                  />
+                </Field>
+                <Field label="Ngày sinh">
+                  <Input
+                    type="date"
+                    required
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Giới tính">
+                  <Select
+                    required
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as typeof gender)}
+                  >
+                    <option value="">Chọn...</option>
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                    <option value="OTHER">Khác</option>
+                  </Select>
+                </Field>
+                <Field label="Tỉnh/Thành">
+                  <Select required value={province} onChange={(e) => setProvince(e.target.value)}>
+                    <option value="">Chọn tỉnh/thành...</option>
+                    {VN_PROVINCES.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+              <Field label="Nghề nghiệp (không bắt buộc)">
+                <Input
+                  value={occupation}
+                  onChange={(e) => setOccupation(e.target.value)}
+                  placeholder="Sinh viên, nhân viên văn phòng..."
+                />
+              </Field>
+              <p className="text-[11px] text-slate-400">
+                Thông tin này dùng để khảo sát phù hợp với bạn. Dữ liệu không được chia sẻ công
+                khai.
+              </p>
+            </div>
+          )}
+
+          {mode === 'register' && (
             <div className="space-y-1.5">
               <span className="block text-xs font-bold text-slate-700">
                 Bạn muốn tham gia với vai trò?
@@ -208,7 +333,7 @@ export default function LoginPage() {
                       : 'border-slate-200 bg-white hover:border-brand-gold'
                   }`}
                 >
-                  <strong className="block text-slate-800">Bên A (Advertiser)</strong>
+                  <strong className="block text-slate-800">Tài khoản Dịch vụ</strong>
                   <span className="text-[10px] text-slate-500">Tôi muốn tạo chiến dịch</span>
                 </button>
                 <button
@@ -220,7 +345,7 @@ export default function LoginPage() {
                       : 'border-slate-200 bg-white hover:border-brand-blue'
                   }`}
                 >
-                  <strong className="block text-slate-800">Bên B (Publisher)</strong>
+                  <strong className="block text-slate-800">Tài khoản Người dùng</strong>
                   <span className="text-[10px] text-slate-500">
                     Tôi muốn làm review nhận thưởng
                   </span>

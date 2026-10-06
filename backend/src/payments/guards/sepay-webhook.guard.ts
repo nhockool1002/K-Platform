@@ -2,27 +2,40 @@ import {
   CanActivate,
   type ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { SepayConfigService } from '../../settings/sepay-config.service.js';
 
 // P2-05/FN-PAY-01 — SePay gọi webhook với header `Authorization: Apikey <key>`
-// khi chọn chế độ xác thực "API Key" trên dashboard SePay. Khác JwtAuthGuard:
-// đây là secret tĩnh cấu hình qua env (SEPAY_WEBHOOK_API_KEY), không phải JWT.
+// khi chọn chế độ xác thực "API Key" trên dashboard SePay. Key lấy từ CMS
+// "Cài đặt SePay" (SepayConfigService — DB trước, env SEPAY_WEBHOOK_API_KEY
+// là fallback), không hard-code hay đọc thẳng ConfigService ở đây.
 @Injectable()
 export class SepayWebhookGuard implements CanActivate {
-  constructor(private readonly config: ConfigService) {}
+  private readonly logger = new Logger(SepayWebhookGuard.name);
 
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private readonly sepayConfig: SepayConfigService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const expected = this.config.get<string>('SEPAY_WEBHOOK_API_KEY');
+    const config = await this.sepayConfig.getConfig();
     const authHeader: string | undefined = request.headers.authorization;
     const provided = authHeader?.replace(/^Apikey\s+/i, '').trim();
 
-    if (!expected) {
-      throw new UnauthorizedException('SEPAY_WEBHOOK_API_KEY chưa được cấu hình trên server');
+    if (!config) {
+      this.logger.warn('SePay webhook: chưa cấu hình (thiếu bank/webhookApiKey)');
+      throw new UnauthorizedException(
+        'Cổng SePay chưa được cấu hình — vào CMS "Cài Đặt > Cài đặt SePay" để thiết lập',
+      );
     }
-    if (!provided || provided !== expected) {
+    if (!provided || provided !== config.webhookApiKey) {
+      // Không log giá trị key thật (cả 2 phía) — chỉ độ dài, đủ để phát hiện
+      // sai lệch do copy thiếu/thừa ký tự khi dán qua dashboard SePay.
+      this.logger.warn(
+        `SePay webhook: sai API key (header ${authHeader ? 'có' : 'không có'}, ` +
+          `provided.length=${provided?.length ?? 0}, expected.length=${config.webhookApiKey.length})`,
+      );
       throw new UnauthorizedException('SePay webhook API key không hợp lệ');
     }
     return true;

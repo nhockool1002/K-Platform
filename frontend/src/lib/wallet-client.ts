@@ -20,7 +20,15 @@ export interface SepayQrInfo {
   qrImageUrl: string;
 }
 
-export type WalletTxType = 'TOPUP_SEPAY' | 'WITHDRAWAL_REQUEST' | 'CAMPAIGN_RESERVE';
+export type WalletTxType =
+  | 'TOPUP_SEPAY'
+  | 'TOPUP_BMC'
+  | 'WITHDRAWAL_REQUEST'
+  | 'CAMPAIGN_RESERVE'
+  | 'TASK_REWARD'
+  | 'ACCOUNT_ACTIVATION'
+  | 'WITHDRAWAL_COMPLETED'
+  | 'WITHDRAWAL_REJECTED';
 export type WalletTxSide = 'A' | 'B' | 'SHARED';
 
 export interface WalletTransaction {

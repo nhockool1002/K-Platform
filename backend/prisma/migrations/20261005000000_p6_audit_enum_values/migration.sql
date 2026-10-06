@@ -1,0 +1,2 @@
+ALTER TYPE "AuditActionType" ADD VALUE 'LOGIN';
+ALTER TYPE "AuditActionType" ADD VALUE 'WEBHOOK';

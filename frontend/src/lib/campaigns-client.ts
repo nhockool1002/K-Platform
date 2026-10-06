@@ -42,6 +42,14 @@ export interface Applicant {
   status: SubmissionStatus;
   createdAt: string;
   publisher: { id: string; email: string; trustScore: number };
+  // Giai đoạn Proof (Phase 4) — chỉ có giá trị khi status là PENDING/APPROVED/REJECTED.
+  proofUrl: string | null;
+  watermarkUrl: string | null;
+  reviewUrl: string | null;
+  reviewNote: string | null;
+  // Phase 5 — lý do Bên A từ chối Proof (nếu có).
+  rejectReason: string | null;
+  autoApproveAt: string | null;
 }
 
 export interface CreateCampaignInput {

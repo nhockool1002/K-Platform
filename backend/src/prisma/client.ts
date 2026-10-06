@@ -8,7 +8,16 @@
 // import thẳng không resolve được dưới Node ESM — xem package.json "type": "module").
 import type {
   ActiveMode as ActiveModeEnum,
+  AuditActionType as AuditActionTypeEnum,
+  AuditLevel as AuditLevelEnum,
+  BmcTopupStatus as BmcTopupStatusEnum,
+  Gender as GenderEnum,
+  OverrideEffect as OverrideEffectEnum,
+  PermissionAction as PermissionActionEnum,
   CampaignStatus as CampaignStatusEnum,
+  DisputeDecision as DisputeDecisionEnum,
+  DisputeStatus as DisputeStatusEnum,
+  ModRecommendation as ModRecommendationEnum,
   PrismaClient as PrismaClientClass,
   SubmissionStatus as SubmissionStatusEnum,
   UserRole as UserRoleEnum,
@@ -28,6 +37,15 @@ export const SubmissionStatus = pkg.SubmissionStatus;
 export const WalletTxType = pkg.WalletTxType;
 export const WalletTxSide = pkg.WalletTxSide;
 export const WithdrawalStatus = pkg.WithdrawalStatus;
+export const DisputeStatus = pkg.DisputeStatus;
+export const ModRecommendation = pkg.ModRecommendation;
+export const DisputeDecision = pkg.DisputeDecision;
+export const AuditActionType = pkg.AuditActionType;
+export const AuditLevel = pkg.AuditLevel;
+export const BmcTopupStatus = pkg.BmcTopupStatus;
+export const PermissionAction = pkg.PermissionAction;
+export const OverrideEffect = pkg.OverrideEffect;
+export const Gender = pkg.Gender;
 
 export type PrismaClient = PrismaClientClass;
 export type UserRole = UserRoleEnum;
@@ -37,3 +55,12 @@ export type SubmissionStatus = SubmissionStatusEnum;
 export type WalletTxType = WalletTxTypeEnum;
 export type WalletTxSide = WalletTxSideEnum;
 export type WithdrawalStatus = WithdrawalStatusEnum;
+export type DisputeStatus = DisputeStatusEnum;
+export type ModRecommendation = ModRecommendationEnum;
+export type DisputeDecision = DisputeDecisionEnum;
+export type AuditActionType = AuditActionTypeEnum;
+export type AuditLevel = AuditLevelEnum;
+export type BmcTopupStatus = BmcTopupStatusEnum;
+export type PermissionAction = PermissionActionEnum;
+export type OverrideEffect = OverrideEffectEnum;
+export type Gender = GenderEnum;

@@ -1,13 +1,15 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Briefcase, LogOut, Sparkles, Wallet } from 'lucide-react';
+import { Briefcase, LogOut, Sparkles, UserCircle, Wallet } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
+import { ActivationConfirmModal } from '@/components/ActivationConfirmModal';
 import { formatKpoint } from '@/lib/format';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useWallet } from '@/lib/use-wallet';
+import { useActivationStatus } from '@/lib/use-activation-status';
 import { switchMode, logout, type ActiveMode } from '@/lib/auth-client';
 
 export type AppRole = 'advertiser' | 'publisher';
@@ -46,6 +48,8 @@ export function AppShell({
   const router = useRouter();
   const { user } = useCurrentUser();
   const { wallet, loading: walletLoading } = useWallet();
+  const { status: activation } = useActivationStatus();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const activeMode: ActiveMode = role
     ? role === 'advertiser'
       ? 'A'
@@ -55,7 +59,19 @@ export function AppShell({
 
   async function handleSwitchMode(target: ActiveMode) {
     if (target === activeMode) return;
+    // issue #54 — chuyển sang chế độ Dịch Vụ khi Tài khoản Dịch vụ CHƯA kích
+    // hoạt phải hiện Modal yêu cầu kích hoạt trước, không cho chuyển thẳng.
+    if (target === 'A' && user && !user.serviceActivated) {
+      setConfirmOpen(true);
+      return;
+    }
     const newMode = await switchMode(target);
+    router.push(DASHBOARD_HREF[newMode]);
+  }
+
+  async function handleActivated() {
+    setConfirmOpen(false);
+    const newMode = await switchMode('A');
     router.push(DASHBOARD_HREF[newMode]);
   }
 
@@ -94,6 +110,7 @@ export function AppShell({
             >
               <button
                 onClick={() => handleSwitchMode('A')}
+                title="Tài khoản Dịch vụ"
                 className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-bold transition ${
                   activeMode === 'A'
                     ? 'bg-brand-gold text-slate-950 shadow-sm'
@@ -101,10 +118,11 @@ export function AppShell({
                 }`}
               >
                 <Briefcase className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Bên A</span>
+                <span className="hidden sm:inline">Dịch Vụ</span>
               </button>
               <button
                 onClick={() => handleSwitchMode('B')}
+                title="Tài khoản Người dùng"
                 className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-bold transition ${
                   activeMode === 'B'
                     ? 'bg-brand-blue text-white shadow-sm'
@@ -112,7 +130,7 @@ export function AppShell({
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Bên B</span>
+                <span className="hidden sm:inline">Người Dùng</span>
               </button>
             </div>
 
@@ -125,6 +143,15 @@ export function AppShell({
               <span className="font-mono text-xs font-bold text-white">
                 {walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.availableKpoint))}
               </span>
+            </Link>
+
+            <Link
+              href="/profile"
+              title="Hồ sơ của tôi"
+              className="flex h-8 items-center gap-1.5 rounded-xl border border-slate-300 px-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+              <UserCircle className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Hồ sơ</span>
             </Link>
 
             <button
@@ -141,6 +168,13 @@ export function AppShell({
       <main className="flex-1 bg-slate-50 px-4 py-6 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
+
+      <ActivationConfirmModal
+        open={confirmOpen}
+        feeKpoint={activation?.feeKpoint ?? 0}
+        onClose={() => setConfirmOpen(false)}
+        onActivated={handleActivated}
+      />
     </div>
   );
 }

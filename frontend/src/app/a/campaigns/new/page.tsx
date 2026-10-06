@@ -104,7 +104,7 @@ export default function NewCampaignPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <PageHeader
           title="Tạo Campaign Mới & Survey Filter"
-          description="Thiết lập điều kiện khảo sát sàng lọc Bên B và cài đặt thuật toán rải review (Drip-feed)."
+          description="Thiết lập điều kiện khảo sát sàng lọc Tài khoản Người dùng và cài đặt thuật toán rải review (Drip-feed)."
         />
 
         <form
@@ -211,7 +211,7 @@ export default function NewCampaignPage() {
           <div className="space-y-4 border-t border-slate-100 pt-4">
             <div className="flex items-center justify-between">
               <SectionHeading step={3} color="dark">
-                Bộ Câu Hỏi Khảo Sát Sàng Lọc Bên B (Survey Filter)
+                Bộ Câu Hỏi Khảo Sát Sàng Lọc Tài Khoản Người Dùng (Survey Filter)
               </SectionHeading>
               <button
                 type="button"
@@ -225,7 +225,8 @@ export default function NewCampaignPage() {
             <div className="space-y-3">
               {questions.length === 0 && (
                 <p className="text-xs text-slate-400">
-                  Chưa có câu hỏi nào — Bên B sẽ ứng tuyển trực tiếp không cần khảo sát.
+                  Chưa có câu hỏi nào — Tài khoản Người dùng sẽ ứng tuyển trực tiếp không cần khảo
+                  sát.
                 </p>
               )}
               {questions.map((q, i) => (

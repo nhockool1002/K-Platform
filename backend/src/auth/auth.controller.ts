@@ -9,16 +9,24 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AccessTokenPayload } from './token.types.js';
+import { Audit } from '../audit/audit.decorator.js';
+import { AuditActionType } from '../prisma/client.js';
+import { RateLimit, RateLimitGuard } from '../security/rate-limit.js';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @RateLimit({ limit: 30, windowSec: 3600, by: 'ip' })
+  @UseGuards(RateLimitGuard)
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
   }
 
+  @Audit({ action: AuditActionType.LOGIN })
+  @RateLimit({ limit: 20, windowSec: 600, by: 'ip+email' })
+  @UseGuards(RateLimitGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
@@ -31,12 +39,16 @@ export class AuthController {
     return this.auth.refresh(dto.refreshToken);
   }
 
+  @RateLimit({ limit: 5, windowSec: 3600, by: 'ip+email' })
+  @UseGuards(RateLimitGuard)
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.auth.forgotPassword(dto);
   }
 
+  @RateLimit({ limit: 30, windowSec: 3600, by: 'ip' })
+  @UseGuards(RateLimitGuard)
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() dto: ResetPasswordDto) {

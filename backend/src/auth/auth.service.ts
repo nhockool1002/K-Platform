@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -10,6 +11,8 @@ import bcrypt from 'bcryptjs';
 import { randomBytes, createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { TrustScoreService } from '../trust-score/trust-score.service.js';
+import { AuditService } from '../audit/audit.service.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { ForgotPasswordDto } from './dto/forgot-password.dto.js';
@@ -21,6 +24,14 @@ const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL = '7d';
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 phút
 
+function ageInYears(dob: Date): number {
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
+  return age;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -28,6 +39,8 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly mail: MailService,
+    private readonly trustScore: TrustScoreService,
+    private readonly audit: AuditService,
   ) {}
 
   private signTokens(user: { id: string; email: string; role: string; activeMode: string }) {
@@ -52,6 +65,14 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('Mật khẩu xác nhận không khớp');
+    }
+    const age = ageInYears(new Date(dto.dateOfBirth));
+    if (age < 16 || age > 120) {
+      throw new BadRequestException('Ngày sinh không hợp lệ (phải từ 16 tuổi trở lên)');
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('Email đã được đăng ký');
@@ -63,6 +84,12 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         activeMode: dto.activeMode ?? 'A',
+        fullName: dto.fullName.trim(),
+        phone: dto.phone,
+        dateOfBirth: new Date(dto.dateOfBirth),
+        gender: dto.gender,
+        province: dto.province,
+        occupation: dto.occupation?.trim() || null,
       },
     });
 
@@ -85,8 +112,61 @@ export class AuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    const tokens = this.signTokens(user);
-    return { user: this.toPublicUser(user), ...tokens };
+    // CMS Quản Trị Tài Khoản — tài khoản bị vô hiệu hoá không đăng nhập được,
+    // bất kể mật khẩu đúng (khác serviceActivatedAt chỉ gate tạo Campaign).
+    if (user.disabledAt) {
+      throw new UnauthorizedException(
+        'Tài khoản của bạn đã bị vô hiệu hoá. Vui lòng liên hệ quản trị viên.',
+      );
+    }
+
+    await this.audit.recordLogin(user.id, user.role);
+    const updatedUser = await this.updateLoginStreak(user);
+    const tokens = this.signTokens(updatedUser);
+    return { user: this.toPublicUser(updatedUser), ...tokens };
+  }
+
+  // B-05 — "đăng nhập liên tục 7 ngày" (+ điểm Trust Score). Tính theo ngày
+  // lịch (không phải 24h kể từ lần trước) — nhiều lần đăng nhập cùng 1 ngày
+  // không đổi chuỗi; cách nhau đúng 1 ngày thì +1; cách hơn 1 ngày thì reset
+  // về 1. Đạt 7 thì thưởng điểm + reset về 0 để có thể lặp lại chu kỳ sau.
+  private async updateLoginStreak(user: {
+    id: string;
+    lastLoginAt: Date | null;
+    loginStreakDays: number;
+  }) {
+    const now = new Date();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    let streak = user.loginStreakDays;
+    if (!user.lastLoginAt) {
+      streak = 1;
+    } else {
+      const diffDays = Math.round(
+        (startOfDay(now).getTime() - startOfDay(user.lastLoginAt).getTime()) / 86_400_000,
+      );
+      if (diffDays === 0) {
+        // Đã đăng nhập hôm nay rồi — giữ nguyên chuỗi, chỉ cập nhật mốc giờ.
+      } else if (diffDays === 1) {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+    }
+
+    const completedStreak = streak >= 7;
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: now, loginStreakDays: completedStreak ? 0 : streak },
+    });
+
+    if (completedStreak) {
+      await this.trustScore
+        .applyRule(user.id, 'ONLINE_STREAK_7D', `streak-complete:${now.toISOString().slice(0, 10)}`)
+        .catch(() => {});
+    }
+
+    return updated;
   }
 
   async refresh(refreshToken: string) {
@@ -184,6 +264,7 @@ export class AuthService {
     role: string;
     activeMode: string;
     trustScore: number;
+    serviceActivatedAt: Date | null;
   }) {
     return {
       id: user.id,
@@ -191,6 +272,7 @@ export class AuthService {
       role: user.role,
       activeMode: user.activeMode,
       trustScore: user.trustScore,
+      serviceActivated: user.serviceActivatedAt !== null,
     };
   }
 }

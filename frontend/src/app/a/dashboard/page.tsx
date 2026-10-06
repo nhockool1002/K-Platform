@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -14,11 +14,22 @@ import { formatKpoint } from '@/lib/format';
 import { archiveCampaign, listMyCampaigns, type Campaign } from '@/lib/campaigns-client';
 import { ApiError } from '@/lib/auth-client';
 import { useWallet } from '@/lib/use-wallet';
+import { useActivationStatus } from '@/lib/use-activation-status';
+import { ActivationConfirmModal } from '@/components/ActivationConfirmModal';
 
 export default function AdvertiserDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { wallet, loading: walletLoading } = useWallet();
+  const { wallet, loading: walletLoading, refresh: refreshWallet } = useWallet();
+  const {
+    status: activation,
+    loading: activationLoading,
+    refresh: refreshActivation,
+  } = useActivationStatus();
+  // issue #53 — kích hoạt phải qua Modal xác nhận, không trừ phí ngay khi bấm.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const notActivated = !activationLoading && activation !== null && !activation.activated;
 
   useEffect(() => {
     listMyCampaigns()
@@ -44,21 +55,62 @@ export default function AdvertiserDashboard() {
     <AppShell role="advertiser" active="/a/dashboard">
       <div className="space-y-6">
         <PageHeader
-          title="Dashboard Bên A (Advertiser)"
+          title="Dashboard Tài Khoản Dịch Vụ"
           description="Giám sát chiến dịch quảng bá, KPoint đã ký quỹ và tiến độ nhận review thực tế."
           actions={
             <>
-              <Link href="/a/campaigns/new">
-                <Button variant="gold">
+              {notActivated ? (
+                <Button variant="gold" disabled title="Kích hoạt Tài khoản Dịch vụ để tạo Campaign">
                   <Plus className="h-4 w-4" />
                   Tạo Campaign Mới
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/a/campaigns/new">
+                  <Button variant="gold">
+                    <Plus className="h-4 w-4" />
+                    Tạo Campaign Mới
+                  </Button>
+                </Link>
+              )}
               <Link href="/a/campaigns">
                 <Button variant="outline">Duyệt Bài Nộp</Button>
               </Link>
             </>
           }
+        />
+
+        {notActivated && (
+          <Card
+            rounded="2xl"
+            className="flex flex-col gap-3 border-brand-gold/40 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-8 w-8 flex-shrink-0 text-brand-gold" />
+              <div>
+                <p className="text-sm font-extrabold text-slate-900">
+                  Tài khoản Dịch vụ của bạn chưa được kích hoạt
+                </p>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  Kích hoạt 1 lần với {formatKpoint(Number(activation?.feeKpoint ?? 0))} KPoint để
+                  mở chức năng tạo Campaign. Phí trừ trực tiếp từ Số Dư Ví Khả Dụng.
+                </p>
+              </div>
+            </div>
+            <Button variant="gold" onClick={() => setConfirmOpen(true)}>
+              Kích hoạt ngay
+            </Button>
+          </Card>
+        )}
+
+        <ActivationConfirmModal
+          open={confirmOpen}
+          feeKpoint={activation?.feeKpoint ?? 0}
+          onClose={() => setConfirmOpen(false)}
+          onActivated={() => {
+            setConfirmOpen(false);
+            refreshActivation();
+            refreshWallet();
+          }}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -83,7 +135,7 @@ export default function AdvertiserDashboard() {
             label="Ký Quỹ Đang Khóa (Reserved)"
             value={walletLoading || !wallet ? '···' : formatKpoint(Number(wallet.reservedKpoint))}
             valueClassName="text-amber-600"
-            hint="Bảo chứng trả thưởng cho Bên B"
+            hint="Bảo chứng trả thưởng cho Tài khoản Người dùng"
           />
           <KpiCard
             label="Tổng Slot Đã Chiếm"
@@ -118,9 +170,13 @@ export default function AdvertiserDashboard() {
           ) : campaigns.length === 0 ? (
             <p className="py-6 text-center text-xs text-slate-500">
               Bạn chưa có Campaign nào —{' '}
-              <Link href="/a/campaigns/new" className="font-bold text-brand-blue hover:underline">
-                tạo Campaign đầu tiên
-              </Link>
+              {notActivated ? (
+                <span className="font-bold text-slate-400">kích hoạt Tài khoản Dịch vụ ở trên</span>
+              ) : (
+                <Link href="/a/campaigns/new" className="font-bold text-brand-blue hover:underline">
+                  tạo Campaign đầu tiên
+                </Link>
+              )}
               .
             </p>
           ) : (

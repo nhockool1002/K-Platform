@@ -1,109 +1,738 @@
-import { ShieldCheck, UserPlus } from 'lucide-react';
+'use client';
+
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { ShieldAlert, Plus, Save, Trash2 } from 'lucide-react';
 import { CmsShell } from '@/components/layout/CmsShell';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Field, Input, Select } from '@/components/ui/Input';
 import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
-import { mockStaff } from '@/lib/mock-data';
+import { ApiError } from '@/lib/auth-client';
+import { useCurrentUser } from '@/lib/use-current-user';
+import { usePermissions } from '@/lib/use-permissions';
+import {
+  createGroup,
+  deleteGroup,
+  getCatalog,
+  getRbacUser,
+  listGroups,
+  listRbacUsers,
+  setGroupPermissions,
+  setUserGroups,
+  setUserOverrides,
+  updateGroup,
+  type AccessGroup,
+  type CatalogResource,
+  type OverrideEffect,
+  type PermissionAction,
+  type RbacUserDetail,
+  type RbacUserRow,
+} from '@/lib/rbac-client';
 
-const ROLE_BADGE = {
-  ROOT_ADMIN: 'bg-rose-100 text-rose-800',
-  ADMIN: 'bg-purple-100 text-purple-800',
-  MODERATOR: 'bg-blue-100 text-blue-800',
-} as const;
+const ACTIONS: { key: PermissionAction; label: string }[] = [
+  { key: 'READ', label: 'Xem' },
+  { key: 'CREATE', label: 'Tạo' },
+  { key: 'UPDATE', label: 'Sửa' },
+  { key: 'DELETE', label: 'Xoá' },
+  { key: 'APPROVE', label: 'Duyệt' },
+];
 
-export default function RbacPage() {
+type Tab = 'groups' | 'users';
+type OverrideChoice = 'INHERIT' | 'ALLOW' | 'DENY';
+
+const key = (resource: string, action: string) => `${resource}:${action}`;
+
+function groupByArea(catalog: CatalogResource[]) {
+  const map = new Map<string, CatalogResource[]>();
+  for (const r of catalog) {
+    map.set(r.area, [...(map.get(r.area) ?? []), r]);
+  }
+  return [...map.entries()];
+}
+
+// Ma trận tài nguyên × hành động. Ô không áp dụng cho tài nguyên hiển thị "—".
+function PermissionMatrix({
+  catalog,
+  checked,
+  onToggle,
+  disabled,
+}: {
+  catalog: CatalogResource[];
+  checked: Set<string>;
+  onToggle: (resource: string, action: PermissionAction) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table className="w-full text-xs">
+        <thead className="bg-slate-50 text-left text-[11px] font-bold text-slate-600 uppercase">
+          <tr>
+            <th className="px-3 py-2">Chức năng</th>
+            {ACTIONS.map((a) => (
+              <th key={a.key} className="px-3 py-2 text-center">
+                {a.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {groupByArea(catalog).map(([area, rows]) => (
+            <Fragment key={area}>
+              <tr className="bg-slate-100/60">
+                <td
+                  colSpan={ACTIONS.length + 1}
+                  className="px-3 py-1.5 font-mono text-[10px] font-extrabold text-slate-500 uppercase"
+                >
+                  {area}
+                </td>
+              </tr>
+              {rows.map((r) => (
+                <tr key={r.resource} className="border-t border-slate-100">
+                  <td className="px-3 py-2 font-bold text-slate-800">{r.label}</td>
+                  {ACTIONS.map((a) => {
+                    const applicable = (r.actions as string[]).includes(a.key);
+                    if (!applicable) {
+                      return (
+                        <td key={a.key} className="px-3 py-2 text-center text-slate-300">
+                          —
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={a.key} className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          aria-label={`${r.label} — ${a.label}`}
+                          disabled={disabled}
+                          checked={checked.has(key(r.resource, a.key))}
+                          onChange={() => onToggle(r.resource, a.key)}
+                          className="h-4 w-4 accent-brand-blue"
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Ma trận override riêng user: mỗi ô chọn Theo nhóm / Cho phép / Cấm.
+function OverrideMatrix({
+  catalog,
+  values,
+  onChange,
+  disabled,
+}: {
+  catalog: CatalogResource[];
+  values: Record<string, OverrideChoice>;
+  onChange: (resource: string, action: PermissionAction, value: OverrideChoice) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table className="w-full text-xs">
+        <thead className="bg-slate-50 text-left text-[11px] font-bold text-slate-600 uppercase">
+          <tr>
+            <th className="px-3 py-2">Chức năng · hành động</th>
+            <th className="px-3 py-2">Quyền riêng</th>
+          </tr>
+        </thead>
+        <tbody>
+          {catalog.flatMap((r) =>
+            r.actions.map((a) => {
+              const k = key(r.resource, a);
+              return (
+                <tr key={k} className="border-t border-slate-100">
+                  <td className="px-3 py-1.5 text-slate-800">
+                    <span className="font-bold">{r.label}</span>
+                    <span className="ml-2 text-slate-400">
+                      · {ACTIONS.find((x) => x.key === a)?.label}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Select
+                      value={values[k] ?? 'INHERIT'}
+                      disabled={disabled}
+                      onChange={(e) => onChange(r.resource, a, e.target.value as OverrideChoice)}
+                      className="w-44 py-1"
+                    >
+                      <option value="INHERIT">Theo nhóm</option>
+                      <option value="ALLOW">Cho phép</option>
+                      <option value="DENY">Cấm</option>
+                    </Select>
+                  </td>
+                </tr>
+              );
+            }),
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function CmsRbacPage() {
+  const { loading: userLoading } = useCurrentUser();
+  const perms = usePermissions();
+  const canRead = perms.can('rbac', 'READ');
+  const canManage = perms.can('rbac', 'UPDATE');
+  const canCreate = perms.can('rbac', 'CREATE');
+  const canDelete = perms.can('rbac', 'DELETE');
+
+  const [tab, setTab] = useState<Tab>('groups');
+  const [catalog, setCatalog] = useState<CatalogResource[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  // --- Nhóm quyền ---
+  const [groups, setGroups] = useState<AccessGroup[] | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [draftChecked, setDraftChecked] = useState<Set<string>>(new Set());
+  const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [savingGroup, setSavingGroup] = useState(false);
+
+  // --- Người dùng ---
+  const [userQuery, setUserQuery] = useState('');
+  const [users, setUsers] = useState<RbacUserRow[] | null>(null);
+  const [selectedUser, setSelectedUser] = useState<RbacUserDetail | null>(null);
+  const [userGroupIds, setUserGroupIds] = useState<Set<string>>(new Set());
+  const [overrideValues, setOverrideValues] = useState<Record<string, OverrideChoice>>({});
+  const [savingUser, setSavingUser] = useState(false);
+
+  const selectedGroup = useMemo(
+    () => groups?.find((g) => g.id === selectedGroupId) ?? null,
+    [groups, selectedGroupId],
+  );
+
+  useEffect(() => {
+    if (!canRead) return;
+    let cancelled = false;
+    Promise.all([getCatalog(), listGroups()])
+      .then(([cat, gs]) => {
+        if (cancelled) return;
+        setCatalog(cat);
+        setGroups(gs);
+        setSelectedGroupId((prev) => prev ?? gs[0]?.id ?? null);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setError(err instanceof ApiError ? err.message : 'Không tải được nhóm quyền');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canRead]);
+
+  // Nạp lại nháp khi đổi sang nhóm khác (cập nhật state khi render, không dùng effect).
+  const [draftFor, setDraftFor] = useState<string | null>(null);
+  if (selectedGroup && draftFor !== selectedGroup.id) {
+    setDraftFor(selectedGroup.id);
+    setGroupName(selectedGroup.name);
+    setGroupDescription(selectedGroup.description ?? '');
+    setDraftChecked(new Set(selectedGroup.permissions.map((p) => key(p.resource, p.action))));
+  }
+
+  useEffect(() => {
+    if (tab !== 'users' || !canRead) return;
+    let cancelled = false;
+    listRbacUsers({ q: userQuery || undefined, pageSize: 50 })
+      .then((res) => {
+        if (!cancelled) setUsers(res.items);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setError(err instanceof ApiError ? err.message : 'Không tải được người dùng');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, userQuery, canRead]);
+
+  function flash(message: string) {
+    setInfo(message);
+    setTimeout(() => setInfo(null), 2500);
+  }
+
+  async function reloadGroups() {
+    setGroups(await listGroups());
+  }
+
+  async function handleCreateGroup() {
+    setError(null);
+    if (newGroupName.trim().length < 2) {
+      setError('Tên nhóm phải có ít nhất 2 ký tự');
+      return;
+    }
+    try {
+      const created = await createGroup({ name: newGroupName.trim(), permissions: [] });
+      setNewGroupName('');
+      await reloadGroups();
+      setSelectedGroupId(created.id);
+      flash('Đã tạo nhóm. Chọn quyền bên dưới rồi bấm Lưu.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tạo được nhóm');
+    }
+  }
+
+  async function handleSaveGroup() {
+    if (!selectedGroup) return;
+    setSavingGroup(true);
+    setError(null);
+    try {
+      if (
+        groupName.trim() !== selectedGroup.name ||
+        groupDescription !== (selectedGroup.description ?? '')
+      ) {
+        await updateGroup(selectedGroup.id, {
+          name: groupName.trim(),
+          description: groupDescription,
+        });
+      }
+      const permissions = [...draftChecked].map((k) => {
+        const [resource, action] = k.split(':');
+        return { resource: resource!, action: action as PermissionAction };
+      });
+      await setGroupPermissions(selectedGroup.id, permissions);
+      await reloadGroups();
+      flash('Đã lưu quyền của nhóm.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không lưu được nhóm');
+    } finally {
+      setSavingGroup(false);
+    }
+  }
+
+  async function handleDeleteGroup(group: AccessGroup) {
+    if (!window.confirm(`Xoá nhóm "${group.name}"? Thành viên sẽ mất quyền của nhóm này.`)) return;
+    setError(null);
+    try {
+      await deleteGroup(group.id);
+      setSelectedGroupId(null);
+      await reloadGroups();
+      flash('Đã xoá nhóm.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không xoá được nhóm');
+    }
+  }
+
+  async function openUser(row: RbacUserRow) {
+    await loadUser(row.id);
+  }
+
+  async function loadUser(id: string) {
+    setError(null);
+    try {
+      const detail = await getRbacUser(id);
+      setSelectedUser(detail);
+      setUserGroupIds(new Set(detail.groups.filter((g) => !g.linkedRole).map((g) => g.id)));
+      const values: Record<string, OverrideChoice> = {};
+      for (const o of detail.overrides) values[key(o.resource, o.action)] = o.effect;
+      setOverrideValues(values);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được người dùng');
+    }
+  }
+
+  // Quyền chỉnh sửa người dùng: Root không ai chỉnh; Admin thường không chỉnh Admin khác.
+  const userLocked = !selectedUser
+    ? true
+    : selectedUser.isRoot || (selectedUser.role === 'ADMIN' && !perms.isRoot);
+
+  async function handleSaveUserGroups() {
+    if (!selectedUser) return;
+    setSavingUser(true);
+    setError(null);
+    try {
+      await setUserGroups(selectedUser.id, [...userGroupIds]);
+      await loadUser(selectedUser.id);
+      flash('Đã lưu nhóm của người dùng.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không lưu được nhóm');
+    } finally {
+      setSavingUser(false);
+    }
+  }
+
+  async function handleSaveOverrides() {
+    if (!selectedUser || !catalog.length) return;
+    setSavingUser(true);
+    setError(null);
+    try {
+      const entries = catalog.flatMap((r) =>
+        r.actions.map((a) => {
+          const choice = overrideValues[key(r.resource, a)] ?? 'INHERIT';
+          const effect: OverrideEffect | null = choice === 'INHERIT' ? null : choice;
+          return { resource: r.resource, action: a, effect };
+        }),
+      );
+      await setUserOverrides(selectedUser.id, entries);
+      await loadUser(selectedUser.id);
+      flash('Đã lưu quyền riêng của người dùng.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không lưu được quyền riêng');
+    } finally {
+      setSavingUser(false);
+    }
+  }
+
+  if (!userLoading && !perms.loading && !canRead) {
+    return (
+      <CmsShell active="/cms/rbac">
+        <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+          <ShieldAlert className="h-8 w-8 text-rose-500" />
+          <p className="text-sm font-bold text-slate-800">Không đủ quyền truy cập</p>
+          <p className="text-xs text-slate-500">
+            Cần quyền &ldquo;Phân quyền &amp; nhóm quyền&rdquo; để xem trang này.
+          </p>
+        </div>
+      </CmsShell>
+    );
+  }
+
   return (
     <CmsShell active="/cms/rbac">
-      <div className="space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <h3 className="text-base font-extrabold text-slate-900">
-              SCR-12: Quản Lý Phân Quyền RBAC &amp; Root Administrator
-            </h3>
-            <p className="text-xs text-slate-500">
-              Mô hình phân cấp: Root Admin → Admin → Super/Moderator → Bên A / Bên B
-            </p>
-          </div>
+      <div className="space-y-4">
+        <div className="border-b border-slate-100 pb-3">
+          <h3 className="text-base font-extrabold text-slate-900">
+            Phân Quyền & Nhóm Quyền (SCR-12)
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Phân quyền theo <strong>nhóm</strong> (vd. Moderator, Supermoderator) và theo từng chức
+            năng — mỗi chức năng có Xem / Tạo / Sửa / Xoá / Duyệt. Có thể cấp{' '}
+            <strong>quyền riêng</strong> cho từng người, ưu tiên hơn quyền của nhóm. Root
+            Administrator luôn có toàn quyền.
+          </p>
         </div>
 
-        {/* Root Administrator Protected Box */}
-        <div className="flex flex-col gap-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-brand-blue p-4 text-white shadow-md sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold text-slate-950">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <strong className="font-mono text-sm text-amber-300">
-                  Root Administrator (ID: root_001)
-                </strong>
-                <span className="rounded border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
-                  IMMUTABLE / HARDCODED
-                </span>
-              </div>
-              <span className="block text-xs text-slate-300">
-                Quy tắc SRS: Tài khoản bất biến, không thể bị xóa hay hạ cấp bởi bất kỳ API hay Quản
-                trị viên nào khác.
-              </span>
-            </div>
-          </div>
-          <span className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-center font-mono text-xs font-bold text-white">
-            Toàn quyền hệ thống
-          </span>
-        </div>
-
-        {/* Staff table */}
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-mono text-xs font-extrabold text-slate-800 uppercase">
-              Danh Sách Nhân Sự &amp; Phân Quyền Nội Bộ
-            </h4>
-            <button className="flex items-center gap-1 rounded-xl bg-brand-blue px-3 py-1 text-xs font-bold text-white transition hover:bg-brand-blue-dark">
-              <UserPlus className="h-3.5 w-3.5" />
-              <span>Thêm Moderator</span>
+        <div className="flex flex-wrap gap-1.5">
+          {(
+            [
+              ['groups', 'Nhóm quyền'],
+              ['users', 'Người dùng & quyền riêng'],
+            ] as [Tab, string][]
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                tab === k
+                  ? 'bg-brand-blue text-white shadow-sm'
+                  : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {label}
             </button>
-          </div>
-
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <Table>
-              <Thead>
-                <Th>User ID</Th>
-                <Th>Họ tên / Email</Th>
-                <Th>Vai trò (Role)</Th>
-                <Th>Campaign phân công</Th>
-                <Th>Quyền hạn cốt lõi</Th>
-                <Th className="text-right">Thao tác</Th>
-              </Thead>
-              <Tbody>
-                {mockStaff.map((staff) => (
-                  <tr key={staff.id} className="hover:bg-slate-50">
-                    <Td className="font-mono font-bold text-slate-900">{staff.id}</Td>
-                    <Td className="font-semibold text-slate-800">
-                      {staff.name}
-                      <br />
-                      <span className="font-normal text-slate-400">{staff.email}</span>
-                    </Td>
-                    <Td>
-                      <Badge className={`${ROLE_BADGE[staff.role]} border-transparent`}>
-                        {staff.role}
-                      </Badge>
-                    </Td>
-                    <Td className="font-mono text-slate-500">{staff.scope}</Td>
-                    <Td className="text-slate-600">{staff.permissions}</Td>
-                    <Td className="text-right">
-                      {staff.protected ? (
-                        <span className="text-slate-400 italic">Khóa bảo vệ</span>
-                      ) : (
-                        <button className="font-bold text-brand-blue hover:underline">
-                          Sửa quyền
-                        </button>
-                      )}
-                    </Td>
-                  </tr>
-                ))}
-              </Tbody>
-            </Table>
-          </div>
+          ))}
         </div>
+
+        {error && (
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
+          </p>
+        )}
+        {info && (
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+            {info}
+          </p>
+        )}
+
+        {tab === 'groups' && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <h4 className="font-mono text-xs font-extrabold text-slate-700 uppercase">
+                Danh sách nhóm
+              </h4>
+              {groups === null ? (
+                <p className="py-4 text-center text-xs text-slate-400">Đang tải...</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {groups.map((g) => (
+                    <li key={g.id}>
+                      <button
+                        onClick={() => setSelectedGroupId(g.id)}
+                        className={`w-full rounded-xl border p-2.5 text-left text-xs transition ${
+                          g.id === selectedGroupId
+                            ? 'border-brand-blue bg-blue-50'
+                            : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-slate-800">{g.name}</span>
+                          <Badge tone={g.isSystem ? 'info' : 'purple'}>
+                            {g.isSystem ? 'Hệ thống' : 'Tự tạo'}
+                          </Badge>
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-500">
+                          {g.memberCount} thành viên · {g.permissions.length} quyền
+                          {g.linkedRole && <> · gắn role {g.linkedRole}</>}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canCreate && (
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <Field label="Nhóm mới">
+                    <Input
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      placeholder="vd. Supermoderator"
+                    />
+                  </Field>
+                  <Button variant="dark" size="sm" className="w-full" onClick={handleCreateGroup}>
+                    <Plus className="h-3.5 w-3.5" />
+                    Tạo nhóm
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+              {!selectedGroup ? (
+                <p className="py-10 text-center text-xs text-slate-400">
+                  Chọn một nhóm để xem và chỉnh quyền.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <Field label="Tên nhóm">
+                      <Input
+                        value={groupName}
+                        disabled={!canManage}
+                        onChange={(e) => setGroupName(e.target.value)}
+                      />
+                    </Field>
+                    <Field label="Mô tả">
+                      <Input
+                        value={groupDescription}
+                        disabled={!canManage}
+                        onChange={(e) => setGroupDescription(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  {selectedGroup.linkedRole && (
+                    <p className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] text-blue-900">
+                      Nhóm này gắn với role <strong>{selectedGroup.linkedRole}</strong>: mọi tài
+                      khoản có role này tự động có các quyền dưới đây. Có thể chỉnh quyền, nhưng
+                      nhóm không xoá được.
+                    </p>
+                  )}
+                  <PermissionMatrix
+                    catalog={catalog}
+                    checked={draftChecked}
+                    disabled={!canManage}
+                    onToggle={(r, a) =>
+                      setDraftChecked((prev) => {
+                        const next = new Set(prev);
+                        const k = key(r, a);
+                        if (next.has(k)) next.delete(k);
+                        else next.add(k);
+                        return next;
+                      })
+                    }
+                  />
+                  <div className="flex flex-wrap justify-between gap-2">
+                    {canDelete && !selectedGroup.isSystem ? (
+                      <Button
+                        variant="danger-ghost"
+                        size="sm"
+                        onClick={() => handleDeleteGroup(selectedGroup)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Xoá nhóm
+                      </Button>
+                    ) : (
+                      <span />
+                    )}
+                    {canManage && (
+                      <Button variant="dark" disabled={savingGroup} onClick={handleSaveGroup}>
+                        <Save className="h-4 w-4" />
+                        {savingGroup ? 'Đang lưu...' : 'Lưu quyền nhóm'}
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'users' && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.2fr]">
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <Field label="Tìm theo email">
+                <Input
+                  value={userQuery}
+                  onChange={(e) => setUserQuery(e.target.value)}
+                  placeholder="email@..."
+                />
+              </Field>
+              <div className="max-h-[560px] overflow-auto rounded-xl border border-slate-200">
+                <Table>
+                  <Thead>
+                    <Th>Tài khoản</Th>
+                    <Th>Role</Th>
+                    <Th>Nhóm</Th>
+                    <Th>Quyền riêng</Th>
+                  </Thead>
+                  <Tbody>
+                    {(users ?? []).map((u) => (
+                      <tr
+                        key={u.id}
+                        onClick={() => openUser(u)}
+                        className={`cursor-pointer hover:bg-slate-50 ${selectedUser?.id === u.id ? 'bg-blue-50' : ''}`}
+                      >
+                        <Td className="font-bold text-slate-800">
+                          {u.email}
+                          {u.isRoot && (
+                            <Badge tone="critical" className="ml-1.5">
+                              Root
+                            </Badge>
+                          )}
+                        </Td>
+                        <Td className="font-mono text-[11px]">{u.role}</Td>
+                        <Td className="text-[11px] text-slate-600">
+                          {u.groups.length ? u.groups.map((g) => g.name).join(', ') : '—'}
+                        </Td>
+                        <Td className="text-center">{u.overrideCount || '—'}</Td>
+                      </tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
+              {!selectedUser ? (
+                <p className="py-10 text-center text-xs text-slate-400">
+                  Chọn một tài khoản để phân nhóm và quyền riêng.
+                </p>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-900">{selectedUser.email}</p>
+                    <p className="text-[11px] text-slate-500">Role: {selectedUser.role}</p>
+                  </div>
+                  {selectedUser.isRoot && (
+                    <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] text-rose-800">
+                      Root Administrator có toàn quyền và không ai chỉnh được quyền của Root.
+                    </p>
+                  )}
+                  {!selectedUser.isRoot && selectedUser.role === 'ADMIN' && (
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                      Quyền của Quản trị viên chỉ Root Administrator được chỉnh.
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    <h4 className="font-mono text-xs font-extrabold text-slate-700 uppercase">
+                      1. Nhóm quyền
+                    </h4>
+                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                      {(groups ?? [])
+                        .filter((g) => !g.linkedRole)
+                        .map((g) => (
+                          <label
+                            key={g.id}
+                            className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                          >
+                            <input
+                              type="checkbox"
+                              disabled={userLocked || !canManage}
+                              checked={userGroupIds.has(g.id)}
+                              onChange={() =>
+                                setUserGroupIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(g.id)) next.delete(g.id);
+                                  else next.add(g.id);
+                                  return next;
+                                })
+                              }
+                              className="h-4 w-4 accent-brand-blue"
+                            />
+                            <span className="font-bold text-slate-800">{g.name}</span>
+                          </label>
+                        ))}
+                    </div>
+                    {!userLocked && canManage && (
+                      <Button
+                        variant="dark"
+                        size="sm"
+                        disabled={savingUser}
+                        onClick={handleSaveUserGroups}
+                      >
+                        Lưu nhóm
+                      </Button>
+                    )}
+                    {selectedUser.groups.some((g) => g.linkedRole) && (
+                      <p className="text-[10px] text-slate-500">
+                        Tự động theo role:{' '}
+                        {selectedUser.groups
+                          .filter((g) => g.linkedRole)
+                          .map((g) => g.name)
+                          .join(', ')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-mono text-xs font-extrabold text-slate-700 uppercase">
+                      2. Quyền riêng (ưu tiên hơn nhóm)
+                    </h4>
+                    <OverrideMatrix
+                      catalog={catalog}
+                      values={overrideValues}
+                      disabled={userLocked || !canManage}
+                      onChange={(r, a, v) =>
+                        setOverrideValues((prev) => ({ ...prev, [key(r, a)]: v }))
+                      }
+                    />
+                    {!userLocked && canManage && (
+                      <Button
+                        variant="dark"
+                        size="sm"
+                        disabled={savingUser}
+                        onClick={handleSaveOverrides}
+                      >
+                        Lưu quyền riêng
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-mono text-xs font-extrabold text-slate-700 uppercase">
+                      3. Quyền hiệu lực
+                    </h4>
+                    {selectedUser.effective.includes('*') ? (
+                      <p className="text-xs text-slate-600">Toàn quyền (Root Administrator).</p>
+                    ) : selectedUser.effective.length === 0 ? (
+                      <p className="text-xs text-slate-400">Không có quyền quản trị nào.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedUser.effective.map((k) => (
+                          <span
+                            key={k}
+                            className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-700"
+                          >
+                            {k}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </CmsShell>
   );

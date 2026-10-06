@@ -176,15 +176,24 @@ Lặp lại cho `/www/wwwroot/kplatform-production/.env`.
 
 ```bash
 cd /www/wwwroot/kplatform-staging
-docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --build
-docker compose -f infra/docker-compose.deploy.yml --env-file .env ps   # cả 3 service phải "healthy"/"running"
+docker compose -f infra/docker-compose.deploy.yml --env-file .env build backend
+docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --wait postgres redis
 ```
 
-Chạy migration + (tuỳ chọn) seed dữ liệu demo:
+Chạy migration (PHẢI chạy trước khi bật backend thật — một số module backend query DB
+ngay lúc bootstrap, vd. seed Trust Score rule mặc định, nên bật backend khi bảng
+chưa tồn tại sẽ khiến container crash-loop/unhealthy) + (tuỳ chọn) seed dữ liệu demo:
 
 ```bash
-docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend node_modules/.bin/prisma migrate deploy
-docker compose -f infra/docker-compose.deploy.yml --env-file .env exec -T backend node_modules/.bin/prisma db seed
+docker compose -f infra/docker-compose.deploy.yml --env-file .env run --rm --no-deps backend node_modules/.bin/prisma migrate deploy
+docker compose -f infra/docker-compose.deploy.yml --env-file .env run --rm --no-deps backend node_modules/.bin/prisma db seed
+```
+
+Giờ mới bật backend thật:
+
+```bash
+docker compose -f infra/docker-compose.deploy.yml --env-file .env up -d --wait backend
+docker compose -f infra/docker-compose.deploy.yml --env-file .env ps   # cả 3 service phải "healthy"/"running"
 ```
 
 > Dùng thẳng `node_modules/.bin/prisma` thay vì `pnpm prisma:deploy`/`pnpm prisma:seed`: image production chỉ cài production dependencies (`pnpm deploy --prod`), package.json bên trong container vẫn liệt kê đủ devDependencies (eslint, vitest, ...) dù không cài — nếu gọi qua `pnpm run`, pnpm sẽ thấy "thiếu" so với package.json và tự tải lại toàn bộ (kể cả tải lại đúng phiên bản pnpm mới nhất qua corepack, có thể khác bản dùng lúc build), từng gây lỗi `ERR_PNPM_IGNORED_BUILDS`. Gọi thẳng binary đã có sẵn trong image thì không đụng tới pnpm/corepack chút nào.

@@ -17,6 +17,7 @@ export interface CurrentUser {
   role: UserRole;
   activeMode: ActiveMode;
   trustScore: number;
+  serviceActivated: boolean;
 }
 
 export function getAccessToken(): string | null {
@@ -86,10 +87,23 @@ export async function login(email: string, password: string) {
   return data.user;
 }
 
-export async function register(email: string, password: string, activeMode: ActiveMode) {
+export interface RegisterInput {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  activeMode: ActiveMode;
+  fullName: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  province: string;
+  occupation?: string;
+}
+
+export async function register(input: RegisterInput) {
   const data = await apiFetch<{ user: CurrentUser; accessToken: string; refreshToken: string }>(
     '/auth/register',
-    { method: 'POST', body: JSON.stringify({ email, password, activeMode }) },
+    { method: 'POST', body: JSON.stringify(input) },
   );
   setTokens(data.accessToken, data.refreshToken);
   return data.user;

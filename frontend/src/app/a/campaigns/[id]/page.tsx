@@ -1,13 +1,14 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
-import { Send } from 'lucide-react';
+import { Check, Send, X } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Textarea } from '@/components/ui/Input';
 import { ApiError } from '@/lib/auth-client';
 import {
   decideApplicant,
@@ -16,17 +17,26 @@ import {
   type Applicant,
   type Campaign,
 } from '@/lib/campaigns-client';
+import { decideProof, resolveUploadUrl } from '@/lib/submissions-client';
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   APPLIED: 'warning',
   INVITED: 'positive',
   REJECTED_APPLICATION: 'critical',
+  PENDING: 'warning',
+  APPROVED: 'positive',
+  REJECTED: 'critical',
+  DISPUTED: 'purple',
 };
 
 const STATUS_LABEL: Record<string, string> = {
   APPLIED: 'Chờ Invite',
-  INVITED: 'Đã Invite',
+  INVITED: 'Đã Invite — Chờ nộp Proof',
   REJECTED_APPLICATION: 'Đã từ chối',
+  PENDING: 'Đã nộp Proof — Chờ duyệt',
+  APPROVED: 'Đã duyệt — Đã trả thưởng',
+  REJECTED: 'Proof bị từ chối',
+  DISPUTED: 'Đang bị khiếu nại (Dispute)',
 };
 
 export default function ManageCampaignPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,6 +45,8 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [applicants, setApplicants] = useState<Applicant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReasonDraft, setRejectReasonDraft] = useState('');
 
   useEffect(() => {
     Promise.all([getCampaign(id), listApplicants(id)])
@@ -57,12 +69,34 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
     }
   }
 
+  async function handleDecideProof(
+    submissionId: string,
+    action: 'APPROVE' | 'REJECT',
+    reason?: string,
+  ) {
+    try {
+      const updated = await decideProof(submissionId, action, reason);
+      setApplicants(
+        (prev) =>
+          prev?.map((a) =>
+            a.id === submissionId
+              ? { ...a, status: updated.status, rejectReason: updated.rejectReason }
+              : a,
+          ) ?? null,
+      );
+      setRejectingId(null);
+      setRejectReasonDraft('');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không thể xử lý Proof');
+    }
+  }
+
   return (
     <AppShell role="advertiser" active="/a/campaigns">
       <div className="space-y-6">
         <PageHeader
           title={`Quản Lý Campaign & Ứng Viên${campaign ? ` — ${campaign.title}` : ''}`}
-          description="Xem danh sách Bên B nộp Survey ứng tuyển, Invite những ứng viên phù hợp hoặc Từ chối."
+          description="Xem danh sách Tài khoản Người dùng nộp Survey ứng tuyển, Invite những ứng viên phù hợp hoặc Từ chối."
         />
 
         {error && (
@@ -76,7 +110,7 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
         ) : applicants.length === 0 ? (
           <EmptyState
             title="Chưa có ứng viên nào"
-            body="Khi Bên B ứng tuyển Campaign này, đơn của họ sẽ hiện ở đây để bạn Invite hoặc Từ chối."
+            body="Khi Tài khoản Người dùng ứng tuyển Campaign này, đơn của họ sẽ hiện ở đây để bạn Invite hoặc Từ chối."
           />
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -124,6 +158,112 @@ export default function ManageCampaignPage({ params }: { params: Promise<{ id: s
                     <Button variant="outline" onClick={() => handleDecide(a.id, 'REJECT')}>
                       Loại
                     </Button>
+                  </div>
+                )}
+
+                {(a.status === 'PENDING' ||
+                  a.status === 'APPROVED' ||
+                  a.status === 'REJECTED' ||
+                  a.status === 'DISPUTED') && (
+                  <div className="space-y-3 border-t border-slate-100 pt-3">
+                    {a.watermarkUrl ? (
+                      /\.(mp4|webm|mov)$/i.test(a.watermarkUrl) ? (
+                        <video
+                          src={resolveUploadUrl(a.watermarkUrl)}
+                          controls
+                          className="max-h-80 w-full rounded-xl border border-slate-200 bg-black"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- ảnh proof động từ backend, không qua Next/Image optimize
+                        <img
+                          src={resolveUploadUrl(a.watermarkUrl)}
+                          alt="Bằng chứng đã chèn Watermark"
+                          className="max-h-80 w-full rounded-xl border border-slate-200 object-contain"
+                        />
+                      )
+                    ) : (
+                      <p className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+                        Đang xử lý Watermark cho bằng chứng...
+                      </p>
+                    )}
+                    {a.reviewUrl && (
+                      <p className="text-xs text-slate-600">
+                        Link review:{' '}
+                        <a
+                          href={a.reviewUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-brand-blue hover:underline"
+                        >
+                          {a.reviewUrl}
+                        </a>
+                      </p>
+                    )}
+                    {a.reviewNote && (
+                      <p className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                        {a.reviewNote}
+                      </p>
+                    )}
+
+                    {(a.status === 'REJECTED' || a.status === 'DISPUTED') && a.rejectReason && (
+                      <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                        <strong className="block">Lý do bạn đã từ chối:</strong>
+                        {a.rejectReason}
+                      </p>
+                    )}
+                    {a.status === 'DISPUTED' && (
+                      <p className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800">
+                        Tài khoản Người dùng đã tạo Dispute khiếu nại quyết định từ chối này —
+                        Moderator/Admin đang xử lý. Slot này tạm khóa, không mở lại cho ứng viên
+                        khác tới khi có phán quyết cuối cùng.
+                      </p>
+                    )}
+
+                    {a.status === 'PENDING' &&
+                      (rejectingId === a.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            rows={2}
+                            value={rejectReasonDraft}
+                            onChange={(e) => setRejectReasonDraft(e.target.value)}
+                            placeholder="Lý do từ chối (Tài khoản Người dùng sẽ thấy lý do này)..."
+                          />
+                          <div className="flex items-center justify-between gap-3">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleDecideProof(a.id, 'REJECT', rejectReasonDraft)}
+                            >
+                              <X className="h-4 w-4" />
+                              Xác Nhận Từ Chối
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setRejectingId(null);
+                                setRejectReasonDraft('');
+                              }}
+                            >
+                              Hủy
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <Button
+                            variant="gold"
+                            className="flex-1"
+                            onClick={() => handleDecideProof(a.id, 'APPROVE')}
+                          >
+                            <Check className="h-4 w-4" />
+                            Duyệt & Trả Thưởng
+                          </Button>
+                          <Button variant="outline" onClick={() => setRejectingId(a.id)}>
+                            <X className="h-4 w-4" />
+                            Từ chối
+                          </Button>
+                        </div>
+                      ))}
                   </div>
                 )}
               </Card>
