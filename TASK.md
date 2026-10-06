@@ -268,22 +268,22 @@
 
 Cần xây (mỗi màn hình phải gắn `@RequirePermission` ở API và kiểm tra quyền ở UI):
 
-| #   | Màn hình                    | Nội dung chính                                                                                 | Tài nguyên & hành động                                                     |
-| --- | --------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 1   | Chi tiết & xử lý Campaign   | Sửa thông tin, vô hiệu hoá / mở lại, lưu trữ (archive) campaign có vấn đề, xem ứng viên & slot | `campaigns`: READ, UPDATE, DELETE (= archive + hoàn ký quỹ slot chưa dùng) |
-| 2   | Quản trị Submission / Proof | Danh sách proof toàn hệ thống, xem chi tiết, duyệt/từ chối thủ công, xử lý watermark bị kẹt    | `submissions`: READ, UPDATE, APPROVE                                       |
-| 3   | Ví & sổ cái người dùng      | Xem số dư, lịch sử ledger, điều chỉnh số dư thủ công (có lý do, ghi audit CRITICAL)            | `wallets`: READ, UPDATE, APPROVE                                           |
-| 4   | Chống gian lận              | Nhóm tài khoản trùng fingerprint/IP (P3-10/P3-11/P3-15), đánh dấu/khoá nghi vấn                | `fraud`: READ, UPDATE                                                      |
-| 5   | Giám sát vận hành           | Hàng đợi BullMQ (watermark), lần chạy cronjob Auto-Approve, webhook SePay lỗi, thử lại job     | `system_ops`: READ, UPDATE (P8-11)                                         |
-| 6   | Xuất báo cáo                | Xuất CSV đối soát nạp/rút, doanh thu, KPI                                                      | `reports`: READ, CREATE (xuất)                                             |
-| 7   | Cấu hình nền tảng           | Phí/giới hạn Campaign (phí tạo, thưởng tối thiểu, số slot), tham số khác                       | `settings`: READ, UPDATE                                                   |
-| 8   | Nội dung CMS                | Banner, FAQ, điều khoản/chính sách hiển thị công khai                                          | `content`: READ, CREATE, UPDATE, DELETE                                    |
-| 9   | Thông báo & email mẫu       | Mẫu email (reset mật khẩu, duyệt/từ chối nạp, dispute) — chờ hạ tầng mail                      | `notifications`: READ, UPDATE                                              |
-| 10  | Quản lý phiên đăng nhập     | Buộc đăng xuất user, xem phiên hoạt động (cần cơ chế thu hồi refresh token)                    | `accounts`: UPDATE                                                         |
+| #   | Màn hình                    | Nội dung chính                                                                                 | Tài nguyên & hành động                                                                           |
+| --- | --------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 1   | Chi tiết & xử lý Campaign   | Sửa thông tin, vô hiệu hoá / mở lại, lưu trữ (archive) campaign có vấn đề, xem ứng viên & slot | `campaigns`: READ, UPDATE, DELETE (DELETE = lưu trữ, không xoá cứng; hoàn ký quỹ slot chưa dùng) |
+| 2   | Quản trị Submission / Proof | Danh sách proof toàn hệ thống, xem chi tiết, duyệt/từ chối thủ công, xử lý watermark bị kẹt    | `submissions`: READ, UPDATE, APPROVE                                                             |
+| 3   | Ví & sổ cái người dùng      | Xem số dư, lịch sử ledger, điều chỉnh số dư thủ công (có lý do, ghi audit CRITICAL)            | `wallets`: READ, UPDATE, APPROVE                                                                 |
+| 4   | Chống gian lận              | Nhóm tài khoản trùng fingerprint/IP (P3-10/P3-11/P3-15), đánh dấu/khoá nghi vấn                | `fraud`: READ, UPDATE                                                                            |
+| 5   | Giám sát vận hành           | Hàng đợi BullMQ (watermark), lần chạy cronjob Auto-Approve, webhook SePay lỗi, thử lại job     | `system_ops`: READ, UPDATE (P8-11)                                                               |
+| 6   | Xuất báo cáo                | Xuất CSV đối soát nạp/rút, doanh thu, KPI                                                      | `reports`: READ, CREATE (xuất)                                                                   |
+| 7   | Cấu hình nền tảng           | Phí/giới hạn Campaign (phí tạo, thưởng tối thiểu, số slot), tham số khác                       | `settings`: READ, UPDATE                                                                         |
+| 8   | Nội dung CMS                | Banner, FAQ, điều khoản/chính sách hiển thị công khai                                          | `content`: READ, CREATE, UPDATE, DELETE                                                          |
+| 9   | Thông báo & email mẫu       | Mẫu email (reset mật khẩu, duyệt/từ chối nạp, dispute) — chờ hạ tầng mail                      | `notifications`: READ, UPDATE                                                                    |
+| 10  | Quản lý phiên đăng nhập     | Buộc đăng xuất user, xem phiên hoạt động (cần cơ chế thu hồi refresh token)                    | `accounts`: UPDATE                                                                               |
 
 Cần quyết định trước khi làm:
 
-- **Xoá Campaign:** P3-13 quy định campaign cũ chỉ được lưu trữ, không xoá. Đề xuất: "xoá" = lưu trữ + hoàn ký quỹ slot chưa dùng; xoá cứng chỉ cho campaign chưa có ứng viên.
+- **Xoá Campaign:** đã chốt — "xoá" trong CMS nghĩa là **lưu trữ (archive)**, không xoá cứng (theo P3-13). Khi lưu trữ, hoàn ký quỹ các slot chưa dùng.
 - **Phân quyền catalog:** thêm các tài nguyên mới ở bảng trên và hành động `CREATE` cho xuất báo cáo; thêm test đảm bảo mọi route `/admin/*` đều khai báo quyền.
 
 ### Kết quả kiểm thử toàn bộ — 2026-10-05 (nhánh RBAC + QA, trước khi merge vào develop)
