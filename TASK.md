@@ -280,11 +280,11 @@ Mã `SCR-xx` theo SRS (README §IV). SCR-01 → SCR-15 đã được định ngh
 | SCR-18 | Yêu cầu rút tiền                                                     | `/cms/withdrawals`                                      | `withdrawals`: READ, APPROVE                                                     | Đã có (chưa có mã trong SRS) |
 | SCR-19 | Cài đặt phí kích hoạt dịch vụ                                        | `/cms/settings/activation-fee`                          | `settings`: READ, UPDATE                                                         | Đã có (chưa có mã trong SRS) |
 | SCR-20 | Lý do Trust Score (rule cộng/trừ điểm)                               | `/cms/settings/trust-score`                             | `trust_score`: READ, CREATE, UPDATE, DELETE                                      | Đã có (chưa có mã trong SRS) |
-| SCR-21 | Chi tiết & xử lý Campaign (sửa, vô hiệu hoá, lưu trữ)                | `/cms/campaigns/[id]`                                   | `campaigns`: READ, UPDATE; **cần thêm DELETE** (= lưu trữ) vào catalog           | Chưa làm                     |
-| SCR-22 | Quản trị Proof (duyệt/từ chối thủ công, watermark kẹt)               | `/cms/submissions`                                      | `submissions` — **chưa có trong catalog**, cần thêm resource                     | Chưa làm (đề xuất)           |
-| SCR-23 | Ví & sổ cái người dùng (điều chỉnh số dư có lý do)                   | `/cms/wallets`                                          | `wallets` — **chưa có trong catalog**, cần thêm resource                         | Chưa làm (đề xuất)           |
-| SCR-24 | Chống gian lận (trùng fingerprint/IP, đánh dấu/khoá)                 | `/cms/fraud`                                            | `fraud` — **chưa có trong catalog**, cần thêm resource                           | Chưa làm (đề xuất)           |
-| SCR-25 | Giám sát vận hành (hàng đợi, cronjob, webhook lỗi, thử lại job)      | `/cms/ops`                                              | `system_ops` — **chưa có trong catalog**, cần thêm resource                      | Chưa làm (đề xuất)           |
+| SCR-21 | Chi tiết & xử lý Campaign (sửa, vô hiệu hoá, lưu trữ)                | `/cms/campaigns/[id]`                                   | `campaigns`: READ, UPDATE; **cần thêm DELETE** (= lưu trữ) vào catalog           | Đã làm                       |
+| SCR-22 | Quản trị Proof (duyệt/từ chối thủ công, watermark kẹt)               | `/cms/submissions`                                      | `submissions` — **chưa có trong catalog**, cần thêm resource                     | Đã làm                       |
+| SCR-23 | Ví & sổ cái người dùng (điều chỉnh số dư có lý do)                   | `/cms/wallets`                                          | `wallets` — **chưa có trong catalog**, cần thêm resource                         | Đã làm                       |
+| SCR-24 | Chống gian lận (trùng fingerprint/IP, đánh dấu/khoá)                 | `/cms/fraud`                                            | `fraud` — **chưa có trong catalog**, cần thêm resource                           | Đã làm                       |
+| SCR-25 | Giám sát vận hành (hàng đợi, cronjob, webhook lỗi, thử lại job)      | `/cms/ops`                                              | `system_ops` — **chưa có trong catalog**, cần thêm resource                      | Đã làm                       |
 | SCR-26 | Xuất báo cáo (CSV đối soát, doanh thu, KPI)                          | `/cms/reports` (nút xuất)                               | `reports`: READ hiện có; **cần thêm CREATE** (xuất file) vào catalog             | Chưa làm                     |
 | SCR-27 | Cấu hình nền tảng (phí/giới hạn Campaign, thưởng tối thiểu, số slot) | `/cms/settings/platform`                                | `settings`: READ, UPDATE (đã có)                                                 | Chưa làm                     |
 | SCR-28 | Nội dung CMS (banner, FAQ, điều khoản công khai)                     | `/cms/content`                                          | `content` — **chưa có trong catalog**, cần thêm resource                         | Chưa làm (đề xuất)           |
@@ -298,6 +298,9 @@ Quyết định đã chốt:
 Việc còn lại:
 
 - Thêm test đảm bảo mọi route `/admin/*` đều khai báo `@RequirePermission`, để không có route nào thiếu phân quyền.
+- SCR-21: lưu trữ từ luồng Owner (`PATCH /campaigns/:id/archive`) vẫn chưa hoàn ký quỹ slot chưa dùng như luồng Admin; cần đồng bộ.
+- SCR-23: điều chỉnh số dư chưa có bước 2 người duyệt (maker-checker).
+- SCR-24: chưa có thao tác đánh dấu/từ chối Proof hàng loạt theo cụm.
 - Cập nhật README §IV (SRS) với các mã SCR-16 → SCR-30 khi làm bản bổ sung tiếp theo (B-06).
 
 ### Kết quả kiểm thử toàn bộ — 2026-10-05 (nhánh RBAC + QA, trước khi merge vào develop)

@@ -53,7 +53,10 @@ export class RbacService implements OnModuleInit {
         where: { OR: [{ linkedRole: sg.linkedRole }, { name: sg.name }] },
         select: { id: true },
       });
-      if (exists) continue;
+      if (exists) {
+        if (sg.linkedRole === UserRole.ADMIN) await this.grantNewAdminPermissions(exists.id);
+        continue;
+      }
       const perms =
         sg.linkedRole === UserRole.ADMIN ? allCatalogPermissions() : MODERATOR_DEFAULT_PERMISSIONS;
       await this.prisma.accessGroup.create({
@@ -68,6 +71,23 @@ export class RbacService implements OnModuleInit {
         },
       });
     }
+  }
+
+  // Nhóm Quản trị viên mặc định có toàn bộ quyền, nhưng nhóm chỉ được tạo 1 lần
+  // lúc khởi động đầu tiên. Khi catalog thêm resource/action mới, bổ sung chúng
+  // vào nhóm này (chỉ thêm, không xoá và không đụng quyền Admin đã chỉnh tay khác).
+  private async grantNewAdminPermissions(groupId: string) {
+    const existing = await this.prisma.accessGroupPermission.findMany({
+      where: { groupId },
+      select: { resource: true, action: true },
+    });
+    const have = new Set(existing.map((p) => `${p.resource}:${p.action}`));
+    const missing = allCatalogPermissions().filter(([r, a]) => !have.has(`${r}:${a}`));
+    if (missing.length === 0) return;
+    await this.prisma.accessGroupPermission.createMany({
+      data: missing.map(([resource, action]) => ({ groupId, resource, action })),
+      skipDuplicates: true,
+    });
   }
 
   catalog() {

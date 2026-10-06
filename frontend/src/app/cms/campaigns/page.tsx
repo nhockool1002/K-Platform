@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { CmsShell } from '@/components/layout/CmsShell';
 import { Badge } from '@/components/ui/Badge';
@@ -158,7 +159,12 @@ export default function CmsCampaignsPage() {
                 visible.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50">
                     <Td className="font-bold text-slate-800">
-                      {c.title}
+                      <Link
+                        href={`/cms/campaigns/${c.id}`}
+                        className="hover:text-brand-blue hover:underline"
+                      >
+                        {c.title}
+                      </Link>
                       <span className="ml-1.5 text-[10px] font-normal text-slate-400">
                         {PLATFORM_LABEL[c.platform]}
                       </span>

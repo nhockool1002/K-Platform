@@ -50,8 +50,28 @@ export const PERMISSION_RESOURCES = {
     ],
   },
   campaigns: {
-    label: 'Quản trị Campaign (phân công Moderator)',
+    label: 'Quản trị Campaign (phân công Moderator, lưu trữ)',
     area: 'Campaign',
+    actions: [PermissionAction.READ, PermissionAction.UPDATE, PermissionAction.DELETE],
+  },
+  submissions: {
+    label: 'Duyệt Proof thủ công (SCR-22)',
+    area: 'Campaign',
+    actions: [PermissionAction.READ, PermissionAction.UPDATE, PermissionAction.APPROVE],
+  },
+  wallets: {
+    label: 'Ví & sổ cái người dùng (SCR-23)',
+    area: 'Thanh toán',
+    actions: [PermissionAction.READ, PermissionAction.UPDATE],
+  },
+  fraud: {
+    label: 'Chống gian lận (SCR-24)',
+    area: 'Bảo mật',
+    actions: [PermissionAction.READ, PermissionAction.UPDATE],
+  },
+  system_ops: {
+    label: 'Giám sát vận hành (SCR-25)',
+    area: 'Hệ thống',
     actions: [PermissionAction.READ, PermissionAction.UPDATE],
   },
   disputes: {

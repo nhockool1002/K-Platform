@@ -31,3 +31,43 @@ export async function assignModerator(
     body: JSON.stringify({ moderatorId }),
   });
 }
+
+// SCR-21 — chi tiết, sửa thông tin hiển thị, lưu trữ (= "xoá" trong CMS, hoàn ký quỹ slot chưa dùng).
+export interface AdminCampaignDetail extends AdminCampaign {
+  location: string | null;
+  minTrustScore: number;
+  dripFeedLimit: number;
+  createdAt: string;
+  owner: { id: string; email: string; disabledAt: string | null };
+  slotsOccupied: number;
+  statusCounts: Record<string, number>;
+  refundableKpoint: string;
+}
+
+export interface ArchiveCampaignResult {
+  status: 'ACTIVE' | 'ARCHIVED';
+  refundedKpoint: string;
+  refundedSlots: number;
+}
+
+export async function getAdminCampaign(id: string): Promise<AdminCampaignDetail> {
+  return apiFetch<AdminCampaignDetail>(`/admin/campaigns/${id}`, { auth: true });
+}
+
+export async function updateAdminCampaign(
+  id: string,
+  patch: { title?: string; location?: string; minTrustScore?: number },
+): Promise<AdminCampaign> {
+  return apiFetch<AdminCampaign>(`/admin/campaigns/${id}`, {
+    method: 'PATCH',
+    auth: true,
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function archiveAdminCampaign(id: string): Promise<ArchiveCampaignResult> {
+  return apiFetch<ArchiveCampaignResult>(`/admin/campaigns/${id}/archive`, {
+    method: 'PATCH',
+    auth: true,
+  });
+}

@@ -19,6 +19,7 @@ import type { CreateCampaignDto } from './dto/create-campaign.dto.js';
 import type { ApplyCampaignDto } from './dto/apply-campaign.dto.js';
 import type { ApplicantActionDto } from './dto/applicant-action.dto.js';
 import type { ListCampaignsQueryDto } from './dto/list-campaigns-query.dto.js';
+import type { UpdateCampaignAdminDto } from './dto/update-campaign-admin.dto.js';
 
 // Phí khởi tạo cố định (FN-CAMP-01 / README.md § 9.4). Export để
 // ReportsService dùng chung khi tính doanh thu phí tạo Campaign (issue #55)
@@ -57,6 +58,11 @@ const APPLICANT_VISIBLE_STATUSES: SubmissionStatus[] = [
 
 function hashFingerprint(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
+}
+
+// Số KPoint ký quỹ của các slot chưa bị chiếm — đây là phần hoàn lại khi lưu trữ.
+function refundableKpoint(totalSlots: number, occupied: number, rewardPerSlot: bigint): bigint {
+  return BigInt(Math.max(0, totalSlots - occupied)) * rewardPerSlot;
 }
 
 @Injectable()
@@ -280,6 +286,7 @@ export class CampaignsService {
     dto: ApplicantActionDto,
   ) {
     await this.assertOwner(campaignId, ownerId);
+    await this.assertNotArchived(campaignId);
 
     const submission = await this.prisma.submission.findUnique({ where: { id: submissionId } });
     if (!submission || submission.campaignId !== campaignId) {
@@ -312,6 +319,127 @@ export class CampaignsService {
       data: { status: CampaignStatus.ARCHIVED },
     });
     return this.toPublicCampaign(campaign);
+  }
+
+  // SCR-21 — chi tiết Campaign cho CMS, kèm số slot đã chiếm và số KPoint sẽ
+  // hoàn về khả dụng nếu lưu trữ ngay bây giờ (xem archiveForAdmin).
+  async getAdminDetail(campaignId: string) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+      include: {
+        owner: { select: { id: true, email: true, disabledAt: true } },
+        assignedModerator: { select: { id: true, email: true } },
+        submissions: { select: { status: true } },
+      },
+    });
+    if (!campaign) throw new NotFoundException('Không tìm thấy Campaign');
+
+    const { submissions, rewardPerSlot, ...rest } = campaign;
+    const slotsOccupied = submissions.filter((s) =>
+      SLOT_OCCUPYING_STATUSES.includes(s.status),
+    ).length;
+    const statusCounts: Record<string, number> = {};
+    for (const s of submissions) statusCounts[s.status] = (statusCounts[s.status] ?? 0) + 1;
+
+    const refundable =
+      campaign.status === CampaignStatus.ACTIVE
+        ? refundableKpoint(campaign.totalSlots, slotsOccupied, rewardPerSlot)
+        : 0n;
+
+    return {
+      ...rest,
+      rewardPerSlot: rewardPerSlot.toString(),
+      slotsOccupied,
+      statusCounts,
+      refundableKpoint: refundable.toString(),
+    };
+  }
+
+  // SCR-21 — sửa thông tin hiển thị. Campaign đã lưu trữ không sửa nữa.
+  async updateForAdmin(campaignId: string, dto: UpdateCampaignAdminDto) {
+    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign) throw new NotFoundException('Không tìm thấy Campaign');
+    if (campaign.status !== CampaignStatus.ACTIVE) {
+      throw new BadRequestException('Campaign đã lưu trữ, không thể sửa');
+    }
+    const updated = await this.prisma.campaign.update({
+      where: { id: campaignId },
+      data: {
+        title: dto.title,
+        location: dto.location,
+        minTrustScore: dto.minTrustScore,
+      },
+    });
+    return this.toPublicCampaign(updated);
+  }
+
+  // SCR-21 — lưu trữ Campaign do Admin/Mod thực hiện ("xoá" trong CMS = lưu
+  // trữ, không xoá cứng). Hoàn ký quỹ của các slot CHƯA chiếm về khả dụng
+  // (reserved_kpoint giảm, balance_kpoint không đổi). Slot đang INVITED/PENDING/
+  // DISPUTED/APPROVED vẫn giữ nguyên để trả thưởng khi duyệt như bình thường.
+  async archiveForAdmin(campaignId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const owner = await tx.campaign.findUnique({
+        where: { id: campaignId },
+        select: { ownerId: true },
+      });
+      if (!owner) throw new NotFoundException('Không tìm thấy Campaign');
+
+      // Khoá ví chủ Campaign trước khi đọc số slot, để không bị lệch với
+      // Invite/Approve đang chạy song song (cùng khoá ví chủ Campaign).
+      await tx.$queryRaw`SELECT id FROM wallets WHERE user_id = ${owner.ownerId} FOR UPDATE`;
+
+      const campaign = await tx.campaign.findUniqueOrThrow({
+        where: { id: campaignId },
+        include: { submissions: { select: { status: true } } },
+      });
+      if (campaign.status !== CampaignStatus.ACTIVE) {
+        throw new BadRequestException('Campaign đã được lưu trữ trước đó');
+      }
+
+      const occupied = campaign.submissions.filter((s) =>
+        SLOT_OCCUPYING_STATUSES.includes(s.status),
+      ).length;
+      const refund = refundableKpoint(campaign.totalSlots, occupied, campaign.rewardPerSlot);
+      const freeSlots = Math.max(0, campaign.totalSlots - occupied);
+
+      if (refund > 0n) {
+        await tx.wallet.update({
+          where: { userId: campaign.ownerId },
+          data: { reservedKpoint: { decrement: refund } },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            userId: campaign.ownerId,
+            type: WalletTxType.CAMPAIGN_REFUND,
+            side: WalletTxSide.A,
+            reservedDeltaKpoint: -refund,
+            relatedCampaignId: campaign.id,
+            note: `Lưu trữ Campaign "${campaign.title}" — hoàn ký quỹ ${freeSlots} slot chưa dùng`,
+          },
+        });
+      }
+
+      const archived = await tx.campaign.update({
+        where: { id: campaignId },
+        data: { status: CampaignStatus.ARCHIVED },
+      });
+      return {
+        ...this.toPublicCampaign(archived),
+        refundedKpoint: refund.toString(),
+        refundedSlots: freeSlots,
+      };
+    });
+  }
+
+  private async assertNotArchived(campaignId: string) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+      select: { status: true },
+    });
+    if (campaign?.status === CampaignStatus.ARCHIVED) {
+      throw new BadRequestException('Campaign đã lưu trữ, không thể xử lý thêm ứng viên');
+    }
   }
 
   // P7-01/SCR-09/SCR-12 — danh sách rút gọn cho CMS (RBAC phân công Moderator

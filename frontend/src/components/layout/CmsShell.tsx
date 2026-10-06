@@ -4,10 +4,13 @@ import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  Activity,
   BarChart3,
   Banknote,
   ChevronDown,
   Coffee,
+  Fingerprint,
+  FileCheck2,
   Megaphone,
   ExternalLink,
   History,
@@ -16,6 +19,7 @@ import {
   ShieldAlert,
   TrendingUp,
   Users,
+  WalletCards,
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePermissions } from '@/lib/use-permissions';
@@ -102,6 +106,34 @@ const NAV: (NavLeaf | NavGroup)[] = [
     label: 'Yêu Cầu Rút Tiền',
     icon: Banknote,
     iconClassName: 'text-emerald-600',
+  },
+  {
+    href: '/cms/submissions',
+    resource: 'submissions',
+    label: 'SCR-22: Duyệt Proof',
+    icon: FileCheck2,
+    iconClassName: 'text-teal-600',
+  },
+  {
+    href: '/cms/wallets',
+    resource: 'wallets',
+    label: 'SCR-23: Ví & Sổ cái',
+    icon: WalletCards,
+    iconClassName: 'text-emerald-700',
+  },
+  {
+    href: '/cms/fraud',
+    resource: 'fraud',
+    label: 'SCR-24: Chống gian lận',
+    icon: Fingerprint,
+    iconClassName: 'text-purple-600',
+  },
+  {
+    href: '/cms/ops',
+    resource: 'system_ops',
+    label: 'SCR-25: Giám sát vận hành',
+    icon: Activity,
+    iconClassName: 'text-slate-600',
   },
   {
     label: 'Cài Đặt',

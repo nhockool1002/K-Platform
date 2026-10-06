@@ -110,14 +110,35 @@ export class SubmissionsService {
     action: 'APPROVE' | 'REJECT',
     reason?: string,
   ) {
+    const submission = await this.loadForDecision(submissionId);
+    if (submission.campaign.ownerId !== ownerId) {
+      throw new ForbiddenException('Bạn không phải chủ sở hữu Campaign này');
+    }
+    return this.settleProof(submission, action, reason);
+  }
+
+  // SCR-22 — Admin/Mod duyệt hoặc từ chối Proof thủ công, không cần là chủ
+  // Campaign. Chỉ áp dụng cho Proof đang PENDING; Proof DISPUTED đi qua Dispute.
+  async decideProofAsAdmin(submissionId: string, action: 'APPROVE' | 'REJECT', reason?: string) {
+    const submission = await this.loadForDecision(submissionId);
+    return this.settleProof(submission, action, reason);
+  }
+
+  private async loadForDecision(submissionId: string) {
     const submission = await this.prisma.submission.findUnique({
       where: { id: submissionId },
       include: { campaign: true },
     });
     if (!submission) throw new NotFoundException('Không tìm thấy đơn ứng tuyển');
-    if (submission.campaign.ownerId !== ownerId) {
-      throw new ForbiddenException('Bạn không phải chủ sở hữu Campaign này');
-    }
+    return submission;
+  }
+
+  private async settleProof(
+    submission: { id: string; publisherId: string; status: SubmissionStatus },
+    action: 'APPROVE' | 'REJECT',
+    reason?: string,
+  ) {
+    const submissionId = submission.id;
     if (submission.status !== SubmissionStatus.PENDING) {
       throw new BadRequestException('Đơn Proof này đã được xử lý trước đó');
     }
@@ -151,6 +172,27 @@ export class SubmissionsService {
       throw new BadRequestException('Đơn Proof này vừa được xử lý xong, vui lòng tải lại trang');
     }
     return result;
+  }
+
+  // SCR-22 — hàng đợi Proof cho Admin/Mod. `stuckWatermark`: đã nộp Proof nhưng
+  // job chèn watermark chưa điền watermarkUrl sau 10 phút (job lỗi/kẹt).
+  async listProofsForAdmin(opts: { stuckWatermark?: boolean }) {
+    const stuckBefore = new Date(Date.now() - 10 * 60 * 1000);
+    const rows = await this.prisma.submission.findMany({
+      where: {
+        status: SubmissionStatus.PENDING,
+        ...(opts.stuckWatermark
+          ? { proofUrl: { not: null }, watermarkUrl: null, updatedAt: { lt: stuckBefore } }
+          : {}),
+      },
+      include: {
+        campaign: { select: { id: true, title: true } },
+        publisher: { select: { id: true, email: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+    });
+    return rows;
   }
 
   // P4-09/P4-13 — dùng chung bởi quyết định thủ công, Cronjob Auto-Approve,
