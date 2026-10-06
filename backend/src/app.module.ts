@@ -22,6 +22,7 @@ import { RbacModule } from './rbac/rbac.module.js';
 import { ProfileModule } from './profile/profile.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SecurityHeadersMiddleware } from './security/security-headers.middleware.js';
+import { CmsOpsModule } from './cms-ops/cms-ops.module.js';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SecurityHeadersMiddleware } from './security/security-headers.middlewar
     PaymentsModule,
     SettingsModule,
     SubmissionsModule,
+    CmsOpsModule,
     AccountActivationModule,
     DisputesModule,
     ReportsModule,

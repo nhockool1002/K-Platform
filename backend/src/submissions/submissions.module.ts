@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SubmissionsController } from './submissions.controller.js';
+import { AdminSubmissionsController } from './admin-submissions.controller.js';
 import { SubmissionsService } from './submissions.service.js';
 import { AutoApproveService } from './auto-approve.service.js';
 import { WatermarkModule } from '../watermark/watermark.module.js';
@@ -8,7 +9,7 @@ import { ensureUploadDirs } from './upload-paths.js';
 
 @Module({
   imports: [WatermarkModule, TrustScoreModule],
-  controllers: [SubmissionsController],
+  controllers: [SubmissionsController, AdminSubmissionsController],
   providers: [SubmissionsService, AutoApproveService],
   exports: [SubmissionsService],
 })

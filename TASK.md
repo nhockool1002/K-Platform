@@ -262,6 +262,47 @@
   > ✅ **Đã bổ sung** (`/cms/settings/trust-score`): Admin tạo/sửa/bật-tắt/xoá lý do tự tạo. Ghi chú gap cũ giữ để lịch sử: CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
 - [x] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — chưa có file `SRS_K-PLATFORM-v1.0.docx` bản mới, nhưng các quyết định nghiệp vụ khi xử lý B-02/03/04/05 (xem các mục trên) là một bản bổ sung yêu cầu trên thực tế, nên đã đối chiếu theo đó: thêm **SCR-14** (CMS Quản Trị Tài Khoản), **SCR-15** (CMS Cài đặt thanh toán), **FN-TRUST-01** (Trust Score), **FN-DISP-04** (SLA & leo thang Dispute), **FN-PAY-04** (cấu hình tỷ giá & SLA Thanh toán Quốc tế) vào README.md §IV/V + PLAN.md §6; sửa lại mô tả sai ở README §I.1 (tỷ giá KPoint↔VNĐ là **cố định** 1:1, không phải "linh hoạt" như bản cũ ghi nhầm — chỉ tỷ giá USD→VNĐ mới cấu hình được). Việc này vẫn định kỳ — đối chiếu lại lần tới khi có SRS bản mới hoặc backlog tiếp theo.
 
+### Màn hình quản trị CMS — mã màn hình & phân quyền
+
+Mã `SCR-xx` theo SRS (README §IV). SCR-01 → SCR-15 đã được định nghĩa; màn hình mới đánh tiếp từ SCR-16. Mỗi màn hình phải có quyền riêng ở API (`@RequirePermission`) và kiểm tra quyền ở UI.
+
+| Mã     | Màn hình                                                             | Route                                                   | Tài nguyên & hành động                                                           | Trạng thái                   |
+| ------ | -------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------- |
+| SCR-09 | Tổng quan KPI                                                        | `/cms/overview`                                         | `dashboard_overview`: READ                                                       | Đã có                        |
+| SCR-10 | Đối soát nạp tiền (SePay + BMC)                                      | `/cms/payments`                                         | `payments_reconciliation`: READ, APPROVE                                         | Đã có                        |
+| SCR-11 | Dispute Center                                                       | `/cms/disputes`                                         | `disputes`: READ, UPDATE, APPROVE                                                | Đã có                        |
+| SCR-12 | Phân quyền & nhóm quyền                                              | `/cms/rbac`                                             | `rbac`: READ, CREATE, UPDATE, DELETE                                             | Đã có                        |
+| SCR-13 | Nhật ký Audit Logs                                                   | `/cms/audit-logs`                                       | `audit_logs`: READ                                                               | Đã có                        |
+| SCR-14 | Quản trị tài khoản                                                   | `/cms/accounts`                                         | `accounts`: READ, CREATE, UPDATE, DELETE                                         | Đã có                        |
+| SCR-15 | Cài đặt thanh toán (SePay, thanh toán quốc tế, gói BMC)              | `/cms/settings/payments`, `/cms/settings/international` | `settings`: READ, UPDATE; `international_packages`: READ, CREATE, UPDATE, DELETE | Đã có                        |
+| SCR-16 | Quản trị Campaign (xem, phân công Moderator)                         | `/cms/campaigns`                                        | `campaigns`: READ, UPDATE                                                        | Đã có (phân công)            |
+| SCR-17 | Thống kê doanh thu & bảng xếp hạng Trust Score                       | `/cms/reports`                                          | `reports`: READ                                                                  | Đã có (chưa có mã trong SRS) |
+| SCR-18 | Yêu cầu rút tiền                                                     | `/cms/withdrawals`                                      | `withdrawals`: READ, APPROVE                                                     | Đã có (chưa có mã trong SRS) |
+| SCR-19 | Cài đặt phí kích hoạt dịch vụ                                        | `/cms/settings/activation-fee`                          | `settings`: READ, UPDATE                                                         | Đã có (chưa có mã trong SRS) |
+| SCR-20 | Lý do Trust Score (rule cộng/trừ điểm)                               | `/cms/settings/trust-score`                             | `trust_score`: READ, CREATE, UPDATE, DELETE                                      | Đã có (chưa có mã trong SRS) |
+| SCR-21 | Chi tiết & xử lý Campaign (sửa, vô hiệu hoá, lưu trữ)                | `/cms/campaigns/[id]`                                   | `campaigns`: READ, UPDATE; **cần thêm DELETE** (= lưu trữ) vào catalog           | Đã làm                       |
+| SCR-22 | Quản trị Proof (duyệt/từ chối thủ công, watermark kẹt)               | `/cms/submissions`                                      | `submissions` — **chưa có trong catalog**, cần thêm resource                     | Đã làm                       |
+| SCR-23 | Ví & sổ cái người dùng (điều chỉnh số dư có lý do)                   | `/cms/wallets`                                          | `wallets` — **chưa có trong catalog**, cần thêm resource                         | Đã làm                       |
+| SCR-24 | Chống gian lận (trùng fingerprint/IP, đánh dấu/khoá)                 | `/cms/fraud`                                            | `fraud` — **chưa có trong catalog**, cần thêm resource                           | Đã làm                       |
+| SCR-25 | Giám sát vận hành (hàng đợi, cronjob, webhook lỗi, thử lại job)      | `/cms/ops`                                              | `system_ops` — **chưa có trong catalog**, cần thêm resource                      | Đã làm                       |
+| SCR-26 | Xuất báo cáo (CSV đối soát, doanh thu, KPI)                          | `/cms/reports` (nút xuất)                               | `reports`: READ hiện có; **cần thêm CREATE** (xuất file) vào catalog             | Chưa làm                     |
+| SCR-27 | Cấu hình nền tảng (phí/giới hạn Campaign, thưởng tối thiểu, số slot) | `/cms/settings/platform`                                | `settings`: READ, UPDATE (đã có)                                                 | Chưa làm                     |
+| SCR-28 | Nội dung CMS (banner, FAQ, điều khoản công khai)                     | `/cms/content`                                          | `content` — **chưa có trong catalog**, cần thêm resource                         | Chưa làm (đề xuất)           |
+| SCR-29 | Mẫu thông báo / email (chờ hạ tầng mail)                             | `/cms/notifications`                                    | `notifications` — **chưa có trong catalog**; chờ hạ tầng mail (P6-06)            | Chưa làm (đề xuất)           |
+| SCR-30 | Phiên đăng nhập (buộc đăng xuất người dùng)                          | `/cms/sessions`                                         | `accounts`: UPDATE (đã có); cần thêm cơ chế thu hồi refresh token                | Chưa làm                     |
+
+Quyết định đã chốt:
+
+- **Xoá Campaign:** trong CMS, "xoá" nghĩa là **lưu trữ (archive)**, không xoá cứng. Khi lưu trữ, hoàn ký quỹ các slot chưa dùng.
+
+Việc còn lại:
+
+- Thêm test đảm bảo mọi route `/admin/*` đều khai báo `@RequirePermission`, để không có route nào thiếu phân quyền.
+- SCR-21: lưu trữ từ luồng Owner (`PATCH /campaigns/:id/archive`) vẫn chưa hoàn ký quỹ slot chưa dùng như luồng Admin; cần đồng bộ.
+- SCR-23: điều chỉnh số dư chưa có bước 2 người duyệt (maker-checker).
+- SCR-24: chưa có thao tác đánh dấu/từ chối Proof hàng loạt theo cụm.
+- Cập nhật README §IV (SRS) với các mã SCR-16 → SCR-30 khi làm bản bổ sung tiếp theo (B-06).
+
 ### Kết quả kiểm thử toàn bộ — 2026-10-05 (nhánh RBAC + QA, trước khi merge vào develop)
 
 - **Backend e2e:** 114/114 pass (19 file), gồm bảo mật (`security-hardening`), RBAC (`rbac`), hồ sơ/đăng ký (`profile`), audit log.

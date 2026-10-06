@@ -85,6 +85,11 @@ enum WalletTxType {
   // Admin duyệt nạp quốc tế qua Buy Me a Coffee — cộng KPoint theo tỷ giá
   // snapshot lúc user bắt đầu nạp (BmcTopup.exchangeRateUsdToVnd).
   TOPUP_BMC
+  // CMS SCR-23 — Admin điều chỉnh số dư có lý do (cộng/trừ balance_kpoint).
+  ADJUSTMENT
+  // CMS SCR-21 — Lưu trữ Campaign: hoàn phần ký quỹ (reserved_kpoint) của các
+  // slot chưa dùng về khả dụng; không đổi balance_kpoint.
+  CAMPAIGN_REFUND
 }
 
 // Bên nào trong SRS Section II mà giao dịch này thuộc về — dùng để lọc Lịch

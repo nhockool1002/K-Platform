@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { CampaignsService } from './campaigns.service.js';
 import { AssignModeratorDto } from './dto/assign-moderator.dto.js';
+import { UpdateCampaignAdminDto } from './dto/update-campaign-admin.dto.js';
 import { AuditLevel } from '../prisma/client.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from '../rbac/permissions.guard.js';
@@ -27,5 +28,27 @@ export class AdminCampaignsController {
   @Patch(':id/assign-moderator')
   assignModerator(@Param('id') id: string, @Body() dto: AssignModeratorDto) {
     return this.campaigns.assignModerator(id, dto.moderatorId ?? null);
+  }
+
+  // SCR-21 — chi tiết Campaign (slot đã chiếm, số KPoint sẽ hoàn khi lưu trữ).
+  @RequirePermission(['campaigns', 'READ'])
+  @Get(':id')
+  detail(@Param('id') id: string) {
+    return this.campaigns.getAdminDetail(id);
+  }
+
+  @Audit({ level: AuditLevel.WARNING })
+  @RequirePermission(['campaigns', 'UPDATE'])
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateCampaignAdminDto) {
+    return this.campaigns.updateForAdmin(id, dto);
+  }
+
+  // "Xoá" trong CMS = lưu trữ (không xoá cứng) + hoàn ký quỹ slot chưa dùng.
+  @Audit({ level: AuditLevel.CRITICAL })
+  @RequirePermission(['campaigns', 'DELETE'])
+  @Patch(':id/archive')
+  archive(@Param('id') id: string) {
+    return this.campaigns.archiveForAdmin(id);
   }
 }
