@@ -10,12 +10,6 @@ import { Table, Thead, Th, Tbody, Td } from '@/components/ui/Table';
 import { ApiError } from '@/lib/auth-client';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePermissions } from '@/lib/use-permissions';
-import { PLATFORM_LABEL } from '@/lib/mock-data';
-import {
-  assignModerator,
-  listAdminCampaigns,
-  type AdminCampaign,
-} from '@/lib/admin-campaigns-client';
 import {
   createGroup,
   deleteGroup,
@@ -43,7 +37,7 @@ const ACTIONS: { key: PermissionAction; label: string }[] = [
   { key: 'APPROVE', label: 'Duyệt' },
 ];
 
-type Tab = 'groups' | 'users' | 'campaigns';
+type Tab = 'groups' | 'users';
 type OverrideChoice = 'INHERIT' | 'ALLOW' | 'DENY';
 
 const key = (resource: string, action: string) => `${resource}:${action}`;
@@ -212,11 +206,6 @@ export default function CmsRbacPage() {
   const [overrideValues, setOverrideValues] = useState<Record<string, OverrideChoice>>({});
   const [savingUser, setSavingUser] = useState(false);
 
-  // --- Campaign ---
-  const [campaigns, setCampaigns] = useState<AdminCampaign[] | null>(null);
-  const [staffPerms, setStaffPerms] = useState<Record<string, Set<string>>>({});
-  const [staff, setStaff] = useState<RbacUserRow[]>([]);
-
   const selectedGroup = useMemo(
     () => groups?.find((g) => g.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
@@ -265,35 +254,6 @@ export default function CmsRbacPage() {
       cancelled = true;
     };
   }, [tab, userQuery, canRead]);
-
-  useEffect(() => {
-    if (tab !== 'campaigns' || !canRead) return;
-    let cancelled = false;
-    listAdminCampaigns()
-      .then(async (cs) => {
-        if (cancelled) return;
-        setCampaigns(cs);
-        // Lấy quyền của các staff để cảnh báo moderator chưa có quyền Campaign.
-        const staff = await listRbacUsers({ pageSize: 100 });
-        const candidates = staff.items.filter((u) => u.role === 'MODERATOR' || u.role === 'ADMIN');
-        setStaff(candidates);
-        const details = await Promise.all(
-          candidates.map((u) => getRbacUser(u.id).catch(() => null)),
-        );
-        if (cancelled) return;
-        const map: Record<string, Set<string>> = {};
-        details.forEach((d) => {
-          if (d) map[d.id] = new Set(d.effective);
-        });
-        setStaffPerms(map);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : 'Không tải được Campaign');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, canRead]);
 
   function flash(message: string) {
     setInfo(message);
@@ -422,17 +382,6 @@ export default function CmsRbacPage() {
     }
   }
 
-  async function handleAssign(campaignId: string, moderatorId: string) {
-    setError(null);
-    try {
-      const updated = await assignModerator(campaignId, moderatorId || null);
-      setCampaigns((prev) => prev?.map((c) => (c.id === campaignId ? updated : c)) ?? null);
-    } catch (err) {
-      // Lỗi nghiệp vụ (vd. moderator chưa có quyền Quản trị Campaign) hiển thị nguyên văn từ backend.
-      setError(err instanceof ApiError ? err.message : 'Không phân công được Moderator');
-    }
-  }
-
   if (!userLoading && !perms.loading && !canRead) {
     return (
       <CmsShell active="/cms/rbac">
@@ -467,7 +416,6 @@ export default function CmsRbacPage() {
             [
               ['groups', 'Nhóm quyền'],
               ['users', 'Người dùng & quyền riêng'],
-              ['campaigns', 'Phân công Campaign'],
             ] as [Tab, string][]
           ).map(([k, label]) => (
             <button
@@ -782,63 +730,6 @@ export default function CmsRbacPage() {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-        )}
-
-        {tab === 'campaigns' && (
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-            <p className="text-xs text-slate-500">
-              Moderator được phân công phải có quyền <strong>Quản trị Campaign</strong> (Sửa). Nếu
-              chưa có, hệ thống báo lỗi — hãy cấp quyền ở tab Người dùng & quyền riêng trước.
-            </p>
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <Table>
-                <Thead>
-                  <Th>Campaign</Th>
-                  <Th>Tài khoản Dịch vụ</Th>
-                  <Th>Moderator phụ trách</Th>
-                </Thead>
-                <Tbody>
-                  {campaigns?.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50">
-                      <Td className="font-bold text-slate-800">
-                        {c.title}
-                        <span className="ml-1.5 text-[10px] font-normal text-slate-400">
-                          {PLATFORM_LABEL[c.platform]}
-                        </span>
-                      </Td>
-                      <Td className="text-slate-600">{c.owner.email}</Td>
-                      <Td>
-                        <Select
-                          value={c.assignedModerator?.id ?? ''}
-                          disabled={!canManage}
-                          onChange={(e) => handleAssign(c.id, e.target.value)}
-                          className="w-72"
-                        >
-                          <option value="">— Chưa phân công (mọi Mod đều xử lý được) —</option>
-                          {staff.map((m) => {
-                            const can = staffPerms[m.id]?.has('campaigns:UPDATE');
-                            return (
-                              <option key={m.id} value={m.id}>
-                                {m.email}
-                                {staffPerms[m.id] && !can ? ' (thiếu quyền Quản trị Campaign)' : ''}
-                              </option>
-                            );
-                          })}
-                        </Select>
-                      </Td>
-                    </tr>
-                  ))}
-                  {campaigns?.length === 0 && (
-                    <tr>
-                      <Td colSpan={3} className="py-6 text-center text-slate-400">
-                        Chưa có Campaign nào.
-                      </Td>
-                    </tr>
-                  )}
-                </Tbody>
-              </Table>
             </div>
           </div>
         )}

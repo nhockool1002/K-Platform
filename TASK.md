@@ -262,6 +262,30 @@
   > ✅ **Đã bổ sung** (`/cms/settings/trust-score`): Admin tạo/sửa/bật-tắt/xoá lý do tự tạo. Ghi chú gap cũ giữ để lịch sử: CMS **chưa có màn hình** cho Admin tự tạo/sửa/xóa rule mới — `createTrustScoreRule`/`updateTrustScoreRule`/`deleteTrustScoreRule` (`frontend/src/lib/trust-score-client.ts`) có sẵn nhưng không nơi nào trong UI gọi tới; `/cms/accounts` chỉ `listTrustScoreRules()` để hiển thị dropdown lúc +/- điểm tay. Cần bổ sung UI quản lý rule (hoặc xác nhận tạm thời chưa cần) trước khi coi yêu cầu "Admin tự tạo thêm lý do" là xong 100%.
 - [x] **B-06** Đối chiếu lại Ma trận FN/SCR (PLAN.md § 6) mỗi khi SRS được bổ sung — chưa có file `SRS_K-PLATFORM-v1.0.docx` bản mới, nhưng các quyết định nghiệp vụ khi xử lý B-02/03/04/05 (xem các mục trên) là một bản bổ sung yêu cầu trên thực tế, nên đã đối chiếu theo đó: thêm **SCR-14** (CMS Quản Trị Tài Khoản), **SCR-15** (CMS Cài đặt thanh toán), **FN-TRUST-01** (Trust Score), **FN-DISP-04** (SLA & leo thang Dispute), **FN-PAY-04** (cấu hình tỷ giá & SLA Thanh toán Quốc tế) vào README.md §IV/V + PLAN.md §6; sửa lại mô tả sai ở README §I.1 (tỷ giá KPoint↔VNĐ là **cố định** 1:1, không phải "linh hoạt" như bản cũ ghi nhầm — chỉ tỷ giá USD→VNĐ mới cấu hình được). Việc này vẫn định kỳ — đối chiếu lại lần tới khi có SRS bản mới hoặc backlog tiếp theo.
 
+### Backlog — Màn hình quản trị CMS (kiểm kê & phân quyền)
+
+Đã có: SCR-09 Tổng quan, Thống kê doanh thu, SCR-10 Đối soát nạp tiền, **Quản Trị Campaign** (phân công Moderator), SCR-11 Dispute, SCR-12 Phân quyền, Quản trị tài khoản, SCR-13 Audit Logs, Rút tiền, Cài đặt SePay / Thanh toán quốc tế / Trust Score / Phí kích hoạt.
+
+Cần xây (mỗi màn hình phải gắn `@RequirePermission` ở API và kiểm tra quyền ở UI):
+
+| #   | Màn hình                    | Nội dung chính                                                                                 | Tài nguyên & hành động                                                     |
+| --- | --------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1   | Chi tiết & xử lý Campaign   | Sửa thông tin, vô hiệu hoá / mở lại, lưu trữ (archive) campaign có vấn đề, xem ứng viên & slot | `campaigns`: READ, UPDATE, DELETE (= archive + hoàn ký quỹ slot chưa dùng) |
+| 2   | Quản trị Submission / Proof | Danh sách proof toàn hệ thống, xem chi tiết, duyệt/từ chối thủ công, xử lý watermark bị kẹt    | `submissions`: READ, UPDATE, APPROVE                                       |
+| 3   | Ví & sổ cái người dùng      | Xem số dư, lịch sử ledger, điều chỉnh số dư thủ công (có lý do, ghi audit CRITICAL)            | `wallets`: READ, UPDATE, APPROVE                                           |
+| 4   | Chống gian lận              | Nhóm tài khoản trùng fingerprint/IP (P3-10/P3-11/P3-15), đánh dấu/khoá nghi vấn                | `fraud`: READ, UPDATE                                                      |
+| 5   | Giám sát vận hành           | Hàng đợi BullMQ (watermark), lần chạy cronjob Auto-Approve, webhook SePay lỗi, thử lại job     | `system_ops`: READ, UPDATE (P8-11)                                         |
+| 6   | Xuất báo cáo                | Xuất CSV đối soát nạp/rút, doanh thu, KPI                                                      | `reports`: READ, CREATE (xuất)                                             |
+| 7   | Cấu hình nền tảng           | Phí/giới hạn Campaign (phí tạo, thưởng tối thiểu, số slot), tham số khác                       | `settings`: READ, UPDATE                                                   |
+| 8   | Nội dung CMS                | Banner, FAQ, điều khoản/chính sách hiển thị công khai                                          | `content`: READ, CREATE, UPDATE, DELETE                                    |
+| 9   | Thông báo & email mẫu       | Mẫu email (reset mật khẩu, duyệt/từ chối nạp, dispute) — chờ hạ tầng mail                      | `notifications`: READ, UPDATE                                              |
+| 10  | Quản lý phiên đăng nhập     | Buộc đăng xuất user, xem phiên hoạt động (cần cơ chế thu hồi refresh token)                    | `accounts`: UPDATE                                                         |
+
+Cần quyết định trước khi làm:
+
+- **Xoá Campaign:** P3-13 quy định campaign cũ chỉ được lưu trữ, không xoá. Đề xuất: "xoá" = lưu trữ + hoàn ký quỹ slot chưa dùng; xoá cứng chỉ cho campaign chưa có ứng viên.
+- **Phân quyền catalog:** thêm các tài nguyên mới ở bảng trên và hành động `CREATE` cho xuất báo cáo; thêm test đảm bảo mọi route `/admin/*` đều khai báo quyền.
+
 ### Kết quả kiểm thử toàn bộ — 2026-10-05 (nhánh RBAC + QA, trước khi merge vào develop)
 
 - **Backend e2e:** 114/114 pass (19 file), gồm bảo mật (`security-hardening`), RBAC (`rbac`), hồ sơ/đăng ký (`profile`), audit log.

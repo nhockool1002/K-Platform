@@ -8,6 +8,7 @@ import {
   Banknote,
   ChevronDown,
   Coffee,
+  Megaphone,
   ExternalLink,
   History,
   Scale,
@@ -58,6 +59,13 @@ const NAV: (NavLeaf | NavGroup)[] = [
     label: 'SCR-10: Đối soát nạp tiền',
     icon: Coffee,
     iconClassName: 'text-brand-gold',
+  },
+  {
+    href: '/cms/campaigns',
+    resource: 'campaigns',
+    label: 'Quản Trị Campaign',
+    icon: Megaphone,
+    iconClassName: 'text-amber-600',
   },
   {
     href: '/cms/disputes',
